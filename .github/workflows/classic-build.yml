@@ -20,11 +20,14 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 8.0.x
+      - uses: microsoft/setup-msbuild@v2
       - name: Build the classic Windows Forms solution
         shell: pwsh
         run: |
-          dotnet build SubtitleEdit.sln -c Release --nologo -p:SolutionDir="$env:GITHUB_WORKSPACE\"
+          $sdk = Get-ChildItem 'C:/Program Files/dotnet/sdk' -Directory | Where-Object Name -like '8.0.*' | Sort-Object { [version]$_.Name } | Select-Object -Last 1
+          @{ sdk = @{ version = $sdk.Name; rollForward = 'latestPatch' } } | ConvertTo-Json | Set-Content global.json
+          msbuild SubtitleEdit.sln /restore /p:Configuration=Release /p:SolutionDir="$env:GITHUB_WORKSPACE\" /verbosity:minimal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Find or install the Inno Setup compiler
         shell: pwsh
@@ -45,15 +48,15 @@ jobs:
           $outputDirectory = Join-Path $env:GITHUB_WORKSPACE 'artifacts'
           & $env:CLASSIC_ISCC /DCLASSIC_FORK "/O$outputDirectory" installer/Subtitle_Edit_installer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $setup = Join-Path $outputDirectory 'SubtitleEdit-Classic-4.0.16.1-Setup.exe'
+          $setup = Join-Path $outputDirectory 'SubtitleEdit-Classic-4.0.17-Setup.exe'
           if (-not (Test-Path -LiteralPath $setup)) { throw 'Installer output was not found.' }
           $hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  SubtitleEdit-Classic-4.0.16.1-Setup.exe" | Set-Content artifacts/SHA256SUMS.txt -Encoding ascii
+          "$hash  SubtitleEdit-Classic-4.0.17-Setup.exe" | Set-Content artifacts/SHA256SUMS.txt -Encoding ascii
       - name: Test installer and application startup on the CI machine
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $setup = Join-Path $env:GITHUB_WORKSPACE 'artifacts/SubtitleEdit-Classic-4.0.16.1-Setup.exe'
+          $setup = Join-Path $env:GITHUB_WORKSPACE 'artifacts/SubtitleEdit-Classic-4.0.17-Setup.exe'
           $installDirectory = Join-Path $env:RUNNER_TEMP 'SubtitleEditClassicTest'
           $install = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$installDirectory", '/NOICONS', '/TASKS=') -WindowStyle Hidden -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "Installer failed with exit code $($install.ExitCode)." }
@@ -69,6 +72,6 @@ jobs:
         with:
           name: SubtitleEdit-Classic-Installer
           path: |
-            artifacts/SubtitleEdit-Classic-4.0.16.1-Setup.exe
+            artifacts/SubtitleEdit-Classic-4.0.17-Setup.exe
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
