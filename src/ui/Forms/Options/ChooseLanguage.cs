@@ -79,8 +79,6 @@ namespace Nikse.SubtitleEdit.Forms.Options
             var translations = new HashSet<TranslationInfo> { _defaultTranslation };
             if (Directory.Exists(Path.Combine(Configuration.BaseDirectory, "Languages")))
             {
-                var versionInfo = Utilities.AssemblyVersion.Split('.');
-                var currentVersion = $"{versionInfo[0]}.{versionInfo[1]}.{versionInfo[2]}";
                 var document = new XmlDocument { XmlResolver = null };
 
                 foreach (var fileName in Directory.GetFiles(Path.Combine(Configuration.BaseDirectory, "Languages"), "*.xml"))
@@ -89,7 +87,7 @@ namespace Nikse.SubtitleEdit.Forms.Options
                     try
                     {
                         var version = document.DocumentElement.SelectSingleNode("General/Version").InnerText.Trim();
-                        if (version == currentVersion)
+                        if (version == Language.CompatibleTranslationVersion)
                         {
                             var cultureName = document.DocumentElement.SelectSingleNode("General/CultureName").InnerText.Trim();
                             var displayName = document.DocumentElement.Attributes["Name"].Value.Trim();

@@ -7,6 +7,9 @@ namespace Nikse.SubtitleEdit.Logic
 {
     public class Language
     {
+        // Translation schema follows the legacy base, independently of fork releases.
+        public const string CompatibleTranslationVersion = "4.0.16";
+
         [XmlAttribute("Name")]
         public string Name;
         public LanguageStructure.General General;

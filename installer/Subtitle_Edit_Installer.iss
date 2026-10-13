@@ -123,7 +123,7 @@ WizardImageFile=Icons\WizardImageFile.bmp
 WizardSmallImageFile=Icons\WizardSmallImageFile.bmp
 OutputDir=.
 #ifdef CLASSIC_FORK
-OutputBaseFilename=SubtitleEdit-Classic-4.0.17-Setup
+OutputBaseFilename=SubtitleEdit-Classic-4.0.18-Setup
 #else
 OutputBaseFilename=SubtitleEdit-{#app_ver}-Setup
 #endif
