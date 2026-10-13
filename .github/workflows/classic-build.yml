@@ -29,6 +29,9 @@ jobs:
           @{ sdk = @{ version = $sdk.Name; rollForward = 'latestPatch' } } | ConvertTo-Json | Set-Content global.json
           msbuild SubtitleEdit.sln /restore /p:Configuration=Release /p:SolutionDir="$env:GITHUB_WORKSPACE\" /verbosity:minimal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $exeVersion = (Get-Item 'src/ui/bin/Release/net48/SubtitleEdit.exe').VersionInfo.FileVersion
+          Write-Output "Compiled application version: $exeVersion"
+          if ($exeVersion -notmatch '^4\.0\.17\.') { throw "Expected Classic 4.0.17, got $exeVersion." }
       - name: Find or install the Inno Setup compiler
         shell: pwsh
         run: |

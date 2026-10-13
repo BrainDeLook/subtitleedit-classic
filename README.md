@@ -24,10 +24,10 @@ Previously exported files must be regenerated or repaired separately. Playback o
 
 ## Build from source
 
-On Windows with a .NET SDK and .NET Framework 4.8 / 4.8.1 support:
+From a Visual Studio Developer PowerShell on Windows, with the .NET 8 SDK and .NET Framework 4.8 / 4.8.1 targeting packs:
 
 ```powershell
-dotnet build SubtitleEdit.sln -c Release -p:SolutionDir="$PWD\"
+msbuild SubtitleEdit.sln /restore /p:Configuration=Release /p:SolutionDir="$PWD\"
 ```
 
 The solution builds the original Windows Forms application. Build the normal Windows installer with Inno Setup 6.2.1 or newer: `ISCC.exe /DCLASSIC_FORK installer/Subtitle_Edit_installer.iss`. The classic-fork switch gives the installer its own application identity, installation directory, and shortcuts.
