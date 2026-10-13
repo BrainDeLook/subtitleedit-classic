@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
@@ -25,13 +26,14 @@ internal static class TestClassicLanguages
         }
         using (var picker = (Form)Activator.CreateInstance(assembly.GetType("Nikse.SubtitleEdit.Forms.Options.ChooseLanguage", true)))
         {
-            var combo = (ComboBox)picker.GetType().GetField("comboBoxLanguages", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(picker);
-            if (combo.Items.Count != count + 1) throw new Exception("Not all installed translations are visible: " + combo.Items.Count + " vs " + (count + 1));
+            var combo = picker.GetType().GetField("comboBoxLanguages", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(picker);
+            var items = (ICollection)combo.GetType().GetProperty("Items").GetValue(combo, null);
+            if (items.Count != count + 1) throw new Exception("Not all installed translations are visible: " + items.Count + " vs " + (count + 1));
             var russian = false;
-            foreach (var item in combo.Items)
+            foreach (var item in items)
                 if ((string)item.GetType().GetProperty("CultureName").GetValue(item, null) == "ru-RU") russian = true;
             if (!russian) throw new Exception("Russian is missing from the language picker.");
-            Console.WriteLine("Loaded all translation files; {0} compatible translations, picker contains {1} languages including Russian.", count, combo.Items.Count);
+            Console.WriteLine("Loaded all translation files; {0} compatible translations, picker contains {1} languages including Russian.", count, items.Count);
         }
     }
 }
