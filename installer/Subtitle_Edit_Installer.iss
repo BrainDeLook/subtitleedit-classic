@@ -26,7 +26,11 @@
   #error Use Inno Setup unicode
 #endif
 
-#define app_name             "Subtitle Edit"
+#ifdef CLASSIC_FORK
+  #define app_name           "Subtitle Edit Classic"
+#else
+  #define app_name           "Subtitle Edit"
+#endif
 #define app_copyright        "Nikse"
 #define app_copyright_start  "2001"
 #define app_copyright_end    GetDateTimeString('yyyy','','')
@@ -72,18 +76,31 @@
 #define keyMuiCache "Software\Classes\Local Settings\MuiCache"
 
 [Setup]
+#ifdef CLASSIC_FORK
+AppID=SubtitleEditClassic
+#else
 AppID=SubtitleEdit
+#endif
 AppName={#app_name}
 AppVersion={#app_ver_full}
 AppVerName={#app_name} {#app_ver}
 
 AppCopyright={#app_copyright} {#app_copyright_start} {#app_copyright_end}
+#ifdef CLASSIC_FORK
+AppPublisher=BrainDeLook
+#else
 AppPublisher={#app_copyright}
+#endif
 
 AppContact=https://www.nikse.dk/SubtitleEdit/Help
 AppPublisherURL=https://www.nikse.dk/SubtitleEdit/
+#ifdef CLASSIC_FORK
+AppSupportURL=https://github.com/BrainDeLook/subtitleedit-classic/issues
+AppUpdatesURL=https://github.com/BrainDeLook/subtitleedit-classic/releases
+#else
 AppSupportURL=https://www.nikse.dk/SubtitleEdit/
 AppUpdatesURL=https://www.nikse.dk/SubtitleEdit/
+#endif
 
 VersionInfoVersion={#app_ver_full}
 VersionInfoDescription={#app_name} installer
@@ -105,7 +122,11 @@ SetupIconFile=..\src\ui\Icons\SE.ico
 WizardImageFile=Icons\WizardImageFile.bmp
 WizardSmallImageFile=Icons\WizardSmallImageFile.bmp
 OutputDir=.
+#ifdef CLASSIC_FORK
+OutputBaseFilename=SubtitleEdit-Classic-4.0.16.1-Setup
+#else
 OutputBaseFilename=SubtitleEdit-{#app_ver}-Setup
+#endif
 AllowNoIcons=yes
 Compression=lzma2/ultra
 InternalCompressLevel=ultra
@@ -117,7 +138,11 @@ ChangesAssociations=yes
 DisableDirPage=auto
 DisableProgramGroupPage=auto
 CloseApplications=true
+#ifdef CLASSIC_FORK
+SetupMutex='subtitle_edit_classic_setup_mutex'
+#else
 SetupMutex='subtitle_edit_setup_mutex'
+#endif
 ArchitecturesInstallIn64BitMode=x64
 
 [Languages]
@@ -316,6 +341,11 @@ Source: {#bindir}\Languages\zh-TW.xml;             DestDir: {app}\Languages;    
 #endif
 
 Source: {#bindir}\SubtitleEdit.exe;                DestDir: {app};                                    Flags: ignoreversion; Components: main
+#ifdef CLASSIC_FORK
+; Keep all managed/native dependencies produced by the current legacy build.
+Source: {#bindir}\*.dll;                          DestDir: {app};                                    Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
+Source: {#bindir}\SubtitleEdit.exe.config;         DestDir: {app};                                    Flags: ignoreversion skipifsourcedoesntexist; Components: main
+#else
 Source: {#bindir}\Hunspellx64.dll;                 DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\Hunspellx86.dll;                 DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\libse.dll;                       DestDir: {app};                                    Flags: ignoreversion; Components: main
@@ -333,6 +363,7 @@ Source: {#bindir}\System.Net.Http.Primitives.dll;  DestDir: {app};              
 Source: {#bindir}\NAudio.Core.dll;                 DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\NAudio.WinMM.dll;                DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\Microsoft.Win32.Registry.dll;    DestDir: {app};                                    Flags: ignoreversion; Components: main
+#endif
 Source: ..\Changelog.txt;                          DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: ..\LICENSE.txt;                            DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: Icons\uninstall.ico;                       DestDir: {app}\Icons;                              Flags: ignoreversion; Components: main

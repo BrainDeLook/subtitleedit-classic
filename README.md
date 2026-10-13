@@ -18,7 +18,7 @@ This fork changes that export parameter in the source code. The editor, classic 
 
 ## Usage
 
-Extract the portable release ZIP into its own folder and run `SubtitleEdit.exe`. Keep `Settings.xml` next to the EXE for separate portable settings. Configure or download FFmpeg when prompted, then generate burned-in subtitles normally using H.264 and AAC in MP4.
+Run `SubtitleEdit-Classic-4.0.16.1-Setup.exe` from Releases. The normal Windows installer installs Subtitle Edit Classic, creates shortcuts, and registers an uninstaller. Configure or download FFmpeg when prompted, then generate burned-in subtitles normally using H.264 and AAC in MP4.
 
 Previously exported files must be regenerated or repaired separately. Playback of a complete new export from this build should be checked in Audition at the previously affected positions; the muxer timing correction has been verified independently.
 
@@ -30,10 +30,10 @@ On Windows with a .NET SDK and .NET Framework 4.8 / 4.8.1 support:
 dotnet build SubtitleEdit.sln -c Release -p:SolutionDir="$PWD\"
 ```
 
-The solution builds the original Windows Forms application. Packaging follows the upstream portable distribution layout, using the newly compiled EXE and libraries.
+The solution builds the original Windows Forms application. Build the normal Windows installer with Inno Setup 6.2.1 or newer: `ISCC.exe /DCLASSIC_FORK installer/Subtitle_Edit_installer.iss`. The classic-fork switch gives the installer its own application identity, installation directory, and shortcuts.
 
 ## По-русски
 
-Это классический Subtitle Edit 4.x со свежими изменениями из официальной ветки `se4-legacy` и исправлением таймингов при создании MP4 с хардсабом и AAC. Интерфейс остаётся прежним. Используйте portable-сборку из раздела Releases в отдельной папке.
+Это классический Subtitle Edit 4.x со свежими изменениями из официальной ветки `se4-legacy` и исправлением таймингов при создании MP4 с хардсабом и AAC. Интерфейс остаётся прежним. Используйте обычный установщик EXE из раздела Releases. Он устанавливает Subtitle Edit Classic, создаёт ярлыки и добавляет удаление программы в настройки Windows.
 
 Original Subtitle Edit is developed by Nikolaj Olsson and contributors. This fork retains the upstream GPL-3.0 license and attribution.
