@@ -37,7 +37,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $exeVersion = (Get-Item 'src/ui/bin/Release/net48/SubtitleEdit.exe').VersionInfo.FileVersion
           Write-Output "Compiled application version: $exeVersion"
-          if ($exeVersion -notmatch '^4\.0\.17\.') { throw "Expected Classic 4.0.18, got $exeVersion." }
+          if ($exeVersion -notmatch '^4\.0\.18\.') { throw "Expected Classic 4.0.18, got $exeVersion." }
       - name: Find or install the Inno Setup compiler
         shell: pwsh
         run: |
