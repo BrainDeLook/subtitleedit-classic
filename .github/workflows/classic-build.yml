@@ -73,7 +73,7 @@ jobs:
           $compiledExe = Join-Path $env:GITHUB_WORKSPACE 'src/ui/bin/Release/net48/SubtitleEdit.exe'
           if ((Get-FileHash $installedExe).Hash -ne (Get-FileHash $compiledExe).Hash) { throw 'Installed executable differs from the compiled executable.' }
           $languageTest = Join-Path $installDirectory 'TestClassicLanguages.exe'
-          & "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe" /nologo /target:exe /platform:x64 "/out:$languageTest" /reference:System.Windows.Forms.dll installer/TestClassicLanguages.cs
+          & "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe" /nologo /target:exe /platform:x64 "/out:$languageTest" /reference:System.Windows.Forms.dll (Join-Path $env:GITHUB_WORKSPACE 'installer\TestClassicLanguages.cs')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $languageTest
           if ($LASTEXITCODE -ne 0) { throw 'Installed language picker test failed.' }
