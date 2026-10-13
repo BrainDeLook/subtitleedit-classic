@@ -818,6 +818,41 @@ namespace Nikse.SubtitleEdit.Controls
             SubtitleListViewLastColumnFill(this, null);
         }
 
+        internal void ResizeTextColumns()
+        {
+            // During a window drag the fixed columns keep their widths. Only the
+            // text columns need to follow the available space; no font measuring.
+            if (ColumnIndexText < 0 || ColumnIndexText >= Columns.Count)
+            {
+                return;
+            }
+
+            var fixedWidth = 0;
+            for (var index = 0; index < Columns.Count; index++)
+            {
+                if (index != ColumnIndexText && index != ColumnIndexTextOriginal)
+                {
+                    fixedWidth += Columns[index].Width;
+                }
+            }
+
+            var available = Math.Max(10, Width - fixedWidth);
+            if (ColumnIndexTextOriginal >= 0 && ColumnIndexTextOriginal < Columns.Count)
+            {
+                available = Math.Max(10, available / 2);
+                if (Columns[ColumnIndexTextOriginal].Width != available)
+                {
+                    SetColumnWidthRetry(ColumnIndexTextOriginal, available);
+                }
+            }
+
+            if (Columns[ColumnIndexText].Width != available)
+            {
+                SetColumnWidthRetry(ColumnIndexText, available);
+            }
+            SubtitleListViewLastColumnFill(this, null);
+        }
+
         public void ShowStartColumn(string title)
         {
             if (GetColumnIndex(SubtitleColumn.Start) == -1)

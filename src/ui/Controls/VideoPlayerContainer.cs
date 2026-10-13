@@ -1198,15 +1198,14 @@ namespace Nikse.SubtitleEdit.Controls
             }
 
             ControlsHeight = _pictureBoxBackground.Height;
-            PanelPlayer.Height = Height - (ControlsHeight + _subtitlesHeight);
-            PanelPlayer.Width = Width;
+            // A native video surface can recreate its rendering buffers on each
+            // size notification. Apply both dimensions in one notification.
+            PanelPlayer.Size = new Size(Width, Height - (ControlsHeight + _subtitlesHeight));
             _videoPlayer?.Resize(PanelPlayer.Width, PanelPlayer.Height);
 
-            _panelSubtitle.Top = Height - (ControlsHeight + _subtitlesHeight);
-            _panelSubtitle.Width = Width;
+            _panelSubtitle.SetBounds(_panelSubtitle.Left, Height - (ControlsHeight + _subtitlesHeight), Width, _panelSubtitle.Height);
 
-            _panelControls.Top = Height - ControlsHeight + 2;
-            _panelControls.Width = Width;
+            _panelControls.SetBounds(_panelControls.Left, Height - ControlsHeight + 2, Width, _panelControls.Height);
             _pictureBoxBackground.Width = Width;
             _pictureBoxProgressbarBackground.Width = Width - (_pictureBoxProgressbarBackground.Left * 2);
             _pictureBoxFastForward.Left = Width - 48;

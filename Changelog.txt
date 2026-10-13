@@ -1,5 +1,14 @@
 ﻿Subtitle Edit Changelog
 
+Classic 4.0.19 (13th October 2026)
+* Added stable SE5.2 burn-in capabilities in the classic Windows Forms interface:
+  compatible container/audio selections, advanced text styling and effects,
+  PNG logos, Blu-ray SUP overlays, audio-only input and source-size two-pass encoding.
+* Preserved ASS styling and the MP4/AAC timing fix for Adobe Audition.
+* Fixed progress/footer overlap and manual target-size formatting (integer MB).
+* Reduced redundant layout work and native video-surface resize notifications.
+* Preserved compatibility with the legacy 4.0.16 translation schema.
+
 4.0.16 (2nd June 2026)
 * IMPROVED:
    * Update Portuguese translation - thx Hugo Carvalho, Blackspirits

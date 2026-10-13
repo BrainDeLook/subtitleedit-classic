@@ -24838,10 +24838,13 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             _textHeightResizeIgnoreUpdate = Stopwatch.GetTimestamp();
-            SubtitleListview1.AutoSizeAllColumns(this);
+            if (!_interactiveResize)
+            {
+                SubtitleListview1.AutoSizeAllColumns(this);
+            }
 
-            if (WindowState == FormWindowState.Maximized ||
-                WindowState == FormWindowState.Normal && _lastFormWindowState == FormWindowState.Maximized)
+            if (!_interactiveResize && (WindowState == FormWindowState.Maximized ||
+                WindowState == FormWindowState.Normal && _lastFormWindowState == FormWindowState.Maximized))
             {
                 TaskDelayHelper.RunDelayed(TimeSpan.FromMilliseconds(25), () =>
                 {
@@ -24867,6 +24870,9 @@ namespace Nikse.SubtitleEdit.Forms
 
         private int _textHeightResize = -1;
         private long _textHeightResizeIgnoreUpdate = 0;
+        private bool _interactiveResize;
+        private bool _mainResizeInProgress;
+        private FixedPanel _resizeEditorFixedPanel;
 
         private void Main_ResizeBegin(object sender, EventArgs e)
         {
@@ -24877,10 +24883,21 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             _textHeightResize = splitContainerListViewAndText.Height - splitContainerListViewAndText.SplitterDistance;
+            _interactiveResize = true;
+            _resizeEditorFixedPanel = splitContainerListViewAndText.FixedPanel;
+            if (groupBoxEdit.Parent == splitContainerListViewAndText.Panel2)
+            {
+                splitContainerListViewAndText.FixedPanel = FixedPanel.Panel2;
+            }
         }
 
         private void Main_ResizeEnd(object sender, EventArgs e)
         {
+            if (_interactiveResize)
+            {
+                splitContainerListViewAndText.FixedPanel = _resizeEditorFixedPanel;
+            }
+            _interactiveResize = false;
             _textHeightResizeIgnoreUpdate = 0;
             if (_loading)
             {
@@ -24909,15 +24926,32 @@ namespace Nikse.SubtitleEdit.Forms
             SubtitleListview1.SelectIndexAndEnsureVisible(_subtitleListViewIndex, true);
 
             ResumeLayout();
+            FixVerticalScrollBars(textBoxListViewText);
+            FixVerticalScrollBars(textBoxListViewTextOriginal);
         }
 
         private void MainResize()
         {
-            if (_loading)
+            if (_loading || _mainResizeInProgress)
             {
                 return;
             }
 
+            // Changing editor bounds can raise nested splitter/size callbacks. Apply
+            // one layout pass rather than re-entering the full editor setup for each.
+            _mainResizeInProgress = true;
+            try
+            {
+                MainResizeCore();
+            }
+            finally
+            {
+                _mainResizeInProgress = false;
+            }
+        }
+
+        private void MainResizeCore()
+        {
             var tbText = textBoxListViewText;
             var tbOriginal = textBoxListViewTextOriginal;
             int firstLeft = numericUpDownDuration.Right + 9;
@@ -24938,7 +24972,9 @@ namespace Nikse.SubtitleEdit.Forms
             tbOriginal.Left = firstLeft;
             lbText.Left = firstLeft;
             lbTextOriginal.Left = firstLeft;
-            tbText.Width = groupBoxEdit.Width - (tbText.Left + 10 + (groupBoxEdit.Width - buttonUnBreak.Left));
+            tbText.Size = new Size(_isOriginalActive ? (groupBoxEdit.Width - (tbText.Left + 10)) / 2 :
+                groupBoxEdit.Width - (tbText.Left + 10 + (groupBoxEdit.Width - buttonUnBreak.Left)),
+                groupBoxEdit.Height - tbText.Top - 32);
 
             bool switchTextBoxes = Configuration.Settings.General.RightToLeftMode && _subtitleOriginal != null && _subtitleOriginal.Paragraphs.Count > 0;
             if (Configuration.Settings.General.TextAndOrigianlTextBoxesSwitched)
@@ -24986,8 +25022,9 @@ namespace Nikse.SubtitleEdit.Forms
 
             if (_isOriginalActive)
             {
-                tbText.Width = (groupBoxEdit.Width - (tbText.Left + 10)) / 2;
-                tbOriginal.Left = tbText.Left + tbText.Width + 3;
+                tbText.Size = new Size((groupBoxEdit.Width - (tbText.Left + 10)) / 2,
+                    groupBoxEdit.Height - tbText.Top - 32);
+                tbOriginal.SetBounds(tbText.Left + tbText.Width + 3, tbOriginal.Top, tbText.Width, tbText.Height);
                 lbTextOriginal.Left = tbOriginal.Left;
 
                 tbOriginal.Width = tbText.Width;
@@ -25019,7 +25056,14 @@ namespace Nikse.SubtitleEdit.Forms
             lbCpsOriginal.Top = lbCps.Top;
             lbCps.Left = tbText.Left + (tbText.Width - lbCps.Width);
             lbTotal.Left = tbText.Left + (tbText.Width - lbTotal.Width);
-            SubtitleListview1.AutoSizeAllColumns(this);
+            if (_interactiveResize)
+            {
+                SubtitleListview1.ResizeTextColumns();
+            }
+            else
+            {
+                SubtitleListview1.AutoSizeAllColumns(this);
+            }
 
             if (textBoxListViewText.Width / 2.1 < labelTextLineLengths.Width)
             {
@@ -25039,7 +25083,10 @@ namespace Nikse.SubtitleEdit.Forms
                 labelSingleLinePixels.Visible = Configuration.Settings.Tools.ListViewSyntaxColorWideLines;
             }
 
-            FixRightToLeftDependingOnLanguage();
+            if (!_interactiveResize)
+            {
+                FixRightToLeftDependingOnLanguage();
+            }
 
             if (tabControlModes.Visible)
             {
@@ -25053,9 +25100,14 @@ namespace Nikse.SubtitleEdit.Forms
             labelVideoInfo.Width = labelVideoInfo.Parent.Width - labelVideoInfo.Left - 10;
 
             pictureBoxBookmark.Left = numericUpDownDuration.Right - pictureBoxBookmark.Width + 4;
-            mediaPlayer.Refresh();
+            // Allow Windows to combine pending paints instead of forcing a paint
+            // inside every size callback (the video has its own native surface).
+            mediaPlayer.Invalidate();
 
-            RefreshTextBoxes();
+            if (!_interactiveResize)
+            {
+                RefreshTextBoxes();
+            }
         }
 
         private void RefreshTextBoxes()
@@ -26856,12 +26908,18 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void TextBoxListViewText_SizeChanged(object sender, EventArgs e)
         {
-            FixVerticalScrollBars(textBoxListViewText);
+            if (!_interactiveResize)
+            {
+                FixVerticalScrollBars(textBoxListViewText);
+            }
         }
 
         private void TextBoxListViewTextOriginal_SizeChanged(object sender, EventArgs e)
         {
-            FixVerticalScrollBars(textBoxListViewTextOriginal);
+            if (!_interactiveResize)
+            {
+                FixVerticalScrollBars(textBoxListViewTextOriginal);
+            }
         }
 
         private void InitializePlayRateDropDown()

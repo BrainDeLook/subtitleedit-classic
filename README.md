@@ -14,13 +14,21 @@ The hard-subtitle exporter enables MP4 edit lists (`-use_editlist 1`) instead of
 
 For the reported 23.976 fps H.264/AAC exports, disabling edit lists produced a first sample of 1513 ticks instead of 1001 ticks at a 1/24000 time base. Correcting the video timing made playback work in Audition without changing the compressed H.264 or AAC data. See [upstream issue #15992](https://github.com/SubtitleEdit/subtitleedit/issues/15992) for reproduction and controlled test results.
 
-This fork changes that export parameter in the source code. The editor, classic panels, subtitle styling, and encoder selections are retained from the legacy branch.
+The timing fix remains enabled for MP4/MOV exports. The editor and classic panels are retained from the legacy branch.
+
+## Classic 4.0.19 additions
+
+The burn-in window adds compatible MP4/MKV/MOV/TS/WebM container choices and AAC, AC-3, MP3, Opus, Vorbis or source-audio copy where supported. A separate classic Advanced dialog provides text styling/effects, PNG logo placement, Blu-ray SUP overlays, audio-only input and source-size two-pass encoding. Existing ASS styles are preserved.
+
+The release also fixes progress/footer overlap and uses integer MB for manual target sizes. Window resizing avoids intermediate editor sizes and applies video width/height together, reducing redundant native video-surface size notifications.
+
+Validation covered 24 audio/container combinations, representative video encoders, MP4 timing, overlays, audio-only input, two-pass export, six editor layouts and the installed language picker. Resizing was profiled with an H.264 video and loaded waveform; these checks do not establish a universal frame rate for every GPU, video or display.
 
 ## Usage
 
 Translation compatibility is tied to the legacy 4.0.16 schema, independently of the fork release number. The installer test loads every packaged translation and checks the actual language picker, including Russian.
 
-Run `SubtitleEdit-Classic-4.0.18-Setup.exe` from Releases. The normal Windows installer installs Subtitle Edit Classic, creates shortcuts, and registers an uninstaller. Configure or download FFmpeg when prompted, then generate burned-in subtitles normally using H.264 and AAC in MP4.
+Run `SubtitleEdit-Classic-4.0.19-Setup.exe` from Releases. The normal Windows installer installs Subtitle Edit Classic, creates shortcuts, and registers an uninstaller. Configure or download FFmpeg when prompted, then generate burned-in subtitles normally using H.264 and AAC in MP4.
 
 Previously exported files must be regenerated or repaired separately. Playback of a complete new export from this build should be checked in Audition at the previously affected positions; the muxer timing correction has been verified independently.
 
