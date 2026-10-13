@@ -129,8 +129,10 @@ namespace Nikse.SubtitleEdit.Logic
         /// <summary>
         /// Generate a video with a burned-in Advanced Sub Station Alpha subtitle.
         /// </summary>
-        public static Process GenerateHardcodedVideoFile(string inputVideoFileName, string assaSubtitleFileName, string outputVideoFileName, int width, int height, string videoEncoding, string preset, string pixelFormat, string crf, string audioEncoding, bool forceStereo, string sampleRate, string tune, string audioBitRate, string pass, string twoPassBitRate, DataReceivedEventHandler dataReceivedHandler = null, string cutStart = null, string cutEnd = null, string audioCutTrack = "")
+        public static Process GenerateHardcodedVideoFile(string inputVideoFileName, string assaSubtitleFileName, string outputVideoFileName, int width, int height, string videoEncoding, string preset, string pixelFormat, string crf, string audioEncoding, bool forceStereo, string sampleRate, string tune, string audioBitRate, string pass, string twoPassBitRate, DataReceivedEventHandler dataReceivedHandler = null, string cutStart = null, string cutEnd = null, string audioCutTrack = "", ClassicBurnInOptions classicOptions = null)
         {
+            var extension = Path.GetExtension(outputVideoFileName).ToLowerInvariant();
+            audioEncoding = ClassicBurnIn.GetAudioEncoder(extension, audioEncoding);
             if (width % 2 == 1)
             {
                 width++;
@@ -145,7 +147,7 @@ namespace Nikse.SubtitleEdit.Logic
             if (!string.IsNullOrEmpty(videoEncoding))
             {
                 videoEncodingSettings = $"-c:v {videoEncoding}";
-                if (videoEncoding == "libx265")
+                if ((videoEncoding == "libx265" || videoEncoding.StartsWith("hevc_", StringComparison.Ordinal)) && (extension == ".mp4" || extension == ".mov"))
                 {
                     videoEncodingSettings += " -tag:v hvc1";
                 }
@@ -155,6 +157,10 @@ namespace Nikse.SubtitleEdit.Logic
             if (audioEncoding != "copy")
             {
                 audioSettings += $" -ar {sampleRate}";
+                if (!string.IsNullOrWhiteSpace(audioBitRate))
+                {
+                    audioSettings += $" -b:a {audioBitRate}";
+                }
                 if (forceStereo)
                 {
                     audioSettings += " -ac 2";
@@ -250,9 +256,8 @@ namespace Nikse.SubtitleEdit.Logic
 
                 if (pass == "1")
                 {
-                    var ext = Path.GetExtension(outputVideoFileName.Trim('"')).ToLowerInvariant().TrimStart('.');
-                    var outputType = ext == "mkv" ? "matroska" : ext;
-                    outputVideoFileName = Configuration.IsRunningOnWindows ? $"-f {outputType} NUL" : "-f mp4 /dev/null";
+                    var outputType = ClassicBurnIn.GetMuxer(extension);
+                    outputVideoFileName = Configuration.IsRunningOnWindows ? $"-f {outputType} NUL" : $"-f {outputType} /dev/null";
                 }
             }
 
@@ -274,6 +279,10 @@ namespace Nikse.SubtitleEdit.Logic
                 cutEnd = " ";
             }
 
+            var filter = ClassicBurnIn.BuildFilter(assaSubtitleFileName, width, height, classicOptions, cutStart, out var extraInputs, out var mappings, out var endArguments);
+            if (!string.IsNullOrEmpty(mappings) && string.IsNullOrWhiteSpace(audioCutTrack)) mappings += " -map 0:a:0?";
+            if (string.IsNullOrEmpty(mappings) && !string.IsNullOrWhiteSpace(audioCutTrack)) mappings = " -map 0:v:0";
+            var containerArguments = ClassicBurnIn.GetContainerArguments(extension);
             var processMakeVideo = new Process
             {
                 StartInfo =
@@ -281,7 +290,7 @@ namespace Nikse.SubtitleEdit.Logic
                     FileName = GetFfmpegLocation(),
                     // Edit lists preserve AAC encoder delay without stretching the first video
                     // sample, which otherwise causes black video playback in Adobe Audition.
-                    Arguments = $"{cutStart}-i \"{inputVideoFileName}\"{cutEnd} -vf scale={width}:{height} -vf \"ass={Path.GetFileName(assaSubtitleFileName)}\" -g 30 -bf 2 -s {width}x{height} {videoEncodingSettings} {passSettings} {presetSettings} {crfSettings} {pixelFormat} {audioSettings}{tuneParameter} -use_editlist 1 -movflags +faststart {outputVideoFileName}".TrimStart(),
+                    Arguments = $"-y{cutStart}-i \"{inputVideoFileName}\"{extraInputs}{cutEnd} {filter}{mappings} -g 30 -bf 2 -s {width}x{height} {videoEncodingSettings} {passSettings} {presetSettings} {crfSettings} {pixelFormat} {audioSettings}{tuneParameter}{containerArguments}{endArguments} {outputVideoFileName}".TrimStart(),
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     WorkingDirectory = Path.GetDirectoryName(assaSubtitleFileName) ?? string.Empty,
