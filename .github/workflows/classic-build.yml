@@ -27,6 +27,12 @@ jobs:
         run: |
           $sdk = Get-ChildItem 'C:/Program Files/dotnet/sdk' -Directory | Where-Object Name -like '8.0.*' | Sort-Object { [version]$_.Name } | Select-Object -Last 1
           @{ sdk = @{ version = $sdk.Name; rollForward = 'latestPatch' } } | ConvertTo-Json | Set-Content global.json
+          # Generate these files before the solution is evaluated, so fresh checkouts
+          # include them in the default Compile glob and receive the correct version.
+          msbuild src/UpdateAssemblyInfo/UpdateAssemblyInfo.csproj /restore /p:Configuration=Release /verbosity:minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./src/UpdateAssemblyInfo/bin/Release/net48/win-x64/UpdateAssemblyInfo.exe src/ui/Properties/AssemblyInfo.cs.template src/libse/Properties/AssemblyInfo.cs.template
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           msbuild SubtitleEdit.sln /restore /p:Configuration=Release /p:SolutionDir="$env:GITHUB_WORKSPACE\" /verbosity:minimal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $exeVersion = (Get-Item 'src/ui/bin/Release/net48/SubtitleEdit.exe').VersionInfo.FileVersion
