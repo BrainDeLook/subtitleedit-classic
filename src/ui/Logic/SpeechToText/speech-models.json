@@ -1,0 +1,2579 @@
+[
+  {
+    "Name": "Crisp ASR ARK",
+    "Family": "crisp",
+    "Backend": "ark-asr",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "pl",
+        "Name": "polish"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "ro",
+        "Name": "romanian"
+      },
+      {
+        "Code": "hu",
+        "Name": "hungarian"
+      },
+      {
+        "Code": "cs",
+        "Name": "czech"
+      },
+      {
+        "Code": "nl",
+        "Name": "dutch"
+      },
+      {
+        "Code": "fi",
+        "Name": "finnish"
+      },
+      {
+        "Code": "hr",
+        "Name": "croatian"
+      },
+      {
+        "Code": "sk",
+        "Name": "slovak"
+      },
+      {
+        "Code": "sl",
+        "Name": "slovenian"
+      },
+      {
+        "Code": "et",
+        "Name": "estonian"
+      },
+      {
+        "Code": "lt",
+        "Name": "lithuanian"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "ark-asr-3b-q4_k.gguf",
+        "Size": "3.52 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/ark-asr-3b-GGUF/resolve/main/ark-asr-3b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "ark-asr-3b-q8_0.gguf",
+        "Size": "4.29 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/ark-asr-3b-GGUF/resolve/main/ark-asr-3b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "ark-asr-3b-f16.gguf",
+        "Size": "7.51 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/ark-asr-3b-GGUF/resolve/main/ark-asr-3b-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Canary",
+    "Family": "crisp",
+    "Backend": "canary",
+    "NativeTimings": true,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "bg",
+        "Name": "bulgarian"
+      },
+      {
+        "Code": "hr",
+        "Name": "croatian"
+      },
+      {
+        "Code": "cs",
+        "Name": "czech"
+      },
+      {
+        "Code": "da",
+        "Name": "danish"
+      },
+      {
+        "Code": "nl",
+        "Name": "dutch"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "et",
+        "Name": "estonian"
+      },
+      {
+        "Code": "fi",
+        "Name": "finnish"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "el",
+        "Name": "greek"
+      },
+      {
+        "Code": "hu",
+        "Name": "hungarian"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "lv",
+        "Name": "latvian"
+      },
+      {
+        "Code": "lt",
+        "Name": "lithuanian"
+      },
+      {
+        "Code": "mt",
+        "Name": "maltese"
+      },
+      {
+        "Code": "pl",
+        "Name": "polish"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "ro",
+        "Name": "romanian"
+      },
+      {
+        "Code": "sk",
+        "Name": "slovak"
+      },
+      {
+        "Code": "sl",
+        "Name": "slovenian"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "sv",
+        "Name": "swedish"
+      },
+      {
+        "Code": "ru",
+        "Name": "russian"
+      },
+      {
+        "Code": "uk",
+        "Name": "ukrainian"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "canary-1b-v2-q4_k.gguf",
+        "Size": "705 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/canary-1b-v2-GGUF/resolve/main/canary-1b-v2-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "canary-1b-v2-q5_0.gguf",
+        "Size": "815 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/canary-1b-v2-GGUF/resolve/main/canary-1b-v2-q5_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "canary-1b-v2-q8_0.gguf",
+        "Size": "1.14 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/canary-1b-v2-GGUF/resolve/main/canary-1b-v2-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "canary-1b-v2.gguf",
+        "Size": "1.97 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/canary-1b-v2-GGUF/resolve/main/canary-1b-v2.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Cohere",
+    "Family": "crisp",
+    "Backend": "cohere",
+    "NativeTimings": true,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "el",
+        "Name": "greek"
+      },
+      {
+        "Code": "nl",
+        "Name": "dutch"
+      },
+      {
+        "Code": "pl",
+        "Name": "polish"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      },
+      {
+        "Code": "vi",
+        "Name": "vietnamese"
+      },
+      {
+        "Code": "ar",
+        "Name": "arabic"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "cohere-transcribe-q4_k.gguf",
+        "Size": "1.51 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main/cohere-transcribe-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-transcribe-q5_0.gguf",
+        "Size": "1.74 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main/cohere-transcribe-q5_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-transcribe-q5_1.gguf",
+        "Size": "1.85 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main/cohere-transcribe-q5_1.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-transcribe-q6_k.gguf",
+        "Size": "1.98 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main/cohere-transcribe-q6_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-transcribe-q8_0.gguf",
+        "Size": "2.42 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main/cohere-transcribe-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-transcribe.gguf",
+        "Size": "4.14 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main/cohere-transcribe.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-transcribe-arabic-q4_k.gguf",
+        "Size": "1.51 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-arabic-07-2026-GGUF/resolve/main/cohere-transcribe-arabic-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-transcribe-arabic-q8_0.gguf",
+        "Size": "2.42 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-arabic-07-2026-GGUF/resolve/main/cohere-transcribe-arabic-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-transcribe-arabic-f16.gguf",
+        "Size": "4.14 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/cohere-transcribe-arabic-07-2026-GGUF/resolve/main/cohere-transcribe-arabic-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-asr-ja-q4_k.gguf",
+        "Size": "1.51 GB",
+        "Urls": [
+          "https://huggingface.co/CKHO/cohere-asr-ja-GGUF/resolve/main/cohere-asr-ja-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-asr-ja-q6_k.gguf",
+        "Size": "1.98 GB",
+        "Urls": [
+          "https://huggingface.co/CKHO/cohere-asr-ja-GGUF/resolve/main/cohere-asr-ja-q6_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-asr-ja-q8_0.gguf",
+        "Size": "2.42 GB",
+        "Urls": [
+          "https://huggingface.co/CKHO/cohere-asr-ja-GGUF/resolve/main/cohere-asr-ja-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "cohere-asr-ja-f16.gguf",
+        "Size": "4.14 GB",
+        "Urls": [
+          "https://huggingface.co/CKHO/cohere-asr-ja-GGUF/resolve/main/cohere-asr-ja-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Fire Red",
+    "Family": "crisp",
+    "Backend": "firered-asr",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "yue",
+        "Name": "cantonese"
+      },
+      {
+        "Code": "wuu",
+        "Name": "shanghainese"
+      },
+      {
+        "Code": "nan",
+        "Name": "minnan"
+      },
+      {
+        "Code": "gan",
+        "Name": "gan"
+      },
+      {
+        "Code": "hak",
+        "Name": "hakka"
+      },
+      {
+        "Code": "hsn",
+        "Name": "xiang"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "ru",
+        "Name": "russian"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "vi",
+        "Name": "vietnamese"
+      },
+      {
+        "Code": "th",
+        "Name": "thai"
+      },
+      {
+        "Code": "id",
+        "Name": "indonesian"
+      },
+      {
+        "Code": "ar",
+        "Name": "arabic"
+      },
+      {
+        "Code": "hi",
+        "Name": "hindi"
+      },
+      {
+        "Code": "tr",
+        "Name": "turkish"
+      },
+      {
+        "Code": "nl",
+        "Name": "dutch"
+      },
+      {
+        "Code": "sv",
+        "Name": "swedish"
+      },
+      {
+        "Code": "pl",
+        "Name": "polish"
+      },
+      {
+        "Code": "ms",
+        "Name": "malay"
+      },
+      {
+        "Code": "fa",
+        "Name": "persian"
+      },
+      {
+        "Code": "el",
+        "Name": "greek"
+      },
+      {
+        "Code": "cs",
+        "Name": "czech"
+      },
+      {
+        "Code": "hu",
+        "Name": "hungarian"
+      },
+      {
+        "Code": "ro",
+        "Name": "romanian"
+      },
+      {
+        "Code": "da",
+        "Name": "danish"
+      },
+      {
+        "Code": "fi",
+        "Name": "finnish"
+      },
+      {
+        "Code": "he",
+        "Name": "hebrew"
+      },
+      {
+        "Code": "uk",
+        "Name": "ukrainian"
+      },
+      {
+        "Code": "sk",
+        "Name": "slovak"
+      },
+      {
+        "Code": "hr",
+        "Name": "croatian"
+      },
+      {
+        "Code": "bg",
+        "Name": "bulgarian"
+      },
+      {
+        "Code": "bn",
+        "Name": "bengali"
+      },
+      {
+        "Code": "ta",
+        "Name": "tamil"
+      },
+      {
+        "Code": "te",
+        "Name": "telugu"
+      },
+      {
+        "Code": "kn",
+        "Name": "kannada"
+      },
+      {
+        "Code": "ml",
+        "Name": "malayalam"
+      },
+      {
+        "Code": "mr",
+        "Name": "marathi"
+      },
+      {
+        "Code": "gu",
+        "Name": "gujarati"
+      },
+      {
+        "Code": "pa",
+        "Name": "punjabi"
+      },
+      {
+        "Code": "sw",
+        "Name": "swahili"
+      },
+      {
+        "Code": "yo",
+        "Name": "yoruba"
+      },
+      {
+        "Code": "ha",
+        "Name": "hausa"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "firered-asr2-aed-q4_k.gguf",
+        "Size": "1 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/firered-asr2-aed-GGUF/resolve/main/firered-asr2-aed-q4_k.gguf",
+          "https://huggingface.co/cstr/firered-vad-GGUF/resolve/main/firered-vad.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "firered-asr2-aed-q8_0.gguf",
+        "Size": "1.5 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/firered-asr2-aed-GGUF/resolve/main/firered-asr2-aed-q8_0.gguf",
+          "https://huggingface.co/cstr/firered-vad-GGUF/resolve/main/firered-vad.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "firered-asr2-aed.gguf",
+        "Size": "2.4 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/firered-asr2-aed-GGUF/resolve/main/firered-asr2-aed.gguf",
+          "https://huggingface.co/cstr/firered-vad-GGUF/resolve/main/firered-vad.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Fun-ASR Nano",
+    "Family": "crisp",
+    "Backend": "funasr",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "yue",
+        "Name": "cantonese"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "funasr-nano-2512-q4_k.gguf",
+        "Size": "0.90 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/funasr-nano-GGUF/resolve/main/funasr-nano-2512-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "funasr-nano-2512-q8_0.gguf",
+        "Size": "1.27 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/funasr-nano-GGUF/resolve/main/funasr-nano-2512-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "funasr-nano-2512-f16.gguf",
+        "Size": "1.98 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/funasr-nano-GGUF/resolve/main/funasr-nano-2512-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR GigaAM",
+    "Family": "crisp",
+    "Backend": "gigaam",
+    "NativeTimings": true,
+    "Languages": [
+      {
+        "Code": "ru",
+        "Name": "russian"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "gigaam-v3-e2e-rnnt-q8_0.gguf",
+        "Size": "249 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-e2e-rnnt-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-e2e-rnnt-q4_k.gguf",
+        "Size": "154 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-e2e-rnnt-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-e2e-rnnt-f16.gguf",
+        "Size": "452 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-e2e-rnnt-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-e2e-ctc-q8_0.gguf",
+        "Size": "245 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-e2e-ctc-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-e2e-ctc-q4_k.gguf",
+        "Size": "151 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-e2e-ctc-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-e2e-ctc-f16.gguf",
+        "Size": "449 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-e2e-ctc-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-rnnt-q8_0.gguf",
+        "Size": "247 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-rnnt-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-rnnt-q4_k.gguf",
+        "Size": "153 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-rnnt-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-rnnt-f16.gguf",
+        "Size": "451 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-rnnt-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-ctc-q8_0.gguf",
+        "Size": "245 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-ctc-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-ctc-q4_k.gguf",
+        "Size": "151 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-ctc-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "gigaam-v3-ctc-f16.gguf",
+        "Size": "449 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/gigaam-v3-GGUF/resolve/main/gigaam-v3-ctc-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR GLM",
+    "Family": "crisp",
+    "Backend": "glm-asr",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "yue",
+        "Name": "cantonese"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "ru",
+        "Name": "russian"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "vi",
+        "Name": "vietnamese"
+      },
+      {
+        "Code": "th",
+        "Name": "thai"
+      },
+      {
+        "Code": "id",
+        "Name": "indonesian"
+      },
+      {
+        "Code": "ar",
+        "Name": "arabic"
+      },
+      {
+        "Code": "hi",
+        "Name": "hindi"
+      },
+      {
+        "Code": "tr",
+        "Name": "turkish"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "glm-asr-nano-q4_k.gguf",
+        "Size": "1.3 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/glm-asr-nano-GGUF/resolve/main/glm-asr-nano-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "glm-asr-nano-q8_0.gguf",
+        "Size": "2.4 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/glm-asr-nano-GGUF/resolve/main/glm-asr-nano-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "glm-asr-nano.gguf",
+        "Size": "4.5 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/glm-asr-nano-GGUF/resolve/main/glm-asr-nano.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Granite",
+    "Family": "crisp",
+    "Backend": "granite-4.1",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "granite-speech-4.1-2b-q4_k-mini.gguf",
+        "Size": "1.78 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/granite-speech-4.1-2b-GGUF/resolve/main/granite-speech-4.1-2b-q4_k-mini.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "granite-speech-4.1-2b-q4_k-f16enc.gguf",
+        "Size": "2.27 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/granite-speech-4.1-2b-GGUF/resolve/main/granite-speech-4.1-2b-q4_k-f16enc.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "granite-speech-4.1-2b-q4_k.gguf",
+        "Size": "2.94 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/granite-speech-4.1-2b-GGUF/resolve/main/granite-speech-4.1-2b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "granite-speech-4.1-2b-f16.gguf",
+        "Size": "5.58 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/granite-speech-4.1-2b-GGUF/resolve/main/granite-speech-4.1-2b-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "granite-speech-4.1-2b-plus-q4_k-mini.gguf",
+        "Size": "1.54 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/granite-speech-4.1-2b-plus-GGUF/resolve/main/granite-speech-4.1-2b-plus-q4_k-mini.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "granite-speech-4.1-2b-plus-q4_k-f16enc.gguf",
+        "Size": "2.13 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/granite-speech-4.1-2b-plus-GGUF/resolve/main/granite-speech-4.1-2b-plus-q4_k-f16enc.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "granite-speech-4.1-2b-plus-q4_k.gguf",
+        "Size": "2.75 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/granite-speech-4.1-2b-plus-GGUF/resolve/main/granite-speech-4.1-2b-plus-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "granite-speech-4.1-2b-plus-f16.gguf",
+        "Size": "5.21 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/granite-speech-4.1-2b-plus-GGUF/resolve/main/granite-speech-4.1-2b-plus-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Kyutai",
+    "Family": "crisp",
+    "Backend": "kyutai-stt",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "kyutai-stt-1b-q4_k.gguf",
+        "Size": "0.67 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/kyutai-stt-1b-GGUF/resolve/main/kyutai-stt-1b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "kyutai-stt-1b-q8_0.gguf",
+        "Size": "1.17 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/kyutai-stt-1b-GGUF/resolve/main/kyutai-stt-1b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "kyutai-stt-1b.gguf",
+        "Size": "2.12 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/kyutai-stt-1b-GGUF/resolve/main/kyutai-stt-1b.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "kyutai-stt-2.6b-q4_k.gguf",
+        "Size": "1.47 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/kyutai-stt-2.6b-en-GGUF/resolve/main/kyutai-stt-2.6b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "kyutai-stt-2.6b-q8_0.gguf",
+        "Size": "2.70 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/kyutai-stt-2.6b-en-GGUF/resolve/main/kyutai-stt-2.6b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "kyutai-stt-2.6b-f16.gguf",
+        "Size": "5.01 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/kyutai-stt-2.6b-en-GGUF/resolve/main/kyutai-stt-2.6b-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Mega",
+    "Family": "crisp",
+    "Backend": "mega-asr",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "mega-asr-1.7b-q4_k.gguf",
+        "Size": "1.3 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/mega-asr-GGUF/resolve/main/mega-asr-1.7b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "mega-asr-1.7b-f16.gguf",
+        "Size": "4.4 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/mega-asr-GGUF/resolve/main/mega-asr-1.7b-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-forced-aligner-0.6b-q8_0.gguf",
+        "Size": "986 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-forced-aligner-0.6b-GGUF/resolve/main/qwen3-forced-aligner-0.6b-q8_0.gguf"
+        ],
+        "Aligner": true
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR MOSS Diarize",
+    "Family": "crisp",
+    "Backend": "moss-diarize",
+    "NativeTimings": true,
+    "Languages": [
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "moss-transcribe-diarize-0.9b-q8_0.gguf",
+        "Size": "1.41 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/MOSS-Transcribe-Diarize-GGUF/resolve/main/moss-transcribe-diarize-0.9b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "moss-transcribe-diarize-0.9b-f16.gguf",
+        "Size": "1.82 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/MOSS-Transcribe-Diarize-GGUF/resolve/main/moss-transcribe-diarize-0.9b-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Omni",
+    "Family": "crisp",
+    "Backend": "omniasr",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "eng_Latn",
+        "Name": "english"
+      },
+      {
+        "Code": "deu_Latn",
+        "Name": "german"
+      },
+      {
+        "Code": "nld_Latn",
+        "Name": "dutch"
+      },
+      {
+        "Code": "afr_Latn",
+        "Name": "afrikaans"
+      },
+      {
+        "Code": "swe_Latn",
+        "Name": "swedish"
+      },
+      {
+        "Code": "dan_Latn",
+        "Name": "danish"
+      },
+      {
+        "Code": "nob_Latn",
+        "Name": "norwegian bokmål"
+      },
+      {
+        "Code": "nno_Latn",
+        "Name": "norwegian nynorsk"
+      },
+      {
+        "Code": "isl_Latn",
+        "Name": "icelandic"
+      },
+      {
+        "Code": "fao_Latn",
+        "Name": "faroese"
+      },
+      {
+        "Code": "ltz_Latn",
+        "Name": "luxembourgish"
+      },
+      {
+        "Code": "fry_Latn",
+        "Name": "frisian"
+      },
+      {
+        "Code": "lim_Latn",
+        "Name": "limburgish"
+      },
+      {
+        "Code": "yid_Hebr",
+        "Name": "yiddish"
+      },
+      {
+        "Code": "fra_Latn",
+        "Name": "french"
+      },
+      {
+        "Code": "spa_Latn",
+        "Name": "spanish"
+      },
+      {
+        "Code": "por_Latn",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "ita_Latn",
+        "Name": "italian"
+      },
+      {
+        "Code": "ron_Latn",
+        "Name": "romanian"
+      },
+      {
+        "Code": "cat_Latn",
+        "Name": "catalan"
+      },
+      {
+        "Code": "glg_Latn",
+        "Name": "galician"
+      },
+      {
+        "Code": "oci_Latn",
+        "Name": "occitan"
+      },
+      {
+        "Code": "ast_Latn",
+        "Name": "asturian"
+      },
+      {
+        "Code": "srd_Latn",
+        "Name": "sardinian"
+      },
+      {
+        "Code": "hat_Latn",
+        "Name": "haitian creole"
+      },
+      {
+        "Code": "pap_Latn",
+        "Name": "papiamento"
+      },
+      {
+        "Code": "rus_Cyrl",
+        "Name": "russian"
+      },
+      {
+        "Code": "ukr_Cyrl",
+        "Name": "ukrainian"
+      },
+      {
+        "Code": "bel_Cyrl",
+        "Name": "belarusian"
+      },
+      {
+        "Code": "pol_Latn",
+        "Name": "polish"
+      },
+      {
+        "Code": "ces_Latn",
+        "Name": "czech"
+      },
+      {
+        "Code": "slk_Latn",
+        "Name": "slovak"
+      },
+      {
+        "Code": "slv_Latn",
+        "Name": "slovenian"
+      },
+      {
+        "Code": "hrv_Latn",
+        "Name": "croatian"
+      },
+      {
+        "Code": "srp_Cyrl",
+        "Name": "serbian"
+      },
+      {
+        "Code": "bos_Latn",
+        "Name": "bosnian"
+      },
+      {
+        "Code": "mkd_Cyrl",
+        "Name": "macedonian"
+      },
+      {
+        "Code": "bul_Cyrl",
+        "Name": "bulgarian"
+      },
+      {
+        "Code": "lit_Latn",
+        "Name": "lithuanian"
+      },
+      {
+        "Code": "lvs_Latn",
+        "Name": "latvian"
+      },
+      {
+        "Code": "est_Latn",
+        "Name": "estonian"
+      },
+      {
+        "Code": "fin_Latn",
+        "Name": "finnish"
+      },
+      {
+        "Code": "hun_Latn",
+        "Name": "hungarian"
+      },
+      {
+        "Code": "gle_Latn",
+        "Name": "irish"
+      },
+      {
+        "Code": "cym_Latn",
+        "Name": "welsh"
+      },
+      {
+        "Code": "gla_Latn",
+        "Name": "scottish gaelic"
+      },
+      {
+        "Code": "ell_Grek",
+        "Name": "greek"
+      },
+      {
+        "Code": "als_Latn",
+        "Name": "albanian"
+      },
+      {
+        "Code": "mlt_Latn",
+        "Name": "maltese"
+      },
+      {
+        "Code": "eus_Latn",
+        "Name": "basque"
+      },
+      {
+        "Code": "tur_Latn",
+        "Name": "turkish"
+      },
+      {
+        "Code": "azj_Latn",
+        "Name": "azerbaijani"
+      },
+      {
+        "Code": "kaz_Cyrl",
+        "Name": "kazakh"
+      },
+      {
+        "Code": "uzn_Latn",
+        "Name": "uzbek"
+      },
+      {
+        "Code": "kir_Cyrl",
+        "Name": "kyrgyz"
+      },
+      {
+        "Code": "tuk_Latn",
+        "Name": "turkmen"
+      },
+      {
+        "Code": "tat_Cyrl",
+        "Name": "tatar"
+      },
+      {
+        "Code": "uig_Arab",
+        "Name": "uyghur"
+      },
+      {
+        "Code": "arb_Arab",
+        "Name": "arabic"
+      },
+      {
+        "Code": "arz_Arab",
+        "Name": "arabic (egyptian)"
+      },
+      {
+        "Code": "ary_Arab",
+        "Name": "arabic (moroccan)"
+      },
+      {
+        "Code": "apc_Arab",
+        "Name": "arabic (levantine)"
+      },
+      {
+        "Code": "heb_Hebr",
+        "Name": "hebrew"
+      },
+      {
+        "Code": "amh_Ethi",
+        "Name": "amharic"
+      },
+      {
+        "Code": "tir_Ethi",
+        "Name": "tigrinya"
+      },
+      {
+        "Code": "pes_Arab",
+        "Name": "persian"
+      },
+      {
+        "Code": "pbt_Arab",
+        "Name": "pashto"
+      },
+      {
+        "Code": "ckb_Arab",
+        "Name": "central kurdish"
+      },
+      {
+        "Code": "kmr_Latn",
+        "Name": "northern kurdish"
+      },
+      {
+        "Code": "tgk_Cyrl",
+        "Name": "tajik"
+      },
+      {
+        "Code": "kat_Geor",
+        "Name": "georgian"
+      },
+      {
+        "Code": "hye_Armn",
+        "Name": "armenian"
+      },
+      {
+        "Code": "hin_Deva",
+        "Name": "hindi"
+      },
+      {
+        "Code": "urd_Arab",
+        "Name": "urdu"
+      },
+      {
+        "Code": "ben_Beng",
+        "Name": "bengali"
+      },
+      {
+        "Code": "guj_Gujr",
+        "Name": "gujarati"
+      },
+      {
+        "Code": "pan_Guru",
+        "Name": "punjabi"
+      },
+      {
+        "Code": "mar_Deva",
+        "Name": "marathi"
+      },
+      {
+        "Code": "npi_Deva",
+        "Name": "nepali"
+      },
+      {
+        "Code": "ory_Orya",
+        "Name": "odia"
+      },
+      {
+        "Code": "asm_Beng",
+        "Name": "assamese"
+      },
+      {
+        "Code": "snd_Arab",
+        "Name": "sindhi"
+      },
+      {
+        "Code": "sin_Sinh",
+        "Name": "sinhala"
+      },
+      {
+        "Code": "mai_Deva",
+        "Name": "maithili"
+      },
+      {
+        "Code": "bho_Deva",
+        "Name": "bhojpuri"
+      },
+      {
+        "Code": "awa_Deva",
+        "Name": "awadhi"
+      },
+      {
+        "Code": "san_Deva",
+        "Name": "sanskrit"
+      },
+      {
+        "Code": "kas_Arab",
+        "Name": "kashmiri"
+      },
+      {
+        "Code": "tam_Taml",
+        "Name": "tamil"
+      },
+      {
+        "Code": "tel_Telu",
+        "Name": "telugu"
+      },
+      {
+        "Code": "kan_Knda",
+        "Name": "kannada"
+      },
+      {
+        "Code": "mal_Mlym",
+        "Name": "malayalam"
+      },
+      {
+        "Code": "tha_Thai",
+        "Name": "thai"
+      },
+      {
+        "Code": "lao_Laoo",
+        "Name": "lao"
+      },
+      {
+        "Code": "khm_Khmr",
+        "Name": "khmer"
+      },
+      {
+        "Code": "mya_Mymr",
+        "Name": "burmese"
+      },
+      {
+        "Code": "vie_Latn",
+        "Name": "vietnamese"
+      },
+      {
+        "Code": "ind_Latn",
+        "Name": "indonesian"
+      },
+      {
+        "Code": "zsm_Latn",
+        "Name": "malay"
+      },
+      {
+        "Code": "jav_Latn",
+        "Name": "javanese"
+      },
+      {
+        "Code": "sun_Latn",
+        "Name": "sundanese"
+      },
+      {
+        "Code": "tgl_Latn",
+        "Name": "tagalog"
+      },
+      {
+        "Code": "ceb_Latn",
+        "Name": "cebuano"
+      },
+      {
+        "Code": "ilo_Latn",
+        "Name": "ilocano"
+      },
+      {
+        "Code": "war_Latn",
+        "Name": "waray"
+      },
+      {
+        "Code": "hil_Latn",
+        "Name": "hiligaynon"
+      },
+      {
+        "Code": "min_Latn",
+        "Name": "minangkabau"
+      },
+      {
+        "Code": "ban_Latn",
+        "Name": "balinese"
+      },
+      {
+        "Code": "cmn_Hans",
+        "Name": "chinese (simplified)"
+      },
+      {
+        "Code": "cmn_Hant",
+        "Name": "chinese (traditional)"
+      },
+      {
+        "Code": "yue_Hant",
+        "Name": "cantonese"
+      },
+      {
+        "Code": "jpn_Jpan",
+        "Name": "japanese"
+      },
+      {
+        "Code": "kor_Hang",
+        "Name": "korean"
+      },
+      {
+        "Code": "bod_Tibt",
+        "Name": "tibetan"
+      },
+      {
+        "Code": "mon_Cyrl",
+        "Name": "mongolian"
+      },
+      {
+        "Code": "mri_Latn",
+        "Name": "maori"
+      },
+      {
+        "Code": "smo_Latn",
+        "Name": "samoan"
+      },
+      {
+        "Code": "fij_Latn",
+        "Name": "fijian"
+      },
+      {
+        "Code": "tpi_Latn",
+        "Name": "tok pisin"
+      },
+      {
+        "Code": "mlg_Latn",
+        "Name": "malagasy"
+      },
+      {
+        "Code": "quy_Latn",
+        "Name": "quechua"
+      },
+      {
+        "Code": "grn_Latn",
+        "Name": "guarani"
+      },
+      {
+        "Code": "ayr_Latn",
+        "Name": "aymara"
+      },
+      {
+        "Code": "swh_Latn",
+        "Name": "swahili"
+      },
+      {
+        "Code": "hau_Latn",
+        "Name": "hausa"
+      },
+      {
+        "Code": "yor_Latn",
+        "Name": "yoruba"
+      },
+      {
+        "Code": "ibo_Latn",
+        "Name": "igbo"
+      },
+      {
+        "Code": "som_Latn",
+        "Name": "somali"
+      },
+      {
+        "Code": "gaz_Latn",
+        "Name": "oromo"
+      },
+      {
+        "Code": "zul_Latn",
+        "Name": "zulu"
+      },
+      {
+        "Code": "xho_Latn",
+        "Name": "xhosa"
+      },
+      {
+        "Code": "sna_Latn",
+        "Name": "shona"
+      },
+      {
+        "Code": "nya_Latn",
+        "Name": "chichewa"
+      },
+      {
+        "Code": "lug_Latn",
+        "Name": "ganda"
+      },
+      {
+        "Code": "kik_Latn",
+        "Name": "kikuyu"
+      },
+      {
+        "Code": "kin_Latn",
+        "Name": "kinyarwanda"
+      },
+      {
+        "Code": "run_Latn",
+        "Name": "rundi"
+      },
+      {
+        "Code": "sot_Latn",
+        "Name": "southern sotho"
+      },
+      {
+        "Code": "nso_Latn",
+        "Name": "northern sotho"
+      },
+      {
+        "Code": "tsn_Latn",
+        "Name": "tswana"
+      },
+      {
+        "Code": "tso_Latn",
+        "Name": "tsonga"
+      },
+      {
+        "Code": "ssw_Latn",
+        "Name": "swati"
+      },
+      {
+        "Code": "lin_Latn",
+        "Name": "lingala"
+      },
+      {
+        "Code": "fon_Latn",
+        "Name": "fon"
+      },
+      {
+        "Code": "ewe_Latn",
+        "Name": "ewe"
+      },
+      {
+        "Code": "twi_Latn",
+        "Name": "twi"
+      },
+      {
+        "Code": "wol_Latn",
+        "Name": "wolof"
+      },
+      {
+        "Code": "bam_Latn",
+        "Name": "bambara"
+      },
+      {
+        "Code": "fuv_Latn",
+        "Name": "fulah"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "omniasr-llm-300m-v2-q4_k.gguf",
+        "Size": "1.08 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/omniasr-llm-300m-v2-GGUF/resolve/main/omniasr-llm-300m-v2-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "omniasr-llm-300m-v2-q8_0.gguf",
+        "Size": "1.84 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/omniasr-llm-300m-v2-GGUF/resolve/main/omniasr-llm-300m-v2-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "omniasr-llm-300m-v2-f16.gguf",
+        "Size": "3.26 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/omniasr-llm-300m-v2-GGUF/resolve/main/omniasr-llm-300m-v2-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Parakeet",
+    "Family": "crisp",
+    "Backend": "parakeet",
+    "NativeTimings": true,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      },
+      {
+        "Code": "ru",
+        "Name": "russian"
+      },
+      {
+        "Code": "pl",
+        "Name": "polish"
+      },
+      {
+        "Code": "tr",
+        "Name": "turkish"
+      },
+      {
+        "Code": "nl",
+        "Name": "dutch"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "parakeet-tdt-0.6b-v3-q4_k.gguf",
+        "Size": "489 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main/parakeet-tdt-0.6b-v3-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-v3-q5_0.gguf",
+        "Size": "541 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main/parakeet-tdt-0.6b-v3-q5_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-v3-q8_0.gguf",
+        "Size": "745 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main/parakeet-tdt-0.6b-v3-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-v3.gguf",
+        "Size": "1.26 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main/parakeet-tdt-0.6b-v3.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-ja-q4_k.gguf",
+        "Size": "476 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-ja-GGUF/resolve/main/parakeet-tdt-0.6b-ja-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-ja-q8_0.gguf",
+        "Size": "744 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-ja-GGUF/resolve/main/parakeet-tdt-0.6b-ja-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-ja.gguf",
+        "Size": "1.25 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-ja-GGUF/resolve/main/parakeet-tdt-0.6b-ja.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-rnnt-0.6b-q4_k.gguf",
+        "Size": "468 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-rnnt-0.6b-GGUF/resolve/main/parakeet-rnnt-0.6b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-rnnt-0.6b-f16.gguf",
+        "Size": "1.24 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-rnnt-0.6b-GGUF/resolve/main/parakeet-rnnt-0.6b-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-rnnt-1.1b-q4_k.gguf",
+        "Size": "808 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-rnnt-1.1b-GGUF/resolve/main/parakeet-rnnt-1.1b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-rnnt-1.1b-f16.gguf",
+        "Size": "2.14 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-rnnt-1.1b-GGUF/resolve/main/parakeet-rnnt-1.1b-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-1.1b-q4_k.gguf",
+        "Size": "652 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-1.1b-GGUF/resolve/main/parakeet-tdt-1.1b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-1.1b-q8_0.gguf",
+        "Size": "1.07 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-1.1b-GGUF/resolve/main/parakeet-tdt-1.1b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-1.1b.gguf",
+        "Size": "2.00 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-1.1b-GGUF/resolve/main/parakeet-tdt-1.1b.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-v2-q4_k.gguf",
+        "Size": "379 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-v2-GGUF/resolve/main/parakeet-tdt-0.6b-v2-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-v2-q8_0.gguf",
+        "Size": "634 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-v2-GGUF/resolve/main/parakeet-tdt-0.6b-v2-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt-0.6b-v2.gguf",
+        "Size": "1.15 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt-0.6b-v2-GGUF/resolve/main/parakeet-tdt-0.6b-v2.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt_ctc-110m-q4_k.gguf",
+        "Size": "75 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt_ctc-110m-GGUF/resolve/main/parakeet-tdt_ctc-110m-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt_ctc-110m-q8_0.gguf",
+        "Size": "121 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt_ctc-110m-GGUF/resolve/main/parakeet-tdt_ctc-110m-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt_ctc-110m.gguf",
+        "Size": "219 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt_ctc-110m-GGUF/resolve/main/parakeet-tdt_ctc-110m.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt_ctc-1.1b-q4_k.gguf",
+        "Size": "654 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt_ctc-1.1b-GGUF/resolve/main/parakeet-tdt_ctc-1.1b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt_ctc-1.1b-q8_0.gguf",
+        "Size": "1.07 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt_ctc-1.1b-GGUF/resolve/main/parakeet-tdt_ctc-1.1b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "parakeet-tdt_ctc-1.1b.gguf",
+        "Size": "2.00 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-tdt_ctc-1.1b-GGUF/resolve/main/parakeet-tdt_ctc-1.1b.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Qwen3",
+    "Family": "crisp",
+    "Backend": "qwen3",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "yue",
+        "Name": "cantonese"
+      },
+      {
+        "Code": "ar",
+        "Name": "arabic"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "id",
+        "Name": "indonesian"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      },
+      {
+        "Code": "ru",
+        "Name": "russian"
+      },
+      {
+        "Code": "th",
+        "Name": "thai"
+      },
+      {
+        "Code": "vi",
+        "Name": "vietnamese"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "tr",
+        "Name": "turkish"
+      },
+      {
+        "Code": "hi",
+        "Name": "hindi"
+      },
+      {
+        "Code": "ms",
+        "Name": "malay"
+      },
+      {
+        "Code": "nl",
+        "Name": "dutch"
+      },
+      {
+        "Code": "sv",
+        "Name": "swedish"
+      },
+      {
+        "Code": "da",
+        "Name": "danish"
+      },
+      {
+        "Code": "fi",
+        "Name": "finnish"
+      },
+      {
+        "Code": "pl",
+        "Name": "polish"
+      },
+      {
+        "Code": "cs",
+        "Name": "czech"
+      },
+      {
+        "Code": "fil",
+        "Name": "filipino"
+      },
+      {
+        "Code": "fa",
+        "Name": "persian"
+      },
+      {
+        "Code": "el",
+        "Name": "greek"
+      },
+      {
+        "Code": "hu",
+        "Name": "hungarian"
+      },
+      {
+        "Code": "mk",
+        "Name": "macedonian"
+      },
+      {
+        "Code": "ro",
+        "Name": "romanian"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "qwen3-asr-1.7b-q4_k.gguf",
+        "Size": "1.49 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-asr-1.7b-GGUF/resolve/main/qwen3-asr-1.7b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-1.7b-q8_0.gguf",
+        "Size": "2.51 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-asr-1.7b-GGUF/resolve/main/qwen3-asr-1.7b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-1.7b-f16.gguf",
+        "Size": "4.7 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-asr-1.7b-GGUF/resolve/main/qwen3-asr-1.7b-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-1.7b-ja-anime-q4_k.gguf",
+        "Size": "1.49 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-asr-1.7b-ja-anime-GGUF/resolve/main/qwen3-asr-1.7b-ja-anime-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-1.7b-ja-anime-q8_0.gguf",
+        "Size": "2.51 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-asr-1.7b-ja-anime-GGUF/resolve/main/qwen3-asr-1.7b-ja-anime-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-0.6b-q4_k.gguf",
+        "Size": "631 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-asr-0.6b-GGUF/resolve/main/qwen3-asr-0.6b-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-0.6b-q8_0.gguf",
+        "Size": "1.01 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-asr-0.6b-GGUF/resolve/main/qwen3-asr-0.6b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-0.6b-f16.gguf",
+        "Size": "1.88 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-asr-0.6b-GGUF/resolve/main/qwen3-asr-0.6b-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-forced-aligner-0.6b-q8_0.gguf",
+        "Size": "986 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-forced-aligner-0.6b-GGUF/resolve/main/qwen3-forced-aligner-0.6b-q8_0.gguf"
+        ],
+        "Aligner": true
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR SenseVoice",
+    "Family": "crisp",
+    "Backend": "sensevoice",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "yue",
+        "Name": "cantonese"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "sensevoice-small-q4_k.gguf",
+        "Size": "136 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/sensevoice-small-GGUF/resolve/main/sensevoice-small-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "sensevoice-small-q8_0.gguf",
+        "Size": "252 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/sensevoice-small-GGUF/resolve/main/sensevoice-small-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "sensevoice-small-f16.gguf",
+        "Size": "469 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/sensevoice-small-GGUF/resolve/main/sensevoice-small-f16.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Voxtral",
+    "Family": "crisp",
+    "Backend": "voxtral",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "auto",
+        "Name": "Auto detect"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "nl",
+        "Name": "dutch"
+      },
+      {
+        "Code": "hi",
+        "Name": "hindi"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "voxtral-mini-3b-2507-q4_k.gguf",
+        "Size": "2.65 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/voxtral-mini-3b-2507-GGUF/resolve/main/voxtral-mini-3b-2507-q4_k.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "voxtral-mini-3b-2507-q8_0.gguf",
+        "Size": "4.99 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/voxtral-mini-3b-2507-GGUF/resolve/main/voxtral-mini-3b-2507-q8_0.gguf"
+        ],
+        "Aligner": false
+      }
+    ]
+  },
+  {
+    "Name": "Qwen3 ASR CPP",
+    "Family": "qwen",
+    "Backend": "",
+    "NativeTimings": false,
+    "Languages": [
+      {
+        "Code": "zh",
+        "Name": "chinese"
+      },
+      {
+        "Code": "en",
+        "Name": "english"
+      },
+      {
+        "Code": "yue",
+        "Name": "cantonese"
+      },
+      {
+        "Code": "ja",
+        "Name": "japanese"
+      },
+      {
+        "Code": "ko",
+        "Name": "korean"
+      },
+      {
+        "Code": "de",
+        "Name": "german"
+      },
+      {
+        "Code": "fr",
+        "Name": "french"
+      },
+      {
+        "Code": "es",
+        "Name": "spanish"
+      },
+      {
+        "Code": "it",
+        "Name": "italian"
+      },
+      {
+        "Code": "pt",
+        "Name": "portuguese"
+      },
+      {
+        "Code": "ru",
+        "Name": "russian"
+      },
+      {
+        "Code": "ar",
+        "Name": "arabic"
+      },
+      {
+        "Code": "hi",
+        "Name": "hindi"
+      },
+      {
+        "Code": "th",
+        "Name": "thai"
+      },
+      {
+        "Code": "vi",
+        "Name": "vietnamese"
+      },
+      {
+        "Code": "id",
+        "Name": "indonesian"
+      },
+      {
+        "Code": "ms",
+        "Name": "malay"
+      },
+      {
+        "Code": "tr",
+        "Name": "turkish"
+      },
+      {
+        "Code": "pl",
+        "Name": "polish"
+      },
+      {
+        "Code": "nl",
+        "Name": "dutch"
+      },
+      {
+        "Code": "sv",
+        "Name": "swedish"
+      },
+      {
+        "Code": "no",
+        "Name": "norwegian"
+      },
+      {
+        "Code": "da",
+        "Name": "danish"
+      },
+      {
+        "Code": "fi",
+        "Name": "finnish"
+      },
+      {
+        "Code": "el",
+        "Name": "greek"
+      },
+      {
+        "Code": "cs",
+        "Name": "czech"
+      },
+      {
+        "Code": "hu",
+        "Name": "hungarian"
+      },
+      {
+        "Code": "ro",
+        "Name": "romanian"
+      },
+      {
+        "Code": "uk",
+        "Name": "ukrainian"
+      },
+      {
+        "Code": "he",
+        "Name": "hebrew"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "qwen3-asr-0.6b-f16.gguf",
+        "Size": "1.9 GB",
+        "Urls": [
+          "https://huggingface.co/OpenVoiceOS/qwen3-asr-0.6b-f16/resolve/main/qwen3-asr-0.6b-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-0.6b-q8_0.gguf",
+        "Size": "1.3 GB",
+        "Urls": [
+          "https://huggingface.co/OpenVoiceOS/qwen3-asr-0.6b-q8-0/resolve/main/qwen3-asr-0.6b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-1.7b-f16.gguf",
+        "Size": "4.4 GB",
+        "Urls": [
+          "https://huggingface.co/FlippyDora/qwen3-asr-1.7b-GGUF/resolve/main/qwen3-asr-1.7b-f16.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-asr-1.7b-q8_0.gguf",
+        "Size": "3.0 GB",
+        "Urls": [
+          "https://huggingface.co/FlippyDora/qwen3-asr-1.7b-GGUF/resolve/main/qwen3-asr-1.7b-q8_0.gguf"
+        ],
+        "Aligner": false
+      },
+      {
+        "Name": "qwen3-forced-aligner-0.6b-q4_k_m.gguf",
+        "Size": "616 MB",
+        "Urls": [
+          "https://huggingface.co/OpenVoiceOS/qwen3-forced-aligner-0.6b-q4-k-m/resolve/main/qwen3-forced-aligner-0.6b-q4_k_m.gguf"
+        ],
+        "Aligner": true
+      }
+    ]
+  }
+]

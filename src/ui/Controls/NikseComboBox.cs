@@ -568,7 +568,7 @@ namespace Nikse.SubtitleEdit.Controls
                 }
                 else if (e.Delta < 0)
                 {
-                    if (_selectedIndex < Items.Count - 2)
+                    if (_selectedIndex < Items.Count - 1)
                     {
                         SelectedIndex++;
                     }
@@ -866,6 +866,9 @@ namespace Nikse.SubtitleEdit.Controls
             form.Controls.Add(_listView);
             _listView.BringToFront();
 
+            // The list is reused when the items change; restore scrolling after
+            // a previous short list disabled it.
+            _listView.Scrollable = hasScrollBar;
             if (hasScrollBar)
             {
                 _listView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.None);
@@ -912,6 +915,7 @@ namespace Nikse.SubtitleEdit.Controls
 
             _listView.Height = lvHeight;
 
+            _listView.Scrollable = hasScrollBar;
             if (hasScrollBar)
             {
                 _listView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.None);

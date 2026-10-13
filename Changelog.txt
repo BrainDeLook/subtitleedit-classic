@@ -1,5 +1,17 @@
 ﻿Subtitle Edit Changelog
 
+Classic 4.0.20 (14th October 2026)
+* Added local Crisp ASR (GigaAM, Parakeet, Qwen3), Qwen3 ASR CPP,
+  Whisper CPP Vulkan and standalone WhisperX in the classic interface.
+* Added engine/model downloads, CPU/Vulkan/CUDA 13 choices where supported,
+  Crisp VAD/retry, quality reports, cancellation and safe batch output names.
+* Split Crisp transcripts into subtitle cues using native word timings.
+* Fixed scrolling when a short model list is replaced by a longer one,
+  and mouse-wheel access to the final item.
+* Preserved all 4.0.19 hard-subtitle, MP4/AAC and media-resize fixes.
+* Known limitation: Russian word alignment in WhisperX depends on a model
+  endpoint that returned HTTP 500 during testing; segment timing mode works.
+
 Classic 4.0.19 (13th October 2026)
 * Added stable SE5.2 burn-in capabilities in the classic Windows Forms interface:
   compatible container/audio selections, advanced text styling and effects,

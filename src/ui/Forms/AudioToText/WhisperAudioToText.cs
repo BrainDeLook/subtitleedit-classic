@@ -137,8 +137,11 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             }
 
             Init();
+            comboBoxWhisperEngine.SelectedIndexChanged -= comboBoxWhisperEngine_SelectedIndexChanged;
             InitializeWhisperEngines(comboBoxWhisperEngine);
+            comboBoxWhisperEngine.SelectedIndexChanged += comboBoxWhisperEngine_SelectedIndexChanged;
             FixPurfviewWhisperStandardArgument(labelAdvanced, comboBoxWhisperEngine.Text);
+            InitializeModernSpeech();
         }
 
         public static void InitializeWhisperEngines(NikseComboBox cb)
@@ -345,6 +348,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void ButtonGenerate_Click(object sender, EventArgs e)
         {
+            if (IsModernSpeech) { _ = GenerateModernSpeech(); return; }
             _cancel = false;
 
             // Check if chosen whisper implementation is installed
@@ -1364,6 +1368,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void buttonCancel_Click(object sender, EventArgs e)
         {
+            if (CancelModernSpeech()) return;
             if (buttonGenerate.Enabled)
             {
                 DialogResult = DialogResult.Cancel;
@@ -1479,11 +1484,19 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void linkLabelWhisperWebsite_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            if (IsModernSpeech)
+            {
+                var family = ModernEngine.Family;
+                UiUtil.OpenUrl(family == "crisp" ? "https://github.com/CrispStrobe/CrispASR" : family == "qwen" ?
+                    "https://github.com/niksedk/qwen3-asr.cpp" : family == "cpp" ? "https://github.com/ggml-org/whisper.cpp" : "https://github.com/m-bain/whisperX");
+                return;
+            }
             UiUtil.OpenUrl(WhisperHelper.GetWebSiteUrl());
         }
 
         private void AudioToText_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if (ModernClosing(e)) return;
             TaskbarList.SetProgressState(_parentForm.Handle, TaskbarButtonProgressFlags.NoProgress);
 
             if (comboBoxModels.SelectedItem is WhisperModel model)
@@ -1498,7 +1511,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
             Configuration.Settings.Tools.VoskPostProcessing = checkBoxUsePostProcessing.Checked;
             Configuration.Settings.Tools.WhisperAutoAdjustTimings = checkBoxAutoAdjustTimings.Checked;
-            Configuration.Settings.Tools.WhisperTranslateToEnglish = checkBoxTranslateToEnglish.Checked;
+            if (!IsModernSpeech) Configuration.Settings.Tools.WhisperTranslateToEnglish = checkBoxTranslateToEnglish.Checked;
 
             DeleteTemporaryFiles(_filesToDelete);
         }
@@ -1557,6 +1570,11 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void linkLabelOpenModelFolder_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            if (IsModernSpeech)
+            {
+                var directory = Path.Combine(Nikse.SubtitleEdit.Logic.SpeechToText.ClassicSpeechCatalog.Root, "Models", ModernEngine.Family);
+                Directory.CreateDirectory(directory); UiUtil.OpenFolder(directory); return;
+            }
             UiUtil.OpenFolder(WhisperHelper.GetWhisperModel().ModelFolder);
         }
 
@@ -1654,6 +1672,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void buttonDownload_Click(object sender, EventArgs e)
         {
+            if (IsModernSpeech) { _ = DownloadModernSelection(); return; }
             using (var form = new WhisperModelDownload { AutoClose = true })
             {
                 var result = form.ShowDialog(this);
@@ -1753,6 +1772,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private bool _checkedInstalledAndVersion;
         private void CheckIfInstalledAndVersion(string whisperChoice)
         {
+            if (IsModernSpeech) return;
             if (_checkedInstalledAndVersion)
             {
                 return;
@@ -1953,6 +1973,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         {
             listViewInputFiles.AutoSizeLastColumn();
             labelElapsed.Left = progressBar1.Width - labelElapsed.Width + 10;
+            LayoutModernFooter();
         }
 
         private void listViewInputFiles_KeyDown(object sender, KeyEventArgs e)
@@ -1984,6 +2005,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void comboBoxLanguages_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (IsModernSpeech) { SaveModernSelection(); return; }
             if (comboBoxLanguages.SelectedIndex > 0 && comboBoxLanguages.Text == LanguageSettings.Current.General.ChangeLanguageFilter)
             {
                 using (var form = new DefaultLanguagesChooser(Configuration.Settings.General.DefaultLanguages))
@@ -2242,6 +2264,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void comboBoxWhisperEngine_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (HandleModernEngineChanged()) return;
             FixPurfviewWhisperStandardArgument(labelAdvanced, comboBoxWhisperEngine.Text);
 
             if (comboBoxWhisperEngine.Text == Configuration.Settings.Tools.WhisperChoice)
@@ -2435,6 +2458,11 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void buttonAdvanced_Click(object sender, EventArgs e)
         {
+            if (IsModernSpeech)
+            {
+                using (var settings = new ClassicSpeechSettings(ModernEngine, _modernOptions)) settings.ShowDialog(this);
+                UpdateModernRuntimeStatus(); return;
+            }
             using (var form = new WhisperAdvanced(comboBoxWhisperEngine.Text))
             {
                 form.ShowDialog(this);

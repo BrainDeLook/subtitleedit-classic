@@ -16,6 +16,16 @@ For the reported 23.976 fps H.264/AAC exports, disabling edit lists produced a f
 
 The timing fix remains enabled for MP4/MOV exports. The editor and classic panels are retained from the legacy branch.
 
+## Classic 4.0.20 speech recognition
+
+Local speech recognition now includes Crisp ASR (GigaAM, Parakeet and Qwen3), Qwen3 ASR CPP, Whisper CPP Vulkan and standalone WhisperX CPU. Choose an engine/model and use the model download button or start transcription to fetch the required runtime and weights. New standalone engines do not need a separate Python installation. CPU, CPU legacy, Vulkan and CUDA 13 are available where supported.
+
+Crisp transcripts are split into subtitle cues using word timings and punctuation, including continuous speech without VAD. Optional VAD/retry, a quality report, safe batch output names, process cancellation and elapsed time remain inside the classic window. Model list scrolling works when switching between short and long lists.
+
+Russian WhisperX word alignment is a known limitation: the external alignment-model endpoint returned HTTP 500 in tests. Turn off word alignment to use segment timings. English alignment passed. The separate legacy selected-lines dialog and paid cloud services have not been migrated in this stage.
+
+Local validation included Russian/English transcription, the user's NVIDIA GPU, VAD, real form cancellation/batch handling and a 120-second video extract: 29 cues after postprocessing, maximum duration 7.2 seconds, with recognised words preserved. CI also tests a clean CPU engine/model download and real transcription after installing Setup.exe. Short samples do not establish accuracy for every catalog model or recording.
+
 ## Classic 4.0.19 additions
 
 The burn-in window adds compatible MP4/MKV/MOV/TS/WebM container choices and AAC, AC-3, MP3, Opus, Vorbis or source-audio copy where supported. A separate classic Advanced dialog provides text styling/effects, PNG logo placement, Blu-ray SUP overlays, audio-only input and source-size two-pass encoding. Existing ASS styles are preserved.

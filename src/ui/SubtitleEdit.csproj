@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <ApplicationIcon>SE.ico</ApplicationIcon>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <ManifestCertificateThumbprint>DCCE7922B5E425ADB221E06DC2FB405664CF8F63</ManifestCertificateThumbprint>
@@ -17,8 +18,8 @@
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <FileVersion>4.0.18.0</FileVersion>
-    <AssemblyVersion>4.0.18.0</AssemblyVersion>
+    <FileVersion>4.0.20.0</FileVersion>
+    <AssemblyVersion>4.0.20.0</AssemblyVersion>
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
@@ -315,6 +316,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Languages\hy-AM.xml" />
+    <EmbeddedResource Include="Logic\SpeechToText\speech-models.json" LogicalName="ClassicSpeechModels.json" />
   </ItemGroup>
   <Target Name="InvokeBuildHelpers" BeforeTargets="BeforeCompile;CoreCompile">
     <Exec Condition="'$(OS)' == 'Windows_NT'" Command="%22$(SolutionDir)build_helpers.bat%22 rev %22$(ConfigurationName)%22" />
