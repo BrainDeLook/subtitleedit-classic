@@ -87,7 +87,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         public static string EngineDirectory(SpeechEngine engine, string variant) =>
             Path.Combine(Root, "Engines", engine.Family, PinnedVersion(engine), variant);
 
-        public static string PinnedVersion(SpeechEngine engine) => engine.Family == "crisp" ? "0.8.32" :
+        public static string PinnedVersion(SpeechEngine engine) => engine.Family == "crisp" ? "0.8.43" :
             engine.Family == "qwen" ? "0.1.8" : engine.Family == "cpp" ? "1.9.3" : "1.0.1";
 
         public static string RuntimeUrl(SpeechEngine engine, string variant)
@@ -95,7 +95,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             if (engine.Family == "crisp")
             {
                 if (!new[] { "cpu", "cpu-legacy", "vulkan", "cuda", "cuda13" }.Contains(variant)) throw new ArgumentException("Unsupported Crisp ASR build");
-                return "https://github.com/CrispStrobe/CrispASR/releases/download/v0.8.32/crispasr-windows-x86_64-" + variant + ".zip";
+                return "https://github.com/CrispStrobe/CrispASR/releases/download/v" + PinnedVersion(engine) + "/crispasr-windows-x86_64-" + variant + ".zip";
             }
             if (engine.Family == "qwen")
                 return "https://github.com/niksedk/qwen3-asr.cpp/releases/download/v0.1.8/qwen3-asr-cpp-win64" + (variant == "vulkan" ? "-vulkan" : "") + ".zip";

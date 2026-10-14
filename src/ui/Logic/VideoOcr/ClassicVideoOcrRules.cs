@@ -12,7 +12,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
         public OcrFixReplaceList ReplaceList { get; }
         public ClassicVideoOcrRules(string language)
         {
-            if(language!="eng" && language!="rus") return;
+            if(language!="eng" && language!="rus" && language!="ron" && language!="hrv") return;
             Directory.CreateDirectory(_folder);
             var name=language+"_OCRFixReplaceList.xml";var path=Path.Combine(_folder,name);
             using(var source=Assembly.GetExecutingAssembly().GetManifestResourceStream("ClassicVideoOcrRules."+language+".xml"))

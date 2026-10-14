@@ -13,28 +13,30 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 {
     public sealed partial class TextToSpeech
     {
+        private static bool IsLocalCrispTts(TextToSpeechEngineId id)=>id==TextToSpeechEngineId.Qwen3Crisp || id==TextToSpeechEngineId.SupertonicCrisp;
+        private bool SupertonicSelected=>_engines.First(p=>p.Index==nikseComboBoxEngine.SelectedIndex).Id==TextToSpeechEngineId.SupertonicCrisp;
         private CancellationTokenSource _qwenCancellation;
         private Button _qwenDownloadButton;
         private Button _qwenSettingsButton;
         private static bool QwenRussian => Configuration.Settings.General.Language.StartsWith("ru",StringComparison.OrdinalIgnoreCase);
         private void FillQwenControls()
         {
-            var settings=ClassicQwenTtsSettings.Load();
+            var settings=ClassicQwenTtsSettings.Load(SupertonicSelected);
             if(settings.Clone) {
                 var references=ClassicQwenReference.List();nikseComboBoxVoice.Items.AddRange(references.Cast<object>().ToArray());
                 nikseComboBoxVoice.SelectedItem=references.FirstOrDefault(v=>v.Id==settings.Voice) ?? references.FirstOrDefault();
             }
-            else {nikseComboBoxVoice.Items.AddRange(ClassicQwenTts.Voices.Cast<object>().ToArray());nikseComboBoxVoice.Text=ClassicQwenTts.Voices.Contains(settings.Voice) ? settings.Voice : "vivian";}
+            else {var voices=SupertonicSelected ? ClassicQwenTts.SupertonicVoices : ClassicQwenTts.Voices; nikseComboBoxVoice.Items.AddRange(voices.Cast<object>().ToArray());nikseComboBoxVoice.Text=voices.Contains(settings.Voice) ? settings.Voice : voices[0];}
             labelRegion.Text=QwenRussian ? "Вычисления" : "Compute";
             labelRegion.Visible=nikseComboBoxRegion.Visible=true;
             nikseComboBoxRegion.Items.Clear();nikseComboBoxRegion.Items.AddRange(new object[]{"cpu","cpu-legacy","vulkan","cuda","cuda13"});nikseComboBoxRegion.Text=settings.Variant;
             labelLanguage.Visible=nikseComboBoxLanguage.Visible=true;
             nikseComboBoxLanguage.Items.Clear();
-            foreach(var pair in new[]{"ru|Russian","en|English","zh|Chinese","de|German","it|Italian","pt|Portuguese","es|Spanish","ja|Japanese","ko|Korean","fr|French"})
+            foreach(var pair in SupertonicSelected ? ClassicSupertonicLanguages.Catalog : new[]{"ru|Russian","en|English","zh|Chinese","de|German","it|Italian","pt|Portuguese","es|Spanish","ja|Japanese","ko|Korean","fr|French"})
             {var parts=pair.Split('|');nikseComboBoxLanguage.Items.Add(new TtsLanguage(parts[1],parts[0]));}
             nikseComboBoxLanguage.SelectedItem=nikseComboBoxLanguage.Items.Cast<TtsLanguage>().FirstOrDefault(l=>l.Code==settings.Language) ?? nikseComboBoxLanguage.Items[0];
-            labelApiKey.Text=settings.Clone ? (QwenRussian ? "Модель" : "Model") : (QwenRussian ? "Стиль голоса" : "Voice style");
-            labelApiKey.Visible=nikseTextBoxApiKey.Visible=true;nikseTextBoxApiKey.ReadOnly=settings.Clone;nikseTextBoxApiKey.Text=settings.Clone ? "1.7B Voice clone" : settings.Instructions;
+            labelApiKey.Text=SupertonicSelected ? (QwenRussian ? "Скорость (0,25–4)" : "Speed (0.25–4)") : settings.Clone ? (QwenRussian ? "Модель" : "Model") : (QwenRussian ? "Стиль голоса" : "Voice style");
+            labelApiKey.Visible=nikseTextBoxApiKey.Visible=true;nikseTextBoxApiKey.ReadOnly=settings.Clone;nikseTextBoxApiKey.Text=SupertonicSelected ? settings.Speed.ToString(System.Globalization.CultureInfo.CurrentCulture) : settings.Clone ? "1.7B Voice clone" : settings.Instructions;
             if(_qwenDownloadButton==null)
             {
                 var available=nikseComboBoxVoice.Right-buttonTestVoice.Right-10;
@@ -46,8 +48,14 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         }
         private ClassicQwenTtsSettings CaptureQwen(bool requireVoice=true)
         {
-            var settings=ClassicQwenTtsSettings.Load();settings.Variant=nikseComboBoxRegion.Text;settings.Voice=(nikseComboBoxVoice.SelectedItem as ClassicQwenReference)?.Id ?? nikseComboBoxVoice.Text;settings.Language=(nikseComboBoxLanguage.SelectedItem as TtsLanguage)?.Code ?? "ru";
-            if(!settings.Clone)settings.Instructions=nikseTextBoxApiKey.Text;
+            var settings=ClassicQwenTtsSettings.Load(SupertonicSelected);settings.Variant=nikseComboBoxRegion.Text;settings.Voice=(nikseComboBoxVoice.SelectedItem as ClassicQwenReference)?.Id ?? nikseComboBoxVoice.Text;settings.Language=(nikseComboBoxLanguage.SelectedItem as TtsLanguage)?.Code ?? "ru";
+            if(SupertonicSelected)
+            {
+                if(!double.TryParse(nikseTextBoxApiKey.Text,System.Globalization.NumberStyles.Float,System.Globalization.CultureInfo.CurrentCulture,out var speed) || double.IsNaN(speed) || speed<0.25 || speed>4)
+                {if(requireVoice)throw new ArgumentException(QwenRussian ? "Скорость должна быть от 0,25 до 4" : "Speed must be between 0.25 and 4");}
+                else settings.Speed=speed;
+            }
+            else if(!settings.Clone)settings.Instructions=nikseTextBoxApiKey.Text;
             if(requireVoice && settings.Clone)ClassicQwenReference.Validate(settings.Voice);
             settings.Save();return settings;
         }
@@ -88,7 +96,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                         var text=Utilities.UnbreakLine(HtmlUtil.RemoveHtmlTags(p.Text));
                         if(string.IsNullOrWhiteSpace(text))continue;
                         var actor=_actorAndVoices.FirstOrDefault(a=>a.Actor==p.Actor);
-                        var voice=settings.Clone ? ClassicQwenReference.List().FirstOrDefault(v=>v.Name==actor?.Voice)?.Id ?? settings.Voice : actor!=null && ClassicQwenTts.Voices.Contains(actor.Voice) ? actor.Voice : settings.Voice;
+                        var voice=settings.Clone ? ClassicQwenReference.List().FirstOrDefault(v=>v.Name==actor?.Voice)?.Id ?? settings.Voice : actor!=null && (SupertonicSelected ? ClassicQwenTts.SupertonicVoices : ClassicQwenTts.Voices).Contains(actor.Voice) ? actor.Voice : settings.Voice;
                         labelProgress.Text=(QwenRussian ? "Озвучка " : "Generating ")+(i+1)+" / "+subtitle.Paragraphs.Count;
                         await engine.SpeakAsync(text,voice,Path.Combine(_waveFolder,string.IsNullOrEmpty(overrideFileName) ? i+".wav" : overrideFileName),cancel);
                         progressBar1.Value=i+1;

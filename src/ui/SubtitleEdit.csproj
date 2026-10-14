@@ -23,8 +23,12 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Logic\ClassicOpenRouterTtsModels.json" LogicalName="ClassicOpenRouterTtsModels.json" />
+    <Reference Include="System.Security" />
     <EmbeddedResource Include="Logic\VideoOcr\Rules\eng_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.eng.xml" />
     <EmbeddedResource Include="Logic\VideoOcr\Rules\rus_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.rus.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\ron_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.ron.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\hrv_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.hrv.xml" />
     <Reference Include="Interop.QuartzTypeLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>DLLs\Interop.QuartzTypeLib.dll</HintPath>

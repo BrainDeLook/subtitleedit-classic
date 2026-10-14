@@ -20,6 +20,8 @@ namespace Nikse.SubtitleEdit.Forms
         private readonly TextBox _logoPath, _supPath;
         private readonly NumericUpDown _logoX, _logoY, _logoSize, _logoOpacity;
         private readonly CheckBox _sourceSize;
+        private readonly ComboBox _stereoMode;
+        private readonly NumericUpDown _stereoDepth;
         private readonly PictureBox _canvas;
         private readonly string _videoFileName;
         private readonly int _videoWidth, _videoHeight;
@@ -120,6 +122,13 @@ namespace Nikse.SubtitleEdit.Forms
 
             var sourcePage = AddPage(tabs, T("Источник и размер", "Source and size"));
             var sourceTable = Table(sourcePage);
+            _stereoMode = Combo(new[] { T("Обычное 2D", "Normal 2D"), "Half side-by-side", "Half top-bottom" }, Math.Max(0, Math.Min(2, options.StereoMode)));
+            _stereoDepth = Number(-100, 100, options.StereoDepth);
+            _stereoDepth.Enabled = _stereoMode.SelectedIndex != 0;
+            _stereoMode.SelectedIndexChanged += (s,e) => _stereoDepth.Enabled = _stereoMode.SelectedIndex != 0;
+            AddRow(sourceTable, T("Режим 3D", "3D mode"), _stereoMode);
+            AddRow(sourceTable, T("Глубина субтитров", "Subtitle depth"), _stereoDepth);
+            AddFull(sourceTable, Note(T("Для видео, уже упакованного в 3D: субтитры дублируются для обоих глаз; видео не преобразуется из 2D в 3D.", "For video already packed as 3D: subtitles are duplicated for both eyes; this does not convert 2D video to 3D.")));
             AddFull(sourceTable, Note(T("Можно прожечь графические субтитры Blu-ray напрямую, без OCR. Пустое поле использует субтитры текущего редактора; в очереди .sup выбирается для каждого файла.", "Burn Blu-ray image subtitles without OCR. Leave empty to use the editor subtitle; batch items can each use a .sup file.")));
             _supPath = PathBox(options.ImageSubtitleFileName);
             AddRow(sourceTable, T("Графические субтитры", "Image subtitles"), FilePicker(_supPath, "Blu-ray SUP|*.sup", null));
@@ -163,6 +172,8 @@ namespace Nikse.SubtitleEdit.Forms
             _options.LogoOpacity = (int)_logoOpacity.Value;
             _options.ImageSubtitleFileName = _supPath.Text;
             _options.MatchSourceFileSize = _sourceSize.Checked;
+            _options.StereoMode = _stereoMode.SelectedIndex;
+            _options.StereoDepth = (int)_stereoDepth.Value;
             Options = _options;
             DialogResult = DialogResult.OK;
         }

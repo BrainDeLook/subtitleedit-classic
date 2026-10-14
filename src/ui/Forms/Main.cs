@@ -1737,6 +1737,7 @@ namespace Nikse.SubtitleEdit.Forms
             toolStripMenuItemPlugins.Text = _language.Menu.File.Plugins;
             toolStripMenuItemImportDvdSubtitles.Text = _language.Menu.File.ImportOcrFromDvd;
             InitializeClassicVideoOcrMenu();
+            InitializeClassicTimingMenu();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -37352,11 +37353,12 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 if (RequireFfmpegOk())
                 {
-                    using (var form = new TextToSpeech(_subtitle, GetCurrentSubtitleFormat(), _videoFileName, _videoInfo))
+                    using (var form = new TextToSpeech(_subtitle, GetCurrentSubtitleFormat(), _videoFileName, _videoInfo,ClassicSelectedAudioIndex()))
                     {
                         if (form.ShowDialog(this) == DialogResult.OK)
                         {
                             var idx = FirstSelectedIndex;
+                            MakeHistoryForUndo("Before text-to-speech preparation");
                             _subtitle = form.EditedSubtitle;
                             SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
                             _subtitleListViewIndex = -1;

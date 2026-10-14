@@ -54,6 +54,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
         public static List<Point> GetPoints(Point start, Point end)
         {
+            if(start==end)return new List<Point>{start};
             List<Point> list;
             var x1 = start.X;
             var x2 = end.X;

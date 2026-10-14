@@ -22,6 +22,8 @@ namespace Nikse.SubtitleEdit.Logic
         public int LogoOpacity { get; set; } = 100;
         public int LogoSize { get; set; } = 100;
         public bool MatchSourceFileSize { get; set; }
+        public int StereoMode { get; set; }
+        public int StereoDepth { get; set; }
         [XmlIgnore] public string ImageSubtitleFileName { get; set; } = string.Empty;
         [XmlIgnore] public bool InputIsAudioOnly { get; set; }
 

@@ -131,6 +131,8 @@ namespace Nikse.SubtitleEdit.Logic
         /// </summary>
         public static Process GenerateHardcodedVideoFile(string inputVideoFileName, string assaSubtitleFileName, string outputVideoFileName, int width, int height, string videoEncoding, string preset, string pixelFormat, string crf, string audioEncoding, bool forceStereo, string sampleRate, string tune, string audioBitRate, string pass, string twoPassBitRate, DataReceivedEventHandler dataReceivedHandler = null, string cutStart = null, string cutEnd = null, string audioCutTrack = "", ClassicBurnInOptions classicOptions = null)
         {
+            if (string.IsNullOrWhiteSpace(tune)) tune = ClassicVideoPresetOptions.MigrateTune(videoEncoding, preset);
+            preset = ClassicVideoPresetOptions.Migrate(videoEncoding, preset);
             var extension = Path.GetExtension(outputVideoFileName).ToLowerInvariant();
             audioEncoding = ClassicBurnIn.GetAudioEncoder(extension, audioEncoding);
             if (width % 2 == 1)
@@ -224,7 +226,7 @@ namespace Nikse.SubtitleEdit.Logic
             {
                 if (videoEncoding == "h264_nvenc" || videoEncoding == "hevc_nvenc")
                 {
-                    crfSettings = $" -cq {crf}";
+                    if (tune != "lossless") crfSettings = $" -cq {crf}";
                 }
                 else if (videoEncoding == "h264_amf" || videoEncoding == "hevc_amf")
                 {
@@ -631,13 +633,19 @@ namespace Nikse.SubtitleEdit.Logic
         }
 
         public static Process TrimSilenceStartAndEnd(string inputFileName, string outputFileName, DataReceivedEventHandler dataReceivedHandler = null)
+            => TrimSilenceStartAndEnd(inputFileName, outputFileName, 0.01, dataReceivedHandler);
+
+        public static Process TrimSilenceStartAndEnd(string inputFileName, string outputFileName, double silenceThreshold, DataReceivedEventHandler dataReceivedHandler = null)
         {
+            // Stable v5.2.0: preserve speech at the edges; trim only detected silence.
+            var threshold = Math.Max(0.000001, Math.Min(1, silenceThreshold)).ToString("0.########", CultureInfo.InvariantCulture);
+            var silenceRemove = "silenceremove=start_periods=1:start_silence=0.1:start_threshold=" + threshold;
             var processMakeVideo = new Process
             {
                 StartInfo =
                 {
                     FileName = GetFfmpegLocation(),
-                    Arguments = $"-i \"{inputFileName}\" -af \"areverse,atrim=start=0.1,silenceremove=start_periods=1:start_silence=0.1:start_threshold=0.01,areverse,atrim=start=0.1,silenceremove=start_periods=1:start_silence=0.1:start_threshold=0.01\" \"{outputFileName}\"",
+                    Arguments = $"-nostdin -y -i \"{inputFileName}\" -af \"areverse,{silenceRemove},areverse,{silenceRemove}\" \"{outputFileName}\"",
                     UseShellExecute = false,
                     CreateNoWindow = true
                 }
@@ -650,6 +658,7 @@ namespace Nikse.SubtitleEdit.Logic
 
         public static Process AddAudioTrack(string inputFileName, string audioFileName, string outputFileName, string audioEncoding, bool? stereo, DataReceivedEventHandler dataReceivedHandler = null)
         {
+            var containerArguments=ClassicBurnIn.GetContainerArguments(Path.GetExtension(outputFileName).ToLowerInvariant());
             var audioEncodingString = !string.IsNullOrEmpty(audioEncoding) ? "-c:a " + audioEncoding + " " : "-c:a copy ";
             var stereoString = stereo == true ? "-ac 2 " : string.Empty;
 
@@ -658,7 +667,7 @@ namespace Nikse.SubtitleEdit.Logic
                 StartInfo =
                 {
                     FileName = GetFfmpegLocation(),
-                    Arguments = $"-i \"{inputFileName}\" -i \"{audioFileName}\" -c:v copy -map 0:v:0 -map 1:a:0 {audioEncodingString}{stereoString}\"{outputFileName}\"",
+                    Arguments = $"-nostdin -y -i \"{inputFileName}\" -i \"{audioFileName}\" -c:v copy -map 0:v:0 -map 1:a:0 {audioEncodingString}{stereoString}{containerArguments} \"{outputFileName}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -673,6 +682,7 @@ namespace Nikse.SubtitleEdit.Logic
 
         public static Process AddVoiceOver(string inputFileName, string audioFileName, string outputFileName, string audioEncoding, bool? stereo, DataReceivedEventHandler dataReceivedHandler = null)
         {
+            var containerArguments=ClassicBurnIn.GetContainerArguments(Path.GetExtension(outputFileName).ToLowerInvariant());
             var audioEncodingString = !string.IsNullOrEmpty(audioEncoding) ? "-c:a " + audioEncoding + " " : "-c:a copy ";
             var stereoString = stereo == true ? "-ac 2 " : string.Empty;
             int attack = 50;
@@ -686,7 +696,7 @@ namespace Nikse.SubtitleEdit.Logic
                 StartInfo =
                 {
                     FileName = GetFfmpegLocation(),
-                    Arguments = $"-i \"{inputFileName}\" -i \"{audioFileName}\" -filter_complex \"[1:a]asplit=2[sc][mix];[0:a]apad[bg_padded];[bg_padded][sc]sidechaincompress=threshold={strthreshold}:ratio={ratio}:attack={attack}:release={release}[bg];[bg][mix]amerge=inputs=2,pan=stereo|c0<c0+c2|c1<c1+c3[final]\" -map 0:v -map [final] -c:v copy -c:a aac -b:a 192k \"{outputFileName}\"",
+                    Arguments = $"-nostdin -y -i \"{inputFileName}\" -i \"{audioFileName}\" -filter_complex \"[1:a]asplit=2[sc][mix];[0:a]apad[bg_padded];[bg_padded][sc]sidechaincompress=threshold={strthreshold}:ratio={ratio}:attack={attack}:release={release}[bg];[bg][mix]amerge=inputs=2,pan=stereo|c0<c0+c2|c1<c1+c3[final]\" -map 0:v -map [final] -c:v copy -c:a aac -b:a 192k {containerArguments} \"{outputFileName}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,

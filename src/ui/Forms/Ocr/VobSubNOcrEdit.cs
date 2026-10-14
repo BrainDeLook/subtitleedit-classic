@@ -36,6 +36,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 
             _nOcrDb = nOcrDb;
             _bitmap = bitmap;
+            InitializeClassicOptimizer();
 
             FillComboBox();
 

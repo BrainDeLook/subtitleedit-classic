@@ -22,19 +22,25 @@ namespace Nikse.SubtitleEdit.Logic
         public string Voice { get; set; } = "vivian";
         public string Instructions { get; set; } = "";
         public bool Clone { get; set; }
+        public bool Supertonic { get; set; }
+        public double Speed { get; set; } = 1.0;
         public string ExportFolder { get; set; } = "";
         public static string Root => Path.Combine(Configuration.DataDirectory,"TextToSpeech","ClassicQwen3");
-        public static ClassicQwenTtsSettings Load()
+        public static string SupertonicRoot => Path.Combine(Configuration.DataDirectory,"TextToSpeech","ClassicSupertonic");
+        public static ClassicQwenTtsSettings Load(bool supertonic=false)
         {
-            try { return JsonConvert.DeserializeObject<ClassicQwenTtsSettings>(File.ReadAllText(Path.Combine(Root,"settings.json"))) ?? new ClassicQwenTtsSettings(); }
-            catch(IOException) { return new ClassicQwenTtsSettings(); }
-            catch(JsonException) { return new ClassicQwenTtsSettings(); }
+            try { var settings=JsonConvert.DeserializeObject<ClassicQwenTtsSettings>(File.ReadAllText(Path.Combine(supertonic ? SupertonicRoot : Root,"settings.json"))) ?? Defaults(supertonic); settings.Supertonic=supertonic; if(supertonic)settings.Clone=false; return settings; }
+            catch(IOException) { return Defaults(supertonic); }
+            catch(JsonException) { return Defaults(supertonic); }
         }
-        public void Save() { Directory.CreateDirectory(Root); File.WriteAllText(Path.Combine(Root,"settings.json"),JsonConvert.SerializeObject(this,Formatting.Indented)); }
+        private static ClassicQwenTtsSettings Defaults(bool supertonic) => new ClassicQwenTtsSettings{Supertonic=supertonic,Voice=supertonic ? "M1" : "vivian"};
+        public void Save() { var root=Supertonic ? SupertonicRoot : Root; Directory.CreateDirectory(root); File.WriteAllText(Path.Combine(root,"settings.json"),JsonConvert.SerializeObject(this,Formatting.Indented)); }
     }
     public sealed class ClassicQwenTts : IDisposable
     {
         public static readonly string[] Voices={"aiden","dylan","eric","ono_anna","ryan","serena","sohee","uncle_fu","vivian"};
+        public static readonly string[] SupertonicVoices={"F1","F2","F3","F4","F5","M1","M2","M3","M4","M5"};
+        public const string SupertonicModel="supertonic3-f16.gguf";
         public const string Talker="qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf";
         public const string CloneTalker="qwen3-tts-12hz-1.7b-base-q8_0.gguf";
         public const string Codec="qwen3-tts-tokenizer-12hz.gguf";
@@ -54,14 +60,19 @@ namespace Nikse.SubtitleEdit.Logic
         public static async Task EnsureInstalledAsync(ClassicQwenTtsSettings settings,CancellationToken cancel,IProgress<SpeechProgress> progress)
         {
             await ClassicSpeechDownload.EnsureRuntimeAsync(Engine,settings.Variant,cancel,progress).ConfigureAwait(false);
+            if(settings.Supertonic)
+            {
+                await EnsureModel(SupertonicModel,"supertonic-3-GGUF",200332512L,"46d3fed1cfd60bd631cdd9f618426c5c072f92b8fed3b0c3fdedf6e43869ceff",cancel,progress,Path.Combine(ClassicQwenTtsSettings.SupertonicRoot,"models")).ConfigureAwait(false);
+                return;
+            }
             if(settings.Clone)
                 await EnsureModel(CloneTalker,"qwen3-tts-1.7b-base-GGUF",2066258176L,"bbb93ab1f4a3f771f94fc6f68404b2b969bdf3b14c6303473dbf64c63011520d",cancel,progress).ConfigureAwait(false);
             else await EnsureModel(Talker,"qwen3-tts-1.7b-customvoice-GGUF",2042225952L,"3985813e21a3f27407110ba3afcd8f12ebc19734a5160ec31992637cd62aa67e",cancel,progress).ConfigureAwait(false);
             await EnsureModel(Codec,"qwen3-tts-tokenizer-12hz-GGUF",358453280L,"70dc95dbfdd9aa5d9d406236ff771d061bf17b0cda02a72513953355606e719b",cancel,progress).ConfigureAwait(false);
         }
-        private static async Task EnsureModel(string file,string repository,long bytes,string hash,CancellationToken cancel,IProgress<SpeechProgress> progress)
+        public static async Task EnsureModel(string file,string repository,long bytes,string hash,CancellationToken cancel,IProgress<SpeechProgress> progress,string modelFolder=null)
         {
-            var path=Path.Combine(Models,file);
+            var path=Path.Combine(modelFolder ?? Models,file);
             if(ValidModel(path,bytes)) return;
             // Publish only after length/header/hash validation. Preserve any previous file.
             var candidate=path+"."+Guid.NewGuid().ToString("N")+".download";
@@ -86,12 +97,13 @@ namespace Nikse.SubtitleEdit.Logic
             _baseUrl="http://127.0.0.1:"+port;
             var voices=Path.Combine(ClassicQwenTtsSettings.Root,"voices");Directory.CreateDirectory(voices);
             var exe=ClassicSpeechCatalog.Executable(Engine,_settings.Variant);
-            _server=new Process{StartInfo=new ProcessStartInfo(exe,"--server --backend "+(_settings.Clone ? "qwen3-tts-1.7b-base" : "qwen3-tts-1.7b-customvoice")+" -m "+ClassicSpeechRunner.Quote(Path.Combine(Models,_settings.Clone ? CloneTalker : Talker))+" --codec-model "+ClassicSpeechRunner.Quote(Path.Combine(Models,Codec))+" --voice-dir "+ClassicSpeechRunner.Quote(voices)+" --host 127.0.0.1 --port "+port)
+            var args=_settings.Supertonic ? "--server --backend supertonic -m "+ClassicSpeechRunner.Quote(Path.Combine(ClassicQwenTtsSettings.SupertonicRoot,"models",SupertonicModel)) : "--server --backend "+(_settings.Clone ? "qwen3-tts-1.7b-base" : "qwen3-tts-1.7b-customvoice")+" -m "+ClassicSpeechRunner.Quote(Path.Combine(Models,_settings.Clone ? CloneTalker : Talker))+" --codec-model "+ClassicSpeechRunner.Quote(Path.Combine(Models,Codec))+" --voice-dir "+ClassicSpeechRunner.Quote(voices);
+            _server=new Process{StartInfo=new ProcessStartInfo(exe,args+" --host 127.0.0.1 --port "+port)
                 {WorkingDirectory=Path.GetDirectoryName(exe),UseShellExecute=false,CreateNoWindow=true,RedirectStandardError=true,RedirectStandardOutput=true,StandardErrorEncoding=Encoding.UTF8,StandardOutputEncoding=Encoding.UTF8}};
             DataReceivedEventHandler capture=(s,e)=>{if(e.Data!=null)lock(_log){_log.AppendLine(e.Data);if(_log.Length>16000)_log.Remove(0,_log.Length-16000);}};
             _server.OutputDataReceived+=capture;_server.ErrorDataReceived+=capture;
             _server.Start();_server.BeginOutputReadLine();_server.BeginErrorReadLine();
-            progress?.Report(new SpeechProgress{Message="Loading Qwen3 TTS model…"});
+            progress?.Report(new SpeechProgress{Message=_settings.Supertonic ? "Loading Supertonic-3 model…" : "Loading Qwen3 TTS model…"});
             try
             {
                 var watch=Stopwatch.StartNew();
@@ -113,7 +125,8 @@ namespace Nikse.SubtitleEdit.Logic
         private string Log() {lock(_log)return _log.ToString();}
         public async Task SpeakAsync(string text,string voice,string output,CancellationToken cancel)
         {
-            if(_settings.Clone) ClassicQwenReference.Validate(voice);
+            if(_settings.Supertonic) {if(Array.IndexOf(SupertonicVoices,voice)<0)throw new ArgumentException("Select a Supertonic preset voice",nameof(voice));}
+            else if(_settings.Clone) ClassicQwenReference.Validate(voice);
             else if(Array.IndexOf(Voices,voice)<0)throw new ArgumentException("Select a Qwen3 CustomVoice speaker",nameof(voice));
             var payload=new System.Collections.Generic.Dictionary<string,object>{{"input",text},{"response_format","wav"},{"voice",voice},{"language",_settings.Language}};
             if(_settings.Clone) {
@@ -121,6 +134,7 @@ namespace Nikse.SubtitleEdit.Logic
                 payload["marking_attestation"]="I will disclose that this audio is AI-generated.";
                 payload["spoken_disclaimer"]=false;
             }
+            else if(_settings.Supertonic)payload["speed"]=Math.Max(0.25,Math.Min(4.0,_settings.Speed));
             else if(!string.IsNullOrWhiteSpace(_settings.Instructions))payload["instructions"]=_settings.Instructions;
             using(var content=new StringContent(JsonConvert.SerializeObject(payload),Encoding.UTF8,"application/json"))
             using(var response=await _client.PostAsync(_baseUrl+"/v1/audio/speech",content,cancel).ConfigureAwait(false))

@@ -20,7 +20,7 @@ namespace Nikse.SubtitleEdit.Forms
 {
     // WinForms adaptation of stable v5.2.0 VideoOcrWindow/ViewModel. The options,
     // crop selection, frame probe and result editing follow that feature.
-    public sealed class ClassicVideoOcr : Form
+    public sealed partial class ClassicVideoOcr : Form
     {
         private readonly ClassicVideoOcrOptions _options=ClassicVideoOcrOptions.Load();
         private readonly TextBox _file=new TextBox{Dock=DockStyle.Fill,ReadOnly=true};
@@ -120,6 +120,7 @@ namespace Nikse.SubtitleEdit.Forms
             root.Controls.Add(_lines,0,2);
             var footer=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2}; footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,70)); footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,30)); footer.Controls.Add(_status,0,0); footer.Controls.Add(_progress,1,0); root.Controls.Add(footer,0,3);
             var buttons=new FlowLayoutPanel{Dock=DockStyle.Fill,FlowDirection=FlowDirection.RightToLeft,WrapContents=false}; foreach(var b in new[]{_cancel,_ok,_start}){b.Width=140;b.Height=27;buttons.Controls.Add(b);} root.Controls.Add(buttons,0,4); Controls.Add(root);
+            var findReplace=new Button{Text=L("Найти и заменить…","Find and replace…"),Width=165,Height=27};findReplace.Click+=(s,e)=>ShowOcrFindReplace();buttons.Controls.Add(findReplace);
             foreach(var lang in ClassicVideoOcrLanguages.GetLanguages()) _language.Items.Add(lang);
             _language.SelectedItem=_language.Items.Cast<OcrLanguage2>().FirstOrDefault(l=>l.Code==_options.Language) ?? _language.Items.Cast<OcrLanguage2>().First(l=>l.Code=="en");
             _engine.Items.AddRange(new object[]{"Paddle OCR","CrispEmbed"}); _engine.SelectedItem=_options.Engine; if(_engine.SelectedIndex<0)_engine.SelectedIndex=0;
@@ -149,6 +150,7 @@ namespace Nikse.SubtitleEdit.Forms
             var menu=new ContextMenuStrip(); var italic=menu.Items.Add(L("Курсив","Italic")); italic.Click+=(s,e)=> {foreach(DataGridViewRow row in _lines.SelectedRows) row.Cells[3].Value="<i>"+row.Cells[3].Value+"</i>";};
             var delete=menu.Items.Add(L("Удалить","Delete")); delete.Click+=(s,e)=> {foreach(DataGridViewRow row in _lines.SelectedRows.Cast<DataGridViewRow>().ToArray()) _lines.Rows.Remove(row);}; _lines.ContextMenuStrip=menu;
             _lines.KeyDown+=(s,e)=> {if(e.KeyCode==Keys.Delete && !_lines.IsCurrentCellInEditMode){foreach(DataGridViewRow row in _lines.SelectedRows.Cast<DataGridViewRow>().ToArray()) _lines.Rows.Remove(row);e.Handled=true;}};
+            KeyPreview=true;KeyDown+=(s,e)=>{if(e.Control && (e.KeyCode==Keys.F || e.KeyCode==Keys.H)){e.Handled=e.SuppressKeyPress=true;ShowOcrFindReplace();}};
             FormClosing+=(s,e)=> {if(_operation!=null){_closeRequested=true;_operation.Cancel();e.Cancel=true;} else {_lifetime.Cancel();_previewRequest?.Cancel();}};
             _elapsedTimer.Tick+=(s,e)=>{if(_operation!=null) _status.Text=_phase+" · "+_watch.Elapsed.ToString(@"hh\:mm\:ss");};
             _ok.Enabled=false; UiUtil.FixFonts(this);

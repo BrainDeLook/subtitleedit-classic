@@ -23,6 +23,10 @@ $tests=@{
     TestClassicVideoOcr='video-ocr-tests/TestClassicVideoOcr.cs'
     TestClassicTts='tts-tests/TestClassicTts.cs'
     TestClassicBurnInCanvas='TestClassicBurnInCanvas.cs'
+    TestClassic53Tts='tts-tests/TestClassic53Tts.cs'
+    TestClassic53Ocr='video-ocr-tests/TestClassic53Ocr.cs'
+    TestClassicTiming='TestClassicTiming.cs'
+    TestClassicNOcr='video-ocr-tests/TestClassicNOcr.cs'
 }
 foreach($name in $tests.Keys) {
     $arguments=@('/nologo','/target:exe','/platform:x64','/langversion:latest',('/out:"'+(Join-Path $OutputDirectory "$name.exe")+'"'))+$refs+('"'+(Join-Path $PSScriptRoot $tests[$name])+'"')
@@ -42,4 +46,12 @@ foreach($mode in @('ui','export')) {
 }
 & "$OutputDirectory/TestClassicBurnInCanvas.exe"
 if($LASTEXITCODE -ne 0){throw 'ASS canvas regression failed'}
+foreach($name in @('TestClassic53Tts','TestClassic53Ocr','TestClassicTiming')) {
+    & "$OutputDirectory/$name.exe" unit (Join-Path $OutputDirectory "$name-unit")
+    if($LASTEXITCODE -ne 0){throw "$name regression failed"}
+}
+& "$OutputDirectory/TestClassicTiming.exe" ui (Join-Path $OutputDirectory 'timing-ui')
+if($LASTEXITCODE -ne 0){throw 'Timing UI regression failed'}
+& "$OutputDirectory/TestClassicNOcr.exe" (Join-Path $PSScriptRoot '../Ocr/Cyrillic.nocr')
+if($LASTEXITCODE -ne 0){throw 'nOCR database/optimizer regression failed'}
 

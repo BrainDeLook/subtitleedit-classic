@@ -143,7 +143,8 @@ namespace Nikse.SubtitleEdit.Logic
             }
             var image = options != null && !string.IsNullOrWhiteSpace(options.ImageSubtitleFileName);
             var logo = options != null && !string.IsNullOrWhiteSpace(options.LogoFileName);
-            if (!image && !logo && (options == null || !options.InputIsAudioOnly))
+            var stereo = options != null && (options.StereoMode == 1 || options.StereoMode == 2);
+            if (!image && !logo && !stereo && (options == null || !options.InputIsAudioOnly))
                 return "-vf \"scale=" + width + ":" + height + ",ass=" + Path.GetFileName(subtitleFileName) + "\"";
 
             var filter = source + "scale=" + width + ":" + height;
@@ -152,8 +153,11 @@ namespace Nikse.SubtitleEdit.Logic
                 var seek = (cutStart ?? string.Empty).Trim();
                 if (seek.StartsWith("-ss ", StringComparison.Ordinal)) extraInputs += " -itsoffset -" + seek.Substring(4).Trim();
                 extraInputs += " -i \"" + options.ImageSubtitleFileName + "\"";
-                filter += "[scaledvideo];[" + inputCount++ + ":s]scale=" + width + ":" + height + "[subtitles];[scaledvideo][subtitles]overlay";
+                var subtitleSource = "[" + inputCount++ + ":s]scale=" + width + ":" + height;
+                if (stereo) filter = StereoGraph(filter, subtitleSource, null, width, height, options);
+                else filter += "[scaledvideo];" + subtitleSource + "[subtitles];[scaledvideo][subtitles]overlay=eof_action=pass";
             }
+            else if (stereo) filter = StereoGraph(filter, null, Path.GetFileName(subtitleFileName), width, height, options);
             else filter += ",ass=" + Path.GetFileName(subtitleFileName);
             if (logo)
             {
@@ -164,6 +168,27 @@ namespace Nikse.SubtitleEdit.Logic
             }
             mappings = " -map \"[burnout]\"";
             return "-filter_complex \"" + filter + "[burnout]\"";
+        }
+
+        // Stable v5.3.0 MakeStereo3DGraph: render subtitles once on a transparent
+        // timestamped canvas, squeeze copies into each eye, then repack the video.
+        private static string StereoGraph(string video,string image,string ass,int width,int height,ClassicBurnInOptions options)
+        {
+            var sources = image != null ? video+",split[v3d1][v3d2];"+image+",split[s3d1][s3d2];"
+                : video+",split=3[v3d1][v3d2][v3d0];[v3d0]format=rgba,colorchannelmixer=rr=0:gg=0:bb=0:aa=0,ass="+ass+":alpha=1,split[s3d1][s3d2];";
+            var alpha = image != null ? ":eof_action=pass" : ":alpha=premultiplied";
+            var depth = Math.Max(-100,Math.Min(100,options.StereoDepth));
+            if(options.StereoMode==2)
+            {
+                var top=height/2;var bottom=height-top;
+                return sources+$"[s3d1]scale={width}:{top}[s3d1h];[s3d2]scale={width}:{bottom}[s3d2h];"+
+                    $"[v3d1]crop={width}:{top}:0:0[e3d1];[v3d2]crop={width}:{bottom}:0:{top}[e3d2];"+
+                    $"[e3d1][s3d1h]overlay=x={depth}:y=0{alpha}[o3d1];[e3d2][s3d2h]overlay=x={-depth}:y=0{alpha}[o3d2];[o3d1][o3d2]vstack";
+            }
+            var left=width/2;var right=width-left;
+            return sources+$"[s3d1]scale={left}:{height}[s3d1h];[s3d2]scale={right}:{height}[s3d2h];"+
+                $"[v3d1]crop={left}:{height}:0:0[e3d1];[v3d2]crop={right}:{height}:{left}:0[e3d2];"+
+                $"[e3d1][s3d1h]overlay=x={depth}:y=0{alpha}[o3d1];[e3d2][s3d2h]overlay=x={-depth}:y=0{alpha}[o3d2];[o3d1][o3d2]hstack";
         }
     }
 }

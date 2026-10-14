@@ -1458,6 +1458,7 @@ namespace Nikse.SubtitleEdit.Forms
             if (_loading)
             {
                 defaultItem = Configuration.Settings.Tools.GenVideoTune;
+                if (string.IsNullOrWhiteSpace(defaultItem)) defaultItem = ClassicVideoPresetOptions.MigrateTune(videoCodec, Configuration.Settings.Tools.GenVideoPreset);
             }
 
             if (comboBoxVideoEncoding.Text == "libx265")
@@ -1570,55 +1571,11 @@ namespace Nikse.SubtitleEdit.Forms
                 defaultItem = Configuration.Settings.Tools.GenVideoPreset;
             }
 
-            if (videoCodec == "h264_nvenc")
+            if (ClassicVideoPresetOptions.IsNvenc(videoCodec))
             {
-                items = new List<string>
-                {
-                    "default",
-                    "slow",
-                    "medium",
-                    "fast",
-                    "hp",
-                    "hq",
-                    "bd",
-                    "ll",
-                    "llhq",
-                    "llhp",
-                    "lossless",
-                    "losslesshp",
-                    "p1",
-                    "p2",
-                    "p3",
-                    "p4",
-                    "p5",
-                    "p6",
-                    "p7",
-                };
-            }
-            else if (videoCodec == "hevc_nvenc")
-            {
-                items = new List<string>
-                {
-                    "default",
-                    "slow",
-                    "medium",
-                    "fast",
-                    "hp",
-                    "hq",
-                    "bd",
-                    "ll",
-                    "llhq",
-                    "llhp",
-                    "lossless",
-                    "losslesshp",
-                    "p1",
-                    "p2",
-                    "p3",
-                    "p4",
-                    "p5",
-                    "p6",
-                    "p7",
-                };
+                items = ClassicVideoPresetOptions.GetNvencPresets();
+                defaultItem = ClassicVideoPresetOptions.Migrate(videoCodec, defaultItem);
+                if (!items.Contains(defaultItem)) defaultItem = "p4";
             }
             else if (videoCodec == "h264_amf")
             {
@@ -2088,6 +2045,10 @@ namespace Nikse.SubtitleEdit.Forms
 
             FixRightToLeft(temp);
             PrepareClassicSubtitle(temp);
+            // Stereo composition is rendered by the dedicated preview, just like export.
+            // The ordinary player cannot display the two-eye subtitle filter graph.
+            if (_classicOptions != null && _classicOptions.StereoMode != 0)
+                temp.Paragraphs.Clear();
             FileUtil.WriteAllText(_mpvSubtitleFileName, new AdvancedSubStationAlpha().ToText(temp, null), new TextEncoding(Encoding.UTF8, "UTF8"));
         }
 

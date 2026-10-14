@@ -1,5 +1,21 @@
 # Subtitle Edit Classic changelog
 
+## 4.0.22 — local preview
+
+Feature ports are based on the stable upstream v5.3.0 tag. This preview preserves Windows Forms and has not been published as a release.
+
+- Burn-in: half side-by-side / top-bottom 3D subtitles with depth adjustment and a rendered preview; current NVENC presets and migration of legacy low-latency/lossless presets. The ordinary player does not composite 3D overlays: use the Preview button.
+- Speech generation: Supertonic-3 with ten preset voices, 31 languages and speed control; OpenAI-compatible TTS for OpenAI, OpenRouter or a custom endpoint, separate provider settings, MP3/PCM fallback and protected API-key storage on Windows.
+- Prepare speech: review continuation merges and silence-only annotations before generation. Actor changes, dialogue dashes and long pauses prevent merges. Annotation text remains in the subtitles; editor changes can be undone.
+- Dubbing: remove original speech with HTDemucs or Mel-Band RoFormer and mix the remaining music/effects with generated speech. Models download on first use. Video muxing remains cancellable; MP4 uses AAC by default and preserves edit-list timing.
+- Improve time codes: Canary/Qwen forced alignment, independent Parakeet word checks, rough synchronization, neighbouring-line safeguards, editable old/new proposals, selective application and optional frame snapping. Preview proposed positions in the main player. Positioned signs, comments and music cues are excluded from speech alignment.
+- OCR: Find/Replace with regular expressions, whole-word search and undo; stable upstream CrispEmbed builds (CPU 0.17.12, GPU 0.17.11), Romanian/Croatian correction rules and the Cyrillic nOCR database. nOCR optimization uses the v5.3 pruning algorithm with the classic bitmap/line adapters, previews the reduction and backs up the original file.
+- Retained the local speech-ending fix: relative silence thresholds and no unconditional 100 ms cuts from either end.
+
+Validation covers real Russian/English Supertonic and Qwen synthesis, permitted synthetic-reference cloning, independent ASR checks, both native speech-removal models, real forced alignment, 3D/NVENC exports, API protocol/PCM/cancellation tests without paid requests, OCR/nOCR algorithms and classic forms. On the compressed Russian movie crop, GLM made the same spelling errors as the old runtime; this update does not guarantee error-free recognition. Separation can leave residual voices or remove parts of the background; long CPU jobs can be slow.
+
+The full v5 catalog, voice-pack manager, Sidon reference cleaning and automatic per-line voice cloning are not included in this preview.
+
 ## 4.0.21
 
 Subtitle Edit Classic 4.0.21 brings video OCR and Qwen3 speech generation from stable Subtitle Edit 5.2.0 into the classic Windows Forms interface.

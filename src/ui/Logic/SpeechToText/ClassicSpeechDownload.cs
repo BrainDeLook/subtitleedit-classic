@@ -16,11 +16,11 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
     {
         private static readonly Dictionary<string, string> RuntimeHashes = new Dictionary<string, string>
         {
-            ["crispasr-windows-x86_64-cpu.zip"] = "ac8b6caf4dd448d00c5050907275bce4d154747110c37943aa4f69ee7fac9541",
-            ["crispasr-windows-x86_64-cpu-legacy.zip"] = "ba4e23fb8dfcc99b8a76af034954576a75f88193e3dbf62fc774287bcbd1114b",
-            ["crispasr-windows-x86_64-vulkan.zip"] = "112a33912d464346ba1c2a75f975864a7ed0a3c1bd1ad0c3cf8806b6919efd7d",
-            ["crispasr-windows-x86_64-cuda13.zip"] = "e2183d839d13a2eeea175f167acfafbd66ba5cc072bd21500777c2a43e1aa8a4",
-            ["crispasr-windows-x86_64-cuda.zip"] = "9108d2be9b61415cf2c6d758d09a6fbfda369c2cda2d98f1f3d61e1326792d01",
+            ["crispasr-windows-x86_64-cpu.zip"] = "997bc39f541e5d5d0bd14144159c038bd95d6ab8b523718c34a54e03ab404f47",
+            ["crispasr-windows-x86_64-cpu-legacy.zip"] = "be0f4978d0613999954215090c2345e613c055d94ab59de0f436487933eae9ba",
+            ["crispasr-windows-x86_64-vulkan.zip"] = "9294c7c6cca319714da2ae913a8839d81d53e2e9583020162ff9573c47654fc8",
+            ["crispasr-windows-x86_64-cuda13.zip"] = "3cc113e6bf5efd4481ed666dc7d46946f06c9ef31a9340c6abb8d3d747bdf812",
+            ["crispasr-windows-x86_64-cuda.zip"] = "94c292069a339e76109e17cc7218b17ceeb70eabf15eb8e1b1afdf7b9ee2b1b0",
             ["qwen3-asr-cpp-win64.zip"] = "ad9c196aa52ceb42a3f46946644e4145fc7e297c84fa54e4cdf7fd9c22556300",
             ["qwen3-asr-cpp-win64-vulkan.zip"] = "a9971a24ba08765568c8a83a547924e42f15bd576b2cf594f6757fff66baf244",
             ["whisper-vulkan-x64.zip"] = "2b3829c69c64b3bbd117ef3fa3ae1de2574cab36a4a572199bf3c291404ff1cc",

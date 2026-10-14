@@ -21,15 +21,16 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
     public static class ClassicCrispVideoOcr
     {
         public static string ModelFolder => Path.Combine(ClassicPaddleOcr.Root,"CrispEmbed","models");
-        public static string EngineFolder(string variant) => Path.Combine(ClassicPaddleOcr.Root,"CrispEmbed","0.17.9",variant);
+        public static string PinnedVersion(string variant)=>variant=="cpu" ? "0.17.12" : "0.17.11";
+        public static string EngineFolder(string variant) => Path.Combine(ClassicPaddleOcr.Root,"CrispEmbed",PinnedVersion(variant),variant);
         public static string Executable(string variant,string name) => Directory.Exists(EngineFolder(variant))
             ? Directory.GetFiles(EngineFolder(variant),name+".exe",SearchOption.AllDirectories).FirstOrDefault() ?? Path.Combine(EngineFolder(variant),name+".exe")
             : Path.Combine(EngineFolder(variant),name+".exe");
         private static readonly Dictionary<string,string> Hashes=new Dictionary<string,string>
         {
-            ["cpu"]="dabf9483f1a2e6e801b85a3fe67a6dab2b55359fc604c91e80a44756a21e4b07",
-            ["vulkan"]="ce2d3eb91b6dda3b9a50b96cf26e70010854c0b28fa38413c87cefe732dd9fc2",
-            ["cuda"]="89bcdde6d81634461278bd877e6e35f477cd6771dec7de40f0cfeeca1c5b732a"
+            ["cpu"]="49a1e4a89bf6f7d2df100794914f15aeb9a2b69513c3dbfb93364208994cc717",
+            ["vulkan"]="0579cc3d04e4493a6791887de518b29241ea50a0d8401b0dd82fb81e24a95d68",
+            ["cuda"]="56d83fd25253de920d5d7f8f949366eddcb202ff6b57d4158f5e886fc39f9b31"
         };
         public static CrispEmbedModel SelectedModel(ClassicVideoOcrOptions options)
         {
@@ -49,7 +50,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
                 try
                 {
                     if(!ValidHash(archive,Hashes[variant]))
-                        await ClassicSpeechDownload.DownloadFileAsync("https://github.com/CrispStrobe/CrispEmbed/releases/download/v0.17.9/"+name,archive,false,cancel,progress).ConfigureAwait(false);
+                        await ClassicSpeechDownload.DownloadFileAsync("https://github.com/CrispStrobe/CrispEmbed/releases/download/v"+PinnedVersion(variant)+"/"+name,archive,false,cancel,progress).ConfigureAwait(false);
                     if(!ValidHash(archive,Hashes[variant])) throw new InvalidDataException("CrispEmbed archive checksum mismatch");
                     progress?.Report(new SpeechProgress{Message="Extracting CrispEmbed"});
                     await Task.Run(()=>ClassicSpeechDownload.Extract(archive,stage,cancel),cancel).ConfigureAwait(false);

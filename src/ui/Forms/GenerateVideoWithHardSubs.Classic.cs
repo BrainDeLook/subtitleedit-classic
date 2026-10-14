@@ -170,9 +170,11 @@ namespace Nikse.SubtitleEdit.Forms
             if (!string.IsNullOrEmpty(_classicOptions.LogoFileName)) parts.Add(CT("Логотип", "Logo"));
             if (!string.IsNullOrEmpty(_classicOptions.ImageSubtitleFileName)) parts.Add("SUP");
             if (_classicOptions.MatchSourceFileSize) parts.Add(CT("Размер исходника", "Source size"));
+            if (_classicOptions.StereoMode != 0) parts.Add(_classicOptions.StereoMode == 1 ? "3D SBS" : "3D TB");
+            if (_classicOptions.StereoMode != 0) parts.Add(CT("Проверка: кнопка «Предпросмотр»", "Check with Preview button"));
             _classicSummary.Text = string.Join(" · ", parts);
             numericUpDownTargetFileSize.Enabled = !_classicOptions.MatchSourceFileSize;
-            buttonPreview.Visible = !_mpvOn || !string.IsNullOrWhiteSpace(_classicOptions.LogoFileName) || !string.IsNullOrWhiteSpace(_classicOptions.ImageSubtitleFileName);
+            buttonPreview.Visible = !_mpvOn || _classicOptions.StereoMode != 0 || !string.IsNullOrWhiteSpace(_classicOptions.LogoFileName) || !string.IsNullOrWhiteSpace(_classicOptions.ImageSubtitleFileName);
         }
 
         private string ClassicSaveFilter() => string.Join("|", ClassicBurnIn.GetContainers(comboBoxVideoEncoding.Text).Select(extension => extension.TrimStart('.').ToUpperInvariant() + "|*" + extension));
@@ -233,7 +235,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private bool ShowClassicCompositePreview()
         {
-            if (_classicOptions == null || string.IsNullOrWhiteSpace(_classicOptions.LogoFileName) && string.IsNullOrWhiteSpace(_classicOptions.ImageSubtitleFileName)) return false;
+            if (_classicOptions == null || _classicOptions.StereoMode == 0 && string.IsNullOrWhiteSpace(_classicOptions.LogoFileName) && string.IsNullOrWhiteSpace(_classicOptions.ImageSubtitleFileName)) return false;
             if (!File.Exists(_inputVideoFileName)) return true;
             var assFile = Path.Combine(Path.GetTempPath(), "classic" + Guid.NewGuid().ToString("N") + ".ass");
             var videoFile = Path.ChangeExtension(assFile, ".mp4");
