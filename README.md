@@ -8,11 +8,11 @@ English · [Русский](README.ru.md)
 
 ## Classic 4.0.22
 
-The next local build ports stable v5.3 features into the classic interface: 3D burn-in and NVENC preset migration, Supertonic-3 and OpenAI-compatible TTS, speech-line preparation, original-speech removal with HTDemucs/RoFormer, reviewed forced-alignment timing corrections and OCR Find/Replace/nOCR database optimization. A Cyrillic database is bundled without replacing an existing user database. Engine/model downloads remain available from the interface.
+This release ports stable v5.3 features into the classic interface: 3D burn-in and NVENC preset migration, Supertonic-3 and OpenAI-compatible TTS, speech-line preparation, original-speech removal with HTDemucs/RoFormer, reviewed forced-alignment timing corrections and OCR Find/Replace/nOCR database optimization. A Cyrillic database is bundled without replacing an existing user database. Engine/model downloads remain available from the interface.
 
 Download the stable Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). The full v5 engine catalog, voice-pack management, Sidon cleaning and per-line voice cloning are not part of this release. See [the changelog](CLASSIC_CHANGELOG.md) for validation and limits.
 
-Select actors with the checkboxes in the speech window; right-click assigns their voices. Removal settings can target either all original speech or only generated cue intervals; selective mode retains audio outside those intervals. Overlaps with unchecked actors keep the original mix.
+Select actors with the checkboxes in the speech window; right-click assigns their voices. Removal settings can target either all original speech or only generated cue intervals; selective mode retains audio outside those intervals. In selective mode, overlaps with unchecked actors keep the original mix.
 
 ## Base version
 
