@@ -113,8 +113,19 @@ namespace Nikse.SubtitleEdit.Logic
             var script = Path.Combine(job, "restore-original.ffgraph");
             File.WriteAllText(script, graph, new System.Text.UTF8Encoding(false));
             var output = Path.Combine(job, "selected-background.wav");
-            await RunFfmpegAsync("-nostdin -y -i "+Quote(original)+" -i "+Quote(background)+" -filter_complex_script "+Quote(script)+
-                " -map " + Quote("[out]") + " -ar 44100 -ac 2 -c:a pcm_s16le " + Quote(output), cancel, progress).ConfigureAwait(false);
+            var inputs = "-nostdin -y -i "+Quote(original)+" -i "+Quote(background);
+            var outputs = " -map " + Quote("[out]") + " -ar 44100 -ac 2 -c:a pcm_s16le " + Quote(output);
+            try
+            {
+                // FFmpeg 9 removed filter_complex_script; modern builds load arguments with -/option.
+                await RunFfmpegAsync(inputs+" -/filter_complex "+Quote(script)+outputs,cancel,progress).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.IndexOf("Unrecognized option '/filter_complex'", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                // Retain compatibility with older user-provided FFmpeg builds.
+                cancel.ThrowIfCancellationRequested();
+                await RunFfmpegAsync(inputs+" -filter_complex_script "+Quote(script)+outputs,cancel,progress).ConfigureAwait(false);
+            }
             return output;
         }
 
