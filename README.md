@@ -12,7 +12,7 @@ The next local build ports stable v5.3 features into the classic interface: 3D b
 
 This build is being tested locally; the Releases link still points to the published stable version. The full v5 engine catalog, voice-pack management, Sidon cleaning and per-line voice cloning are not part of this preview. See [the changelog](CLASSIC_CHANGELOG.md) for validation and limits.
 
-Select actors with the checkboxes in the speech window; right-click assigns their voices. Video exports retain original audio outside generated cue intervals. Overlaps with unchecked actors keep the original mix.
+Select actors with the checkboxes in the speech window; right-click assigns their voices. Removal settings can target either all original speech or only generated cue intervals; selective mode retains audio outside those intervals. Overlaps with unchecked actors keep the original mix.
 
 ## Base version
 

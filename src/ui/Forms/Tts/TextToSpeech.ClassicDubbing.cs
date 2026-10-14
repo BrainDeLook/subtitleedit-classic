@@ -31,16 +31,20 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private void EditDubbingSettings()
         {
             var settings=ClassicDubbingSettings.Load();
-            using(var dialog=new Form{Text=QwenRussian ? "Удаление исходной речи" : "Remove original speech",ClientSize=new Size(460,218),FormBorderStyle=FormBorderStyle.FixedDialog,MaximizeBox=false,MinimizeBox=false,StartPosition=FormStartPosition.CenterParent})
+            using(var dialog=new Form{Text=QwenRussian ? "Удаление исходной речи" : "Remove original speech",ClientSize=new Size(460,318),FormBorderStyle=FormBorderStyle.FixedDialog,MaximizeBox=false,MinimizeBox=false,StartPosition=FormStartPosition.CenterParent})
             {
                 var modeLabel=new Label{Text=QwenRussian ? "Модель" : "Model",AutoSize=true,Location=new Point(15,22)};
                 var mode=new ComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(130,18),Width=310};mode.Items.AddRange(new object[]{QwenRussian ? "HTDemucs — быстрее (81 МБ)" : "HTDemucs — faster (81 MB)",QwenRussian ? "RoFormer — качество (457 МБ)" : "RoFormer — quality (457 MB)"});mode.SelectedIndex=settings.Fast ? 0 : 1;
                 var computeLabel=new Label{Text=QwenRussian ? "Вычисления" : "Compute",AutoSize=true,Location=new Point(15,61)};
                 var compute=new ComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Location=new Point(130,57),Width=310};compute.Items.AddRange(new object[]{"cpu","cpu-legacy","vulkan","cuda","cuda13"});compute.SelectedItem=settings.Variant;if(compute.SelectedIndex<0)compute.SelectedIndex=0;
-                var note=new Label{Location=new Point(15,96),Size=new Size(425,70),Text=QwenRussian ? "Музыка и эффекты сохраняются и смешиваются с новой озвучкой. Модель загрузится при первом запуске. На CPU обработка полного видео может занять долгое время." : "Retain music/effects and mix generated speech. The model downloads on first use. Full-video processing on CPU can take considerable time."};
-                var ok=new Button{Text="OK",DialogResult=DialogResult.OK,Location=new Point(275,178),Width=75};var cancel=new Button{Text=QwenRussian ? "Отмена" : "Cancel",DialogResult=DialogResult.Cancel,Location=new Point(365,178),Width=75};
-                dialog.Controls.AddRange(new Control[]{modeLabel,mode,computeLabel,compute,note,ok,cancel});dialog.AcceptButton=ok;dialog.CancelButton=cancel;
-                if(dialog.ShowDialog(this)==DialogResult.OK){settings.Fast=mode.SelectedIndex==0;settings.Variant=compute.Text;settings.RemoveSpeech=_removeOriginalSpeech.Checked;settings.Save();}
+                var scope=new GroupBox{Text=QwenRussian ? "Какие реплики удалять" : "Speech removal scope",Location=new Point(15,92),Size=new Size(425,86)};
+                var selected=new RadioButton{Name="radioRemoveSelectedActors",Text=QwenRussian ? "Только реплики выбранных актёров" : "Only selected actors' lines",AutoSize=true,Location=new Point(12,24),Checked=!settings.RemoveAllSpeech};
+                var all=new RadioButton{Name="radioRemoveAllSpeech",Text=QwenRussian ? "Всю исходную речь в видео" : "All original speech in the video",AutoSize=true,Location=new Point(12,51),Checked=settings.RemoveAllSpeech};
+                scope.Controls.AddRange(new Control[]{selected,all});
+                var note=new Label{Location=new Point(15,188),Size=new Size(425,70),Text=QwenRussian ? "Музыка и эффекты сохраняются и смешиваются с новой озвучкой. Модель загрузится при первом запуске. На CPU обработка полного видео может занять долгое время." : "Retain music/effects and mix generated speech. The model downloads on first use. Full-video processing on CPU can take considerable time."};
+                var ok=new Button{Text="OK",DialogResult=DialogResult.OK,Location=new Point(275,278),Width=75};var cancel=new Button{Text=QwenRussian ? "Отмена" : "Cancel",DialogResult=DialogResult.Cancel,Location=new Point(365,278),Width=75};
+                dialog.Controls.AddRange(new Control[]{modeLabel,mode,computeLabel,compute,scope,note,ok,cancel});dialog.AcceptButton=ok;dialog.CancelButton=cancel;
+                if(dialog.ShowDialog(this)==DialogResult.OK){settings.RemoveAllSpeech=all.Checked;settings.Fast=mode.SelectedIndex==0;settings.Variant=compute.Text;settings.RemoveSpeech=_removeOriginalSpeech.Checked;settings.Save();}
             }
         }
         private async Task<bool> AddDubbingBackgroundAsync(string speech,string output,string encoding)
@@ -57,7 +61,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 if (_removeOriginalSpeech.Checked)
                 {
                     background = await ClassicDubbing.BackgroundAsync(_videoFileName,job,settings,_dubbingCancellation.Token,progress,_dubbingAudioTrack);
-                    background = await ClassicDubbing.RestoreOutsideAsync(System.IO.Path.Combine(job,"original.wav"),background,job,
+                    background = await ClassicDubbing.ApplyRemovalScopeAsync(System.IO.Path.Combine(job,"original.wav"),background,job,settings,
                         _dubbedRanges ?? new System.Collections.Generic.List<ClassicDubbing.SpeechRange>(),_dubbingCancellation.Token,progress);
                 }
                 else

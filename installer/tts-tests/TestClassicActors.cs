@@ -43,6 +43,13 @@ class TestClassicActors
    Call(form,"CaptureSpeechActors");filtered=(Subtitle)Call(form,"SpeakingSubtitle",sub,true);
    Check(filtered.Paragraphs[1].Text=="Bob" && filtered.Paragraphs[3].Text=="","Qwen receives only checked actors");
    using(var b=new Bitmap(form.Width,form.Height)){form.DrawToBitmap(b,new Rectangle(Point.Empty,b.Size));b.Save(Path.Combine(folder,"actors.png"));}
+   var settings=ClassicDubbingSettings.Load();Check(!settings.RemoveAllSpeech,"existing settings default to selective removal");
+   ScopeDialog(form,folder,true,DialogResult.OK);
+   Check(ClassicDubbingSettings.Load().RemoveAllSpeech,"all-speech option persists after OK");
+   ScopeDialog(form,folder,false,DialogResult.Cancel);
+   Check(ClassicDubbingSettings.Load().RemoveAllSpeech,"cancel leaves removal scope unchanged");
+   ScopeDialog(form,folder,false,DialogResult.OK);
+   Check(!ClassicDubbingSettings.Load().RemoveAllSpeech,"selected-actor option persists after OK");
    form.Close();
   }
   var video=Path.Combine(folder,"fixture.mp4");Run(args[1],"-nostdin -y -f lavfi -i color=c=blue:s=640x360:r=24:d=5 -f lavfi -i sine=frequency=220:duration=5 -c:v libx264 -preset ultrafast -c:a aac -shortest \""+video+"\"");
@@ -61,10 +68,12 @@ class TestClassicActors
   var original=Path.Combine(folder,"original.wav");var bg=Path.Combine(folder,"background.wav");WriteWav(original,220);WriteWav(bg,880);
   var ranges=ClassicDubbing.ExcludeProtectedRanges(new[]{new ClassicDubbing.SpeechRange(1,2),new ClassicDubbing.SpeechRange(3,4)},new[]{new ClassicDubbing.SpeechRange(3.4,3.6)});
   Check(ranges.Count==3,"unselected overlapping actor protected");
-  var output=ClassicDubbing.RestoreOutsideAsync(original,bg,folder,ranges,CancellationToken.None,null).GetAwaiter().GetResult();
+  var output=ClassicDubbing.ApplyRemovalScopeAsync(original,bg,folder,new ClassicDubbingSettings{RemoveAllSpeech=false},ranges,CancellationToken.None,null).GetAwaiter().GetResult();
   var a=ReadWav(original);var b2=ReadWav(bg);var c=ReadWav(output);
   foreach(var time in new[]{0.5,2.5,3.5,4.5})Check(Error(a,c,time)<0.0001,"original audio samples preserved at "+time);
   foreach(var time in new[]{1.5,3.2,3.8})Check(Error(b2,c,time)<0.0001,"separated background only inside selected cues at "+time);
+  var allBackground=ClassicDubbing.ApplyRemovalScopeAsync(original,bg,folder,new ClassicDubbingSettings{RemoveAllSpeech=true},ranges,CancellationToken.None,null).GetAwaiter().GetResult();
+  foreach(var time in new[]{0.5,2.5,3.5,4.5})Check(Error(b2,ReadWav(allBackground),time)<0.0001,"all-speech mode keeps separated background across video at "+time);
   var silent = Path.Combine(folder,"silence.wav");Run(args[1],"-nostdin -y -f lavfi -i anullsrc=r=44100:cl=stereo -t 5 -c:a pcm_s16le "+Q(silent));
   var muxed = Path.Combine(folder,"selective-dub.mkv");ClassicDubbing.MuxAsync(video,silent,output,muxed,null,CancellationToken.None,null).GetAwaiter().GetResult();
   var decoded = Path.Combine(folder,"muxed.wav");Run(args[1],"-nostdin -y -i "+Q(muxed)+" -map 0:a:0 -c:a pcm_s16le "+Q(decoded));
@@ -75,6 +84,27 @@ class TestClassicActors
   var many=Enumerable.Range(0,1000).Select(i=>new ClassicDubbing.SpeechRange(i*.005,i*.005+.002)).ToArray();
   var watch=System.Diagnostics.Stopwatch.StartNew();ClassicDubbing.RestoreOutsideAsync(original,bg,Path.Combine(folder,"many"),many,CancellationToken.None,null).GetAwaiter().GetResult();Check(watch.Elapsed.TotalSeconds<30,"1000-cue graph avoids command-line/depth limits");
   using(var cancel=new CancellationTokenSource()){cancel.Cancel();try{ClassicDubbing.RestoreOutsideAsync(original,bg,Path.Combine(folder,"cancel"),ranges,cancel.Token,null).GetAwaiter().GetResult();throw new Exception("cancel ignored");}catch(OperationCanceledException){Console.WriteLine("PASS: cancellation");}}
+ }
+ static void ScopeDialog(Form owner,string folder,bool all,DialogResult result)
+ {
+  bool found=false;using(var timer=new System.Windows.Forms.Timer{Interval=200})
+  {
+   timer.Tick+=(s,e)=>
+   {
+    var dialog=Application.OpenForms.Cast<Form>().FirstOrDefault(f=>f!=owner);if(dialog==null)return;
+    timer.Stop();found=true;dialog.ShowInTaskbar=false;dialog.Location=new Point(-20000,-20000);
+    var selected=(RadioButton)dialog.Controls.Find("radioRemoveSelectedActors",true).Single();
+    var entire=(RadioButton)dialog.Controls.Find("radioRemoveAllSpeech",true).Single();
+    if(all)entire.Checked=true;else selected.Checked=true;
+    Check(entire.Checked!=selected.Checked,"removal modes are mutually exclusive");
+    Check(selected.Right<selected.Parent.ClientSize.Width && entire.Right<entire.Parent.ClientSize.Width && entire.Bottom<entire.Parent.ClientSize.Height,"scope options fully visible");
+    foreach(var button in dialog.Controls.OfType<Button>())Check(button.Bottom<=dialog.ClientSize.Height,"settings footer buttons fully visible");
+    using(var image=new Bitmap(dialog.Width,dialog.Height)){dialog.DrawToBitmap(image,new Rectangle(Point.Empty,image.Size));image.Save(Path.Combine(folder,"scope-"+(all ? "all" : "selected")+".png"));}
+    dialog.DialogResult=result;dialog.Close();
+   };
+   timer.Start();Call(owner,"EditDubbingSettings");
+  }
+  Check(found,"speech-removal settings dialog opened");
  }
  static string Q(string path)=>Nikse.SubtitleEdit.Logic.SpeechToText.ClassicSpeechRunner.Quote(path);
  static void WriteWav(string path,int frequency){using(var w=new BinaryWriter(File.Create(path))){int samples=44100*5;w.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));w.Write(36+samples*4);w.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));w.Write(16);w.Write((short)1);w.Write((short)2);w.Write(44100);w.Write(176400);w.Write((short)4);w.Write((short)16);w.Write(System.Text.Encoding.ASCII.GetBytes("data"));w.Write(samples*4);for(int i=0;i<samples;i++){var s=(short)(9000*Math.Sin(i*2*Math.PI*frequency/44100));w.Write(s);w.Write(s);}}}

@@ -15,6 +15,7 @@ namespace Nikse.SubtitleEdit.Logic
     public sealed class ClassicDubbingSettings
     {
         public bool RemoveSpeech { get; set; }
+        public bool RemoveAllSpeech { get; set; } // Missing setting preserves actor-scoped removal.
         public bool Fast { get; set; } = true;
         public string Variant { get; set; } = "cpu";
         public static string Root=>Path.Combine(Configuration.DataDirectory,"TextToSpeech","ClassicDubbing");
@@ -88,6 +89,14 @@ namespace Nikse.SubtitleEdit.Logic
         {
             return RunFfmpegAsync("-nostdin -y -i " + Quote(video) + " -map 0:a:" + Math.Max(0, audioTrack) +
                 " -vn -af aresample=async=1:first_pts=0 -ar 44100 -ac 2 -c:a pcm_s16le " + Quote(output), cancel, progress);
+        }
+
+        public static Task<string> ApplyRemovalScopeAsync(string original, string background, string job,
+            ClassicDubbingSettings settings, IEnumerable<SpeechRange> ranges, CancellationToken cancel, IProgress<SpeechProgress> progress)
+        {
+            cancel.ThrowIfCancellationRequested();
+            if (settings.RemoveAllSpeech) return Task.FromResult(background);
+            return RestoreOutsideAsync(original, background, job, ranges, cancel, progress);
         }
 
         // Preserve the original samples outside dubbed cues. Fade only inside each selected interval.
