@@ -45,13 +45,26 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         }
         private async Task<bool> AddDubbingBackgroundAsync(string speech,string output,string encoding)
         {
-            if(_removeOriginalSpeech==null || !_removeOriginalSpeech.Checked)return false;
-            var settings=ClassicDubbingSettings.Load();settings.RemoveSpeech=true;settings.Save();
+            if(_removeOriginalSpeech==null || (!_removeOriginalSpeech.Checked && _speechActorFilter == null))return false;
+            var settings=ClassicDubbingSettings.Load();settings.RemoveSpeech=_removeOriginalSpeech.Checked;settings.Save();
             _dubbingCancellation=new CancellationTokenSource();_removeOriginalSpeech.Enabled=_dubbingSettingsButton.Enabled=false;
             try
             {
                 var progress=new Progress<SpeechProgress>(p=>labelProgress.Text=p.Message.Length>140 ? p.Message.Substring(0,140) : p.Message);
-                var background=await ClassicDubbing.BackgroundAsync(_videoFileName,System.IO.Path.Combine(_waveFolder,"separation"),settings,_dubbingCancellation.Token,progress,_dubbingAudioTrack);
+                var job = System.IO.Path.Combine(_waveFolder,"separation");
+                System.IO.Directory.CreateDirectory(job);
+                string background;
+                if (_removeOriginalSpeech.Checked)
+                {
+                    background = await ClassicDubbing.BackgroundAsync(_videoFileName,job,settings,_dubbingCancellation.Token,progress,_dubbingAudioTrack);
+                    background = await ClassicDubbing.RestoreOutsideAsync(System.IO.Path.Combine(job,"original.wav"),background,job,
+                        _dubbedRanges ?? new System.Collections.Generic.List<ClassicDubbing.SpeechRange>(),_dubbingCancellation.Token,progress);
+                }
+                else
+                {
+                    background = System.IO.Path.Combine(job,"original.wav");
+                    await ClassicDubbing.ExtractOriginalAsync(_videoFileName,background,_dubbingAudioTrack,_dubbingCancellation.Token,progress);
+                }
                 await ClassicDubbing.MuxAsync(_videoFileName,speech,background,output,encoding,_dubbingCancellation.Token,progress);
                 _ttsMuxedPath=output;return true;
             }

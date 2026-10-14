@@ -123,6 +123,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 .Select(p => p.Actor)
                 .Distinct()
                 .ToList();
+            if (_actors.Count > 0 && _subtitle.Paragraphs.Any(p => string.IsNullOrEmpty(p.Actor))) _actors.Add(string.Empty);
 
             _murfLanguages = new List<TtsLanguage>
             {
@@ -146,7 +147,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             labelVoice.Text = LanguageSettings.Current.TextToSpeech.Voice;
             labelApiKey.Text = LanguageSettings.Current.VobSubOcr.ApiKey;
             buttonTestVoice.Text = LanguageSettings.Current.TextToSpeech.TestVoice;
-            labelActors.Text = LanguageSettings.Current.TextToSpeech.ActorInfo;
+            labelActors.Text = QwenRussian ? "Озвучить отмеченных (ПКМ — выбор голоса)" : "Dub checked actors (right-click to assign voice)";
+            InitializeSpeechActors();
             checkBoxAddToVideoFile.Text = LanguageSettings.Current.TextToSpeech.AddAudioToVideo;
             buttonGenerateTTS.Text = LanguageSettings.Current.TextToSpeech.GenerateSpeech;
             labelRegion.Text = LanguageSettings.Current.General.Region;
@@ -237,11 +239,13 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 itemActor.Voice = actor.Voice;
                 itemActor.VoiceIndex = actor.VoiceIndex;
                 item.SubItems[1].Text = actor.Voice;
+                item.Checked = true;
             }
         }
 
         private void FillActorListView()
         {
+            _fillingSpeechActors = true;
             listViewActors.BeginUpdate();
             listViewActors.Items.Clear();
             foreach (var actor in _actorAndVoices)
@@ -249,13 +253,15 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 var lvi = new ListViewItem
                 {
                     Tag = actor,
-                    Text = actor.Actor,
+                    Text = string.IsNullOrEmpty(actor.Actor) ? (QwenRussian ? "(без актёра)" : "(no actor)") : actor.Actor,
+                    Checked = _checkedSpeechActors.Contains(actor.Actor ?? string.Empty),
                 };
                 lvi.SubItems.Add(actor.Voice);
                 listViewActors.Items.Add(lvi);
             }
 
             listViewActors.EndUpdate();
+            _fillingSpeechActors = false;
         }
 
         private async void ButtonGenerateTtsClick(object sender, EventArgs e)
@@ -273,6 +279,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 return;
             }
 
+            if(!CaptureSpeechActors())return;
             if(!ChooseSpeechExport())return;
             if(!PrepareSpeechLines())return;
             try
@@ -300,7 +307,12 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 if (checkBoxShowPreview.Checked)
                 {
                     var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
-                    using (var form = new ReviewAudioClips(this, _subtitle, fileNameAndSpeedFactors, engine))
+                    var reviewIndices = Enumerable.Range(0, _subtitle.Paragraphs.Count)
+                        .Where(i => SpeechActorIncluded(_subtitle.Paragraphs[i]) && !_silentSpeechRows.Contains(ClassicTtsPreparation.Key(_subtitle.Paragraphs[i]))
+                            && fileNameAndSpeedFactors[i] != null && File.Exists(fileNameAndSpeedFactors[i].Filename)).ToList();
+                    var reviewSubtitle = new Subtitle();
+                    reviewSubtitle.Paragraphs.AddRange(reviewIndices.Select(i => _subtitle.Paragraphs[i]));
+                    using (var form = new ReviewAudioClips(this, reviewSubtitle, reviewIndices.Select(i => fileNameAndSpeedFactors[i]).ToList(), engine))
                     {
                         var dr = form.ShowDialog(this);
                         if (dr != DialogResult.OK)
@@ -312,11 +324,12 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
                         foreach (var idx in form.SkipIndices)
                         {
-                            fileNameAndSpeedFactors[idx] = null; // skip these files
+                            fileNameAndSpeedFactors[reviewIndices[idx]] = null; // map reviewed rows to their original cue indices
                         }
                     }
                 }
 
+                CaptureDubbedRanges(fileNameAndSpeedFactors);
                 var tempAudioFile = MergeAudioParagraphs(fileNameAndSpeedFactors);
                 if (_abort)
                 {
@@ -401,12 +414,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private async Task<bool> GenerateParagraphAudioAsync(Subtitle subtitle, bool showProgressBar, string overrideFileName)
         {
-            if(_silentSpeechRows.Count>0)
-            {
-                var speaking=new Subtitle(subtitle);
-                foreach(var p in speaking.Paragraphs)if(_silentSpeechRows.Contains(ClassicTtsPreparation.Key(p)))p.Text=string.Empty;
-                subtitle=speaking;
-            }
+            subtitle = SpeakingSubtitle(subtitle, showProgressBar);
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
             if (IsLocalCrispTts(engine.Id))
                 return await GenerateQwenAudioAsync(subtitle, showProgressBar, overrideFileName);
@@ -707,7 +715,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 progressBar1.Value = index + 1;
                 labelProgress.Text = string.Format(LanguageSettings.Current.TextToSpeech.MergingAudioTrackXOfY, index + 1, _subtitle.Paragraphs.Count);
                 var p = _subtitle.Paragraphs[index];
-                if (_silentSpeechRows.Contains(ClassicTtsPreparation.Key(p)))
+                if (!SpeechActorIncluded(p) || _silentSpeechRows.Contains(ClassicTtsPreparation.Key(p)))
                     continue;
                 var pFileName = fileNames[index];
                 if (pFileName == null || !File.Exists(pFileName.Filename))
@@ -2667,6 +2675,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         public async Task<FileNameAndSpeedFactor> ReGenerateAudioAsync(Paragraph p, Paragraph next, string voice)
         {
             nikseComboBoxVoice.Text = voice;
+            // The review list may contain only selected actors; preserve the original next-cue boundary.
+            var sourceIndex = _subtitle.GetIndex(p);
+            if (sourceIndex >= 0) next = _subtitle.GetParagraphOrDefault(sourceIndex + 1);
             var sub = new Subtitle();
             sub.Paragraphs.Add(p);
 

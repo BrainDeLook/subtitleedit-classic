@@ -18,7 +18,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private CancellationTokenSource _qwenCancellation;
         private Button _qwenDownloadButton;
         private Button _qwenSettingsButton;
-        private static bool QwenRussian => Configuration.Settings.General.Language.StartsWith("ru",StringComparison.OrdinalIgnoreCase);
+        private static bool QwenRussian => (Configuration.Settings.General.Language ?? string.Empty).StartsWith("ru",StringComparison.OrdinalIgnoreCase);
         private void FillQwenControls()
         {
             var settings=ClassicQwenTtsSettings.Load(SupertonicSelected);

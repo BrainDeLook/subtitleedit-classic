@@ -59,7 +59,24 @@ namespace Nikse.SubtitleEdit.Forms
             labelProgress.FontChanged += (s, e) => LayoutClassicFooter();
             labelProgress.TextChanged += (s, e) => LayoutClassicFooter();
             labelPass.TextChanged += (s, e) => LayoutClassicFooter();
+            groupBoxVideo.Resize += (s, e) => LayoutClassicPixelFormat();
+            labelPixelFormat.TextChanged += (s, e) => LayoutClassicPixelFormat();
+            Shown += (s, e) => LayoutClassicPixelFormat();
+            LayoutClassicPixelFormat();
             LayoutClassicFooter();
+        }
+
+        private void LayoutClassicPixelFormat()
+        {
+            // Keep the translated label and the entire dropdown inside the video column.
+            var right = groupBoxVideo.ClientSize.Width - 12;
+            var labelWidth = labelPixelFormat.PreferredSize.Width;
+            var width = Math.Min(100, Math.Max(72, right - comboBoxVideoEncoding.Right - labelWidth - 16));
+            nikseComboBoxPixelFormat.SetBounds(right - width, comboBoxVideoEncoding.Top, width, comboBoxVideoEncoding.Height);
+            labelPixelFormat.Left = nikseComboBoxPixelFormat.Left - labelWidth - 4;
+            // Russian needs more room than English. Shorten the encoder dropdown if necessary.
+            if (labelPixelFormat.Left < comboBoxVideoEncoding.Right + 6)
+                comboBoxVideoEncoding.Width = Math.Max(85, labelPixelFormat.Left - comboBoxVideoEncoding.Left - 6);
         }
 
         private void LayoutClassicFooter()

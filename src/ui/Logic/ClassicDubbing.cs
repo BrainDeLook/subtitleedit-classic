@@ -3,6 +3,8 @@ using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic.SpeechToText;
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -38,7 +40,7 @@ namespace Nikse.SubtitleEdit.Logic
             await ClassicQwenTts.EnsureModel(file,repository,bytes,hash,cancel,progress,models).ConfigureAwait(false);
             Directory.CreateDirectory(job);
             var original=Path.Combine(job,"original.wav");
-            await RunFfmpegAsync("-nostdin -y -i "+Quote(video)+" -map 0:a:"+Math.Max(0,audioTrack)+" -vn -ar 44100 -ac 2 -c:a pcm_s16le "+Quote(original),cancel,progress).ConfigureAwait(false);
+            await ExtractOriginalAsync(video,original,audioTrack,cancel,progress).ConfigureAwait(false);
             var stems=settings.Fast ? new[]{"drums","bass","other"} : new[]{"other"};
             var executable=ClassicSpeechCatalog.Executable(Engine,settings.Variant);
             await ClassicSpeechRunner.RunProcessAsync(new ProcessStartInfo(executable,"-m "+Quote(Path.Combine(models,file))+" -f "+Quote(original)+" --separate --stems "+string.Join(",",stems)+" --sep-output-dir "+Quote(job)){WorkingDirectory=Path.GetDirectoryName(executable)},cancel,progress).ConfigureAwait(false);
@@ -49,6 +51,78 @@ namespace Nikse.SubtitleEdit.Logic
             await RunFfmpegAsync("-nostdin -y "+string.Join(" ",paths.Select(p=>"-i "+Quote(p)))+" -filter_complex amix=inputs="+paths.Length+":normalize=0 -ar 44100 -ac 2 -c:a pcm_s16le "+Quote(output),cancel,progress).ConfigureAwait(false);
             return output;
         }
+        public sealed class SpeechRange
+        {
+            public double Start { get; }
+            public double End { get; }
+            public SpeechRange(double start, double end) { Start = Math.Max(0, start); End = end; }
+        }
+
+        public static List<SpeechRange> ExcludeProtectedRanges(IEnumerable<SpeechRange> selected, IEnumerable<SpeechRange> protectedRanges)
+        {
+            var pieces = selected.Where(r => r.End > r.Start).OrderBy(r => r.Start).ToList();
+            foreach (var keep in protectedRanges.Where(r => r.End > r.Start))
+            {
+                var next = new List<SpeechRange>();
+                foreach (var r in pieces)
+                {
+                    if (keep.End <= r.Start || keep.Start >= r.End) next.Add(r);
+                    else
+                    {
+                        if (keep.Start > r.Start) next.Add(new SpeechRange(r.Start, keep.Start));
+                        if (keep.End < r.End) next.Add(new SpeechRange(keep.End, r.End));
+                    }
+                }
+                pieces = next;
+            }
+            var merged = new List<SpeechRange>();
+            foreach (var r in pieces.OrderBy(r => r.Start))
+            {
+                if (merged.Count == 0 || merged[merged.Count - 1].End < r.Start) merged.Add(r);
+                else { var last = merged[merged.Count - 1]; merged[merged.Count - 1] = new SpeechRange(last.Start, Math.Max(last.End, r.End)); }
+            }
+            return merged;
+        }
+
+        public static Task ExtractOriginalAsync(string video, string output, int audioTrack, CancellationToken cancel, IProgress<SpeechProgress> progress)
+        {
+            return RunFfmpegAsync("-nostdin -y -i " + Quote(video) + " -map 0:a:" + Math.Max(0, audioTrack) +
+                " -vn -af aresample=async=1:first_pts=0 -ar 44100 -ac 2 -c:a pcm_s16le " + Quote(output), cancel, progress);
+        }
+
+        // Preserve the original samples outside dubbed cues. Fade only inside each selected interval.
+        public static async Task<string> RestoreOutsideAsync(string original, string background, string job,
+            IEnumerable<SpeechRange> ranges, CancellationToken cancel, IProgress<SpeechProgress> progress)
+        {
+            var intervals = ExcludeProtectedRanges(ranges, new SpeechRange[0]);
+            if (intervals.Count == 0) return original;
+            var n = new Func<double,string>(v => v.ToString("0.######", CultureInfo.InvariantCulture));
+            var mask = BuildRangeMask(intervals, 0, intervals.Count, n);
+            var graph = "[0:a][1:a]join=inputs=2:channel_layout=quad:map=0.0-FL|0.1-FR|1.0-BL|1.1-BR[j];"+
+                "[j]aeval=exprs='val(0)*(1-("+mask+"))+val(2)*("+mask+")|val(1)*(1-("+mask+"))+val(3)*("+mask+")':channel_layout=stereo[out]";
+            Directory.CreateDirectory(job);
+            var script = Path.Combine(job, "restore-original.ffgraph");
+            File.WriteAllText(script, graph, new System.Text.UTF8Encoding(false));
+            var output = Path.Combine(job, "selected-background.wav");
+            await RunFfmpegAsync("-nostdin -y -i "+Quote(original)+" -i "+Quote(background)+" -filter_complex_script "+Quote(script)+
+                " -map " + Quote("[out]") + " -ar 44100 -ac 2 -c:a pcm_s16le " + Quote(output), cancel, progress).ConfigureAwait(false);
+            return output;
+        }
+
+        private static string BuildRangeMask(List<SpeechRange> ranges, int start, int count, Func<double,string> n)
+        {
+            if (count == 0) return "0";
+            if (count == 1)
+            {
+                var r = ranges[start];
+                var ramp = Math.Min(0.02, (r.End-r.Start)/2);
+                return "max(0,min(1,min((t-"+n(r.Start)+")/"+n(ramp)+",("+n(r.End)+"-t)/"+n(ramp)+")))";
+            }
+            // FFmpeg evaluates only the chosen branch, so long films remain O(log cue count) per sample.
+            var left = count / 2;
+            return "if(lt(t,"+n(ranges[start+left].Start)+"),"+BuildRangeMask(ranges,start,left,n)+","+BuildRangeMask(ranges,start+left,count-left,n)+")";
+        }
+
         public static Task MuxAsync(string video,string speech,string background,string output,string encoding,CancellationToken cancel,IProgress<SpeechProgress> progress)
         {
             if(string.IsNullOrWhiteSpace(encoding) || encoding=="copy")encoding=Path.GetExtension(output).Equals(".mp4",StringComparison.OrdinalIgnoreCase) ? "aac" : "pcm_s16le";
