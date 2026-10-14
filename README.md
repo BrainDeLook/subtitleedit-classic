@@ -8,6 +8,8 @@ English · [Русский](README.ru.md)
 
 ## Local 4.0.23 preview
 
+CosyVoice 3, VoxCPM 2 and Chatterbox are available locally with model downloads, shared reference voices and actor casts. Select the model in the engine's Settings dialog; CosyVoice also offers preset voices. Chatterbox Turbo is English-only. The default models were tested on CUDA 13 in Russian and English; the remaining quantizations/backends have narrower coverage.
+
 Actor-specific cast settings, cloning from video/original subtitle lines, a voice manager with pack import/export and reference trimming, Qwen3 VoiceDesign and Sidon cleaning are being tested locally in the classic interface. Automatic speaker detection can merge voices; review its results or use existing subtitle actors. The published stable release remains 4.0.22.
 
 ## Classic 4.0.22

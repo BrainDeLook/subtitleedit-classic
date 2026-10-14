@@ -24,6 +24,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Logic\ClassicOpenRouterTtsModels.json" LogicalName="ClassicOpenRouterTtsModels.json" />
+    <EmbeddedResource Include="Logic\ClassicLocalTtsCatalog.json" LogicalName="ClassicLocalTtsCatalog.json" />
     <Reference Include="System.Security" />
     <EmbeddedResource Include="Logic\VideoOcr\Rules\eng_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.eng.xml" />
     <EmbeddedResource Include="Logic\VideoOcr\Rules\rus_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.rus.xml" />

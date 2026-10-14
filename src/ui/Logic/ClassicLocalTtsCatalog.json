@@ -1,0 +1,341 @@
+[
+  {
+    "Id": "cosy",
+    "Name": "CosyVoice 3 (CrispASR / local)",
+    "Backend": "cosyvoice3-tts",
+    "Presets": [
+      "zero_shot",
+      "fleurs-en",
+      "fleurs-de",
+      "fleurs-zh",
+      "fleurs-ja",
+      "fleurs-fr",
+      "fleurs-es",
+      "fleurs-ko"
+    ],
+    "Languages": [
+      "ru|Russian",
+      "en|English",
+      "zh|Chinese",
+      "ja|Japanese",
+      "ko|Korean",
+      "de|German",
+      "es|Spanish",
+      "fr|French",
+      "it|Italian"
+    ],
+    "Models": [
+      {
+        "Key": "Q4_K",
+        "Files": [
+          {
+            "File": "cosyvoice3-llm-q4_k.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 383891200,
+            "Hash": "33d899490108bce896c3448bca40ebd994daa125ce0b118e6267f6b84fc09530"
+          },
+          {
+            "File": "cosyvoice3-flow-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 665140992,
+            "Hash": "689566f06437567f764bfb50d3c06461c79bab97914ab8889b735e35498bd5f6"
+          },
+          {
+            "File": "cosyvoice3-hift-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 41601888,
+            "Hash": "6df249e52901714f30f9bb163ff47cedfa56f6df3385567b657610eeb8b8cfd3"
+          },
+          {
+            "File": "cosyvoice3-s3tok-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 484406944,
+            "Hash": "12d6b5761e9d2efbc905f8b5ddecc6dc34371c928fbbe30cf52d900c0fb27f7e"
+          },
+          {
+            "File": "cosyvoice3-campplus-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 14153600,
+            "Hash": "f3243551ace3dd0cc73844e2edfd94feea89d2668dad79bcfc9f5800b376c334"
+          },
+          {
+            "File": "cosyvoice3-voices.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 665472,
+            "Hash": "73b5cac894d8e715d418d0228d2878ad6e836a809ccb85799ff08ae5f63ac6a2"
+          }
+        ]
+      },
+      {
+        "Key": "F16",
+        "Files": [
+          {
+            "File": "cosyvoice3-llm-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 1289653952,
+            "Hash": "f13149e1f695d79dcc707de45b3df58ccaf2ab7eba1dad4168ae2c778efe4e67"
+          },
+          {
+            "File": "cosyvoice3-flow-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 665140992,
+            "Hash": "689566f06437567f764bfb50d3c06461c79bab97914ab8889b735e35498bd5f6"
+          },
+          {
+            "File": "cosyvoice3-hift-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 41601888,
+            "Hash": "6df249e52901714f30f9bb163ff47cedfa56f6df3385567b657610eeb8b8cfd3"
+          },
+          {
+            "File": "cosyvoice3-s3tok-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 484406944,
+            "Hash": "12d6b5761e9d2efbc905f8b5ddecc6dc34371c928fbbe30cf52d900c0fb27f7e"
+          },
+          {
+            "File": "cosyvoice3-campplus-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 14153600,
+            "Hash": "f3243551ace3dd0cc73844e2edfd94feea89d2668dad79bcfc9f5800b376c334"
+          },
+          {
+            "File": "cosyvoice3-voices.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 665472,
+            "Hash": "73b5cac894d8e715d418d0228d2878ad6e836a809ccb85799ff08ae5f63ac6a2"
+          }
+        ]
+      },
+      {
+        "Key": "RL Q4_K",
+        "Files": [
+          {
+            "File": "cosyvoice3-llm-rl-q4_k.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 383891200,
+            "Hash": "6f70770750c3f302a6b1732fc9a02d97f33d86aa77282e46237cff3c55510d60"
+          },
+          {
+            "File": "cosyvoice3-flow-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 665140992,
+            "Hash": "689566f06437567f764bfb50d3c06461c79bab97914ab8889b735e35498bd5f6"
+          },
+          {
+            "File": "cosyvoice3-hift-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 41601888,
+            "Hash": "6df249e52901714f30f9bb163ff47cedfa56f6df3385567b657610eeb8b8cfd3"
+          },
+          {
+            "File": "cosyvoice3-s3tok-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 484406944,
+            "Hash": "12d6b5761e9d2efbc905f8b5ddecc6dc34371c928fbbe30cf52d900c0fb27f7e"
+          },
+          {
+            "File": "cosyvoice3-campplus-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 14153600,
+            "Hash": "f3243551ace3dd0cc73844e2edfd94feea89d2668dad79bcfc9f5800b376c334"
+          },
+          {
+            "File": "cosyvoice3-voices.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 665472,
+            "Hash": "73b5cac894d8e715d418d0228d2878ad6e836a809ccb85799ff08ae5f63ac6a2"
+          }
+        ]
+      },
+      {
+        "Key": "RL F16",
+        "Files": [
+          {
+            "File": "cosyvoice3-llm-rl-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 1289653952,
+            "Hash": "f7d5ace0dde950dc0f0dd53e347d51e6f4304f8181d6ed657d11288b09ca2497"
+          },
+          {
+            "File": "cosyvoice3-flow-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 665140992,
+            "Hash": "689566f06437567f764bfb50d3c06461c79bab97914ab8889b735e35498bd5f6"
+          },
+          {
+            "File": "cosyvoice3-hift-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 41601888,
+            "Hash": "6df249e52901714f30f9bb163ff47cedfa56f6df3385567b657610eeb8b8cfd3"
+          },
+          {
+            "File": "cosyvoice3-s3tok-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 484406944,
+            "Hash": "12d6b5761e9d2efbc905f8b5ddecc6dc34371c928fbbe30cf52d900c0fb27f7e"
+          },
+          {
+            "File": "cosyvoice3-campplus-f16.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 14153600,
+            "Hash": "f3243551ace3dd0cc73844e2edfd94feea89d2668dad79bcfc9f5800b376c334"
+          },
+          {
+            "File": "cosyvoice3-voices.gguf",
+            "Repository": "cstr/cosyvoice3-0.5b-2512-GGUF",
+            "Bytes": 665472,
+            "Hash": "73b5cac894d8e715d418d0228d2878ad6e836a809ccb85799ff08ae5f63ac6a2"
+          }
+        ]
+      }
+    ],
+    "Codec": false
+  },
+  {
+    "Id": "vox",
+    "Name": "VoxCPM 2 (CrispASR / local)",
+    "Backend": "voxcpm2-tts",
+    "Presets": [],
+    "Languages": [],
+    "Models": [
+      {
+        "Key": "Q4_K",
+        "Files": [
+          {
+            "File": "voxcpm2-q4_k.gguf",
+            "Repository": "cstr/voxcpm2-GGUF",
+            "Bytes": 1689498432,
+            "Hash": "502efe74f6a59c370b3abf5a3fcfd7c3955ca6c167b411c8aee3977e9e46c079"
+          },
+          {
+            "File": "voxcpm2-ref.gguf",
+            "Repository": "cstr/voxcpm2-GGUF",
+            "Bytes": 433600,
+            "Hash": "9b024ef9a109075aa8ac7219c097a1b1b1bed23d3230b33a902e162c2c10c5f8"
+          }
+        ]
+      },
+      {
+        "Key": "F16",
+        "Files": [
+          {
+            "File": "voxcpm2-f16.gguf",
+            "Repository": "cstr/voxcpm2-GGUF",
+            "Bytes": 4972550208,
+            "Hash": "08a11148711ca5df89795f0b8c3e8c17ee3aa81982598c1b90f86d52480e4381"
+          },
+          {
+            "File": "voxcpm2-ref.gguf",
+            "Repository": "cstr/voxcpm2-GGUF",
+            "Bytes": 433600,
+            "Hash": "9b024ef9a109075aa8ac7219c097a1b1b1bed23d3230b33a902e162c2c10c5f8"
+          }
+        ]
+      }
+    ],
+    "Codec": false
+  },
+  {
+    "Id": "chatter",
+    "Name": "Chatterbox (CrispASR / local)",
+    "Backend": "chatterbox",
+    "Presets": [],
+    "Languages": [
+      "ar|Arabic",
+      "zh|Chinese",
+      "da|Danish",
+      "nl|Dutch",
+      "en|English",
+      "fi|Finnish",
+      "fr|French",
+      "de|German",
+      "el|Greek",
+      "he|Hebrew",
+      "hi|Hindi",
+      "it|Italian",
+      "ja|Japanese",
+      "ko|Korean",
+      "ms|Malay",
+      "no|Norwegian",
+      "pl|Polish",
+      "pt|Portuguese",
+      "ru|Russian",
+      "es|Spanish",
+      "sw|Swahili",
+      "sv|Swedish",
+      "tr|Turkish"
+    ],
+    "Models": [
+      {
+        "Key": "Base",
+        "Files": [
+          {
+            "File": "chatterbox-v3-t3-q8_0.gguf",
+            "Repository": "cstr/chatterbox-GGUF",
+            "Bytes": 639286176,
+            "Hash": "c896a0d882aedd61083e5ea1b6764e52fa09a5734cba54b55fdcec18036e8211"
+          },
+          {
+            "File": "chatterbox-v3-s3gen-q8_0.gguf",
+            "Repository": "cstr/chatterbox-GGUF",
+            "Bytes": 364590688,
+            "Hash": "ad2d99210a469e7d5ee66780a1e2e8604473e2dcc2ee09cef3409dbed2015c83"
+          }
+        ]
+      },
+      {
+        "Key": "Base F16",
+        "Files": [
+          {
+            "File": "chatterbox-v3-t3-f16.gguf",
+            "Repository": "cstr/chatterbox-GGUF",
+            "Bytes": 1138156416,
+            "Hash": "e7da2bf7a56ca44abdd0c53630a724d53dad03f563e13e8492f6b1661e7aad5f"
+          },
+          {
+            "File": "chatterbox-v3-s3gen-f16.gguf",
+            "Repository": "cstr/chatterbox-GGUF",
+            "Bytes": 649405376,
+            "Hash": "6ef53a11ef93668514468510fde6788dd75b626a63d64ae9e518e86e45d5c787"
+          }
+        ]
+      },
+      {
+        "Key": "Base Q4_K",
+        "Files": [
+          {
+            "File": "chatterbox-v3-t3-q4_k.gguf",
+            "Repository": "cstr/chatterbox-GGUF",
+            "Bytes": 386367392,
+            "Hash": "fb63d7c53c4f8bb07286d67709c4d4200fa63b4de3476a4558f37964ce8e5aa6"
+          },
+          {
+            "File": "chatterbox-v3-s3gen-q4_k.gguf",
+            "Repository": "cstr/chatterbox-GGUF",
+            "Bytes": 313698144,
+            "Hash": "dce74d3df941abcd1bd19f4a96f8325b89d3b58391f4be5c01c216db56a9a725"
+          }
+        ]
+      },
+      {
+        "Key": "Turbo",
+        "Files": [
+          {
+            "File": "chatterbox-turbo-t3-q8_0.gguf",
+            "Repository": "cstr/chatterbox-turbo-GGUF",
+            "Bytes": 658897472,
+            "Hash": "35520ec377209a55e064464996f71694546eb8fdf793c719a24d44729e098d57"
+          },
+          {
+            "File": "chatterbox-turbo-s3gen-q8_0.gguf",
+            "Repository": "cstr/chatterbox-turbo-GGUF",
+            "Bytes": 366820384,
+            "Hash": "a77e3ef2559e8c4411b06a2692eb35646a43b0e5eef899633271aa281122e750"
+          }
+        ]
+      }
+    ],
+    "Codec": true
+  }
+]

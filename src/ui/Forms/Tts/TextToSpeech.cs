@@ -98,6 +98,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             Qwen3Crisp,
             SupertonicCrisp,
             OpenAiCompatible,
+            CosyVoice3,
+            VoxCpm2,
+            Chatterbox,
         }
 
         public TextToSpeech(Subtitle subtitle, SubtitleFormat subtitleFormat, string videoFileName, VideoInfo videoInfo)
@@ -173,6 +176,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Piper, "Piper (fast/good)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Qwen3Crisp, "Qwen3 TTS (CrispASR / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.SupertonicCrisp, "Supertonic-3 (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.CosyVoice3, "CosyVoice 3 (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.VoxCpm2, "VoxCPM 2 (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Chatterbox, "Chatterbox (CrispASR / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.OpenAiCompatible, "OpenAI-compatible (API)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.AllTalk, "All Talk TTS (Coqui based)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.ElevenLabs, "ElevenLabs TTS (online/pay/good)", _engines.Count));
@@ -221,7 +227,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             nikseComboBoxEngine_SelectedIndexChanged(null, null);
             nikseComboBoxEngine.SelectedIndexChanged += nikseComboBoxEngine_SelectedIndexChanged;
-            if (!IsLocalCrispTts(_engines.First(p=>p.Index==nikseComboBoxEngine.SelectedIndex).Id) && !CompatibleSelected)
+            if (!IsLocalCrispTts(_engines.First(p=>p.Index==nikseComboBoxEngine.SelectedIndex).Id) && SelectedLocalId == null && !CompatibleSelected)
                 nikseComboBoxVoice.Text = Configuration.Settings.Tools.TextToSpeechLastVoice;
             checkBoxAddToVideoFile.Checked = Configuration.Settings.Tools.TextToSpeechAddToVideoFile;
             checkBoxShowPreview.Checked = Configuration.Settings.Tools.TextToSpeechPreview;
@@ -275,6 +281,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 _abort = true;
                 _castCancellation?.Cancel();
                 _qwenCancellation?.Cancel();
+                _localCancellation?.Cancel();
                 _dubbingCancellation?.Cancel();
                 _compatibleCancellation?.Cancel();
                 Application.DoEvents();
@@ -427,6 +434,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
             if (IsLocalCrispTts(engine.Id))
                 return await GenerateQwenAudioAsync(subtitle, showProgressBar, overrideFileName);
+            if (LocalId(engine.Id) != null)
+                return await GenerateLocalAsync(subtitle, showProgressBar, overrideFileName);
             if (engine.Id == TextToSpeechEngineId.OpenAiCompatible)
                 return await GenerateCompatibleAudioAsync(subtitle, showProgressBar, overrideFileName);
             if (engine.Id == TextToSpeechEngineId.MsSpeechSynthesizer)
@@ -1693,6 +1702,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 nikseTextBoxApiKey.ReadOnly=false;
             }
             if(engine.Id==TextToSpeechEngineId.OpenAiCompatible)FillCompatibleControls();
+            if (LocalId(engine.Id) != null) FillLocalControls();
+            if (_localDownload != null) _localDownload.Visible = LocalId(engine.Id) != null;
+            if (_localSettings != null) _localSettings.Visible = LocalId(engine.Id) != null;
 
             if (engine.Id == TextToSpeechEngineId.Tortoise)
             {
@@ -2789,6 +2801,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
             if (IsLocalCrispTts(engine.Id) && _qwenCancellation==null)
                 CaptureQwen(false);
+            if (LocalId(engine.Id) != null && _localCancellation == null)
+                CaptureLocal(false);
             if (engine.Id == TextToSpeechEngineId.ElevenLabs)
             {
                 Configuration.Settings.Tools.TextToSpeechElevenLabsStability = (double)nikseUpDownStability.Value / 100.0;
@@ -2816,9 +2830,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private void TextToSpeech_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (_qwenCancellation != null || _compatibleCancellation != null || _converting)
+            if (_qwenCancellation != null || _localCancellation != null || _castCancellation != null || _compatibleCancellation != null || _converting)
             {
-                _abort=true; _castCancellation?.Cancel(); _qwenCancellation?.Cancel(); _dubbingCancellation?.Cancel(); _compatibleCancellation?.Cancel(); e.Cancel=true; return;
+                _abort=true; _castCancellation?.Cancel(); _qwenCancellation?.Cancel(); _localCancellation?.Cancel(); _dubbingCancellation?.Cancel(); _compatibleCancellation?.Cancel(); e.Cancel=true; return;
             }
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
 
@@ -2912,6 +2926,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private void buttonCancel_Click(object sender, EventArgs e)
         {
             if (_qwenCancellation != null) { _abort=true; _qwenCancellation.Cancel(); return; }
+            if (_localCancellation != null) { _abort=true; _localCancellation.Cancel(); return; }
             if (_dubbingCancellation != null) { _abort=true; _dubbingCancellation.Cancel(); return; }
             if (_compatibleCancellation != null) { _abort=true; _compatibleCancellation.Cancel(); return; }
             if (_converting)

@@ -2,6 +2,9 @@
 
 ## 4.0.23 — local preview
 
+- Added CosyVoice 3, VoxCPM 2 and Chatterbox from stable v5.3.0. Ten model choices include CosyVoice RL variants and Chatterbox Base/F16/Q4_K/Turbo. Model bundles download through the classic interface with pinned sizes and SHA-256 checks; all CosyVoice companion files are staged together.
+- These engines share the reference-voice library, support actor-specific casts and audio-review regeneration, and can use original subtitle references for per-line cloning. CosyVoice also exposes eight presets. Chatterbox Turbo is restricted to English; VoxCPM infers the language from text. Compute, model, reference language and voice preferences persist separately for each engine.
+- Native CUDA 13 checks covered Russian and English synthesis with the default model of all three engines, CosyVoice preset switching and cancellation. Independent GigaAM/Parakeet checks recovered all six test sentences. Mixed casts with Supertonic and actor-specific regeneration passed for all three engines; VoxCPM per-line cloning and temporary-reference cleanup passed. Other model quantizations and compute variants have not received the same native coverage.
 - Fixed burn-in quality hints overlapping the CQ input and moved the total-bitrate explanation into its own bounded row.
 - Cast settings persist each actor's engine, voice, model, language and instructions. Qwen3/Supertonic/API casts can be mixed with the existing engines; audio review regenerates each actor through the correct engine. Voice-name tags can be moved into speech-session actor metadata without removing them from the editor text.
 - Clone voices from video using Sortformer speaker labels or existing subtitle actors. Review actor names and exact reference transcripts before importing. Per-line Qwen3 cloning uses original-language subtitle text, with temporary references cleaned after synthesis.

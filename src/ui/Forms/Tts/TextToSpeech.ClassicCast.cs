@@ -29,7 +29,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
    var toolbar=new FlowLayoutPanel{Name="panelClassicCast",Anchor=AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right,Location=new Point(groupBoxSettings.Left,groupBoxSettings.Bottom+5),Size=new Size(ClientSize.Width-24,30),WrapContents=false};
    foreach(var pair in new[]{new[]{CL("Состав голосов…","Cast…"),"cast"},new[]{CL("Менеджер голосов…","Voice manager…"),"voices"},new[]{CL("Голоса из видео…","Voices from video…"),"video"}})
    {
-    var button=new Button{Text=pair[0],AutoSize=true,Height=26};var action=pair[1];button.Click+=(s,e)=>{if(_converting)return;if(action=="cast")EditClassicCast();else if(action=="voices"){using(var f=new ClassicVoiceManager())f.ShowDialog(this);nikseComboBoxEngine_SelectedIndexChanged(null,null);}else EditVideoVoices();};toolbar.Controls.Add(button);
+    var button=new Button{Text=pair[0],AutoSize=true,Height=26};var action=pair[1];button.Click+=(s,e)=>{if(_converting || _castCancellation!=null || _qwenCancellation!=null || _localCancellation!=null || _compatibleCancellation!=null)return;if(action=="cast")EditClassicCast();else if(action=="voices"){using(var f=new ClassicVoiceManager())f.ShowDialog(this);nikseComboBoxEngine_SelectedIndexChanged(null,null);}else EditVideoVoices();};toolbar.Controls.Add(button);
    }
    Controls.Add(toolbar);
   }
@@ -100,6 +100,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
    if(engineName=="Qwen3")return (model.IndexOf("clone",StringComparison.OrdinalIgnoreCase)>=0 || (string.IsNullOrEmpty(model) && ClassicQwenTtsSettings.Load().Clone)) ? ClassicQwenReference.List().Cast<object>().ToArray() : ClassicQwenTts.Voices.Cast<object>().ToArray();
    if(engineName=="API"){var settings=ClassicCompatibleTtsSettings.Load();return ClassicCompatibleTts.Voices(settings.Provider,string.IsNullOrEmpty(model) ? settings.Selected().Model : model).Cast<object>().ToArray();}
    if(engineName=="Global")return nikseComboBoxVoice.Items.Cast<object>().ToArray();
+   var localDefinition=ClassicLocalTts.Catalog.FirstOrDefault(d=>d.Name==engineName);if(localDefinition!=null)return ClassicLocalTts.Voices(localDefinition.Id);
    var selected=_engines.FirstOrDefault(e=>e.Name==engineName);if(selected==null)return new object[0];
    var before=nikseComboBoxEngine.SelectedIndex;var voice=nikseComboBoxVoice.Text;var region=nikseComboBoxRegion.Text;var language=nikseComboBoxLanguage.Text;
    try{nikseComboBoxEngine.SelectedIndex=selected.Index;if(nikseComboBoxRegion.Items.Cast<object>().Any(v=>v.ToString()==model))nikseComboBoxRegion.Text=model;return nikseComboBoxVoice.Items.Cast<object>().ToArray();}
@@ -148,9 +149,15 @@ namespace Nikse.SubtitleEdit.Forms.Tts
     foreach(var group in groups)
     {
      cancel.ThrowIfCancellationRequested();var row=_castSettings.Get(subtitle.Paragraphs[group.First()].Actor) ?? new ClassicCastRow();var choice=row?.Engine ?? "";
-     if(string.IsNullOrEmpty(choice)){var id=_engines.First(e=>e.Index==nikseComboBoxEngine.SelectedIndex).Id;choice=id==TextToSpeechEngineId.Qwen3Crisp ? "Qwen3" : id==TextToSpeechEngineId.SupertonicCrisp ? "Supertonic" : id==TextToSpeechEngineId.OpenAiCompatible ? "API" : "";}
+     if(string.IsNullOrEmpty(choice)){var id=_engines.First(e=>e.Index==nikseComboBoxEngine.SelectedIndex).Id;choice=id==TextToSpeechEngineId.Qwen3Crisp ? "Qwen3" : id==TextToSpeechEngineId.SupertonicCrisp ? "Supertonic" : id==TextToSpeechEngineId.OpenAiCompatible ? "API" : LocalId(id)!=null ? _engines.First(e=>e.Id==id).Name : "";}
      if(string.IsNullOrEmpty(choice))
      {var filtered=new Subtitle(subtitle);for(var i=0;i<filtered.Paragraphs.Count;i++)if(!group.Contains(i))filtered.Paragraphs[i].Text="";if(!await GenerateDefaultAudioAsync(filtered,true,outputOverride))return false;continue;}
+     var localDefinition=ClassicLocalTts.Catalog.FirstOrDefault(d=>d.Name==choice);
+     if(localDefinition!=null)
+     {
+      var config=ClassicLocalTtsSettings.Load(localDefinition.Id);if(!string.IsNullOrWhiteSpace(row.Model))config.Model=row.Model;if(!string.IsNullOrWhiteSpace(row.Language))config.Language=row.Language;
+      using(var engine=new ClassicLocalTts(localDefinition.Id,config))foreach(var i in group){cancel.ThrowIfCancellationRequested();var p=subtitle.Paragraphs[i];var actor=_castSettings.Get(p.Actor) ?? new ClassicCastRow();var voice=_castRegenerationVoice ?? (string.IsNullOrWhiteSpace(actor.Voice) ? config.Voice : actor.Voice);if(_perLineOriginal!=null)voice=await PerLineReferenceAsync(p,cancel) ?? voice;labelProgress.Text=CL("Озвучка актёра: ","Speaking actor: ")+p.Actor;await engine.SpeakAsync(Utilities.UnbreakLine(HtmlUtil.RemoveHtmlTags(p.Text)),voice,Path.Combine(_waveFolder,outputOverride ?? i+".wav"),cancel,new Progress<SpeechProgress>(x=>labelProgress.Text=x.Message));}continue;
+     }
      if(choice!="Qwen3" && choice!="Supertonic" && choice!="API")
      {
       if(!await GenerateLegacyCastAsync(subtitle,group.ToList(),choice,cancel,outputOverride))return false;

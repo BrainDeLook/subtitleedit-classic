@@ -64,6 +64,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             nikseComboBoxEngine.Enabled=nikseComboBoxVoice.Enabled=nikseComboBoxRegion.Enabled=nikseComboBoxLanguage.Enabled=nikseTextBoxApiKey.Enabled=!busy;
             if(_qwenDownloadButton!=null)_qwenDownloadButton.Enabled=!busy;
             if(_qwenSettingsButton!=null)_qwenSettingsButton.Enabled=!busy;
+            if(_localDownload!=null)_localDownload.Enabled=!busy;
+            if(_localSettings!=null)_localSettings.Enabled=!busy;
             buttonTestVoice.Enabled=!busy;
         }
         private async Task DownloadQwen()
