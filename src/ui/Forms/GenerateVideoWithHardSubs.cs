@@ -1962,6 +1962,7 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 labelVideoBitrate.Text += $" ({videoBitRate:#,###,##0}k + {audioBitRate:#,###,##0}k)";
             }
+            LayoutClassicHints();
         }
 
         private void comboBoxAudioBitRate_SelectedValueChanged(object sender, EventArgs e)

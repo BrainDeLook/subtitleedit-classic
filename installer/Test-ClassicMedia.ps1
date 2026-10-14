@@ -29,6 +29,7 @@ $tests=@{
     TestClassicTiming='TestClassicTiming.cs'
     TestClassicNOcr='video-ocr-tests/TestClassicNOcr.cs'
     TestClassicActors='tts-tests/TestClassicActors.cs'
+    TestClassicCastFeatures='tts-tests/TestClassicCastFeatures.cs'
 }
 foreach($name in $tests.Keys) {
     $arguments=@('/nologo','/target:exe','/platform:x64','/langversion:latest',('/out:"'+(Join-Path $OutputDirectory "$name.exe")+'"'))+$refs+('"'+(Join-Path $PSScriptRoot $tests[$name])+'"')
@@ -62,4 +63,6 @@ if ($FFmpegLocation) {
     if (-not (Test-Path -LiteralPath $FFmpegLocation)) { throw 'FFmpeg executable was not found.' }
     & "$OutputDirectory/TestClassicActors.exe" (Join-Path $OutputDirectory 'actor-dubbing') $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw 'Actor selection, removal scope and audio preservation regression failed.' }
+    & "$OutputDirectory/TestClassicCastFeatures.exe" unit (Join-Path $OutputDirectory 'cast-features') $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw 'Cast/voice library/layout regression failed.' }
 }

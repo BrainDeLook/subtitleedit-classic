@@ -24,6 +24,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 if (actor == null) return;
                 if (e.Item.Checked) _checkedSpeechActors.Add(actor.Actor ?? string.Empty);
                 else _checkedSpeechActors.Remove(actor.Actor ?? string.Empty);
+                var row=_castSettings.Get(actor.Actor);if(row!=null)row.Selected=e.Item.Checked;
             };
         }
 
@@ -41,10 +42,14 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private Subtitle SpeakingSubtitle(Subtitle subtitle, bool filterActors)
         {
-            if (_silentSpeechRows.Count == 0 && (!filterActors || _speechActorFilter == null)) return subtitle;
+            if (_castSpeakerNames.Count == 0 && _silentSpeechRows.Count == 0 && (!filterActors || _speechActorFilter == null)) return subtitle;
             var speaking = new Subtitle(subtitle);
             foreach (var p in speaking.Paragraphs)
-                if (_silentSpeechRows.Contains(ClassicTtsPreparation.Key(p)) || (filterActors && !SpeechActorIncluded(p))) p.Text = string.Empty;
+            {
+                if (_silentSpeechRows.Contains(ClassicTtsPreparation.Key(p)) || (filterActors && !SpeechActorIncluded(p))) {p.Text = string.Empty;continue;}
+                var lines=(p.Text ?? "").SplitToLines();for(int i=0;i<lines.Count;i++)if(Nikse.SubtitleEdit.Logic.ClassicCast.TextSpeakerDetector.TrySplit(lines[i],i+1<lines.Count,out var name,out var text) && _castSpeakerNames.Contains(name))lines[i]=text;
+                p.Text=string.Join(Environment.NewLine,lines).Trim();
+            }
             return speaking;
         }
 
@@ -64,9 +69,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 if (generated)
                 {
                     // Cover the actual generated clip, including its retained quiet ending.
-                    var info = UiUtil.GetVideoInfo(files[i].Filename);
+                    var seconds = Nikse.SubtitleEdit.Logic.ClassicCast.ClassicVoiceAssets.WaveSeconds(files[i].Filename);
                     included.Add(new ClassicDubbing.SpeechRange(p.StartTime.TotalSeconds,
-                        Math.Max(p.EndTime.TotalSeconds, p.StartTime.TotalSeconds + info.TotalMilliseconds / 1000.0)));
+                        Math.Max(p.EndTime.TotalSeconds, p.StartTime.TotalSeconds + seconds)));
                 }
                 else if (_speechActorFilter != null && !SpeechActorIncluded(p))
                     protectedRanges.Add(new ClassicDubbing.SpeechRange(p.StartTime.TotalSeconds, p.EndTime.TotalSeconds));

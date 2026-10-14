@@ -62,8 +62,28 @@ namespace Nikse.SubtitleEdit.Forms
             groupBoxVideo.Resize += (s, e) => LayoutClassicPixelFormat();
             labelPixelFormat.TextChanged += (s, e) => LayoutClassicPixelFormat();
             Shown += (s, e) => LayoutClassicPixelFormat();
+            labelCrfHint.TextChanged += (s, e) => LayoutClassicHints();
+            labelVideoBitrate.TextChanged += (s, e) => LayoutClassicHints();
+            groupBoxSettings.Resize += (s, e) => LayoutClassicHints();
+            Shown += (s, e) => LayoutClassicHints();
             LayoutClassicPixelFormat();
+            LayoutClassicHints();
             LayoutClassicFooter();
+        }
+
+        private void LayoutClassicHints()
+        {
+            comboBoxCrf.Width = Math.Min(comboBoxPreset.Width, 80);
+            labelCrfHint.AutoSize = false;
+            labelCrfHint.AutoEllipsis = true;
+            labelCrfHint.SetBounds(comboBoxCrf.Right + 6, comboBoxCrf.Top + 3,
+                Math.Max(1, groupBoxVideo.ClientSize.Width - comboBoxCrf.Right - 18), comboBoxCrf.Height);
+            // The total-rate explanation gets a row of its own, bounded by the video column.
+            labelVideoBitrate.AutoSize = false;
+            labelVideoBitrate.AutoEllipsis = true;
+            var rateLeft=groupBoxVideo.Left+14;
+            labelVideoBitrate.SetBounds(rateLeft, numericUpDownTargetFileSize.Bottom + 8,
+                Math.Max(1, groupBoxVideo.Right-rateLeft-12), Math.Max(38, TextRenderer.MeasureText("Ag",labelVideoBitrate.Font).Height*2+4));
         }
 
         private void LayoutClassicPixelFormat()

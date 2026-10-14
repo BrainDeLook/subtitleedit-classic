@@ -6,6 +6,10 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 
 English · [Русский](README.ru.md)
 
+## Local 4.0.23 preview
+
+Actor-specific cast settings, cloning from video/original subtitle lines, a voice manager with pack import/export and reference trimming, Qwen3 VoiceDesign and Sidon cleaning are being tested locally in the classic interface. Automatic speaker detection can merge voices; review its results or use existing subtitle actors. The published stable release remains 4.0.22.
+
 ## Classic 4.0.22
 
 This release ports stable v5.3 features into the classic interface: 3D burn-in and NVENC preset migration, Supertonic-3 and OpenAI-compatible TTS, speech-line preparation, original-speech removal with HTDemucs/RoFormer, reviewed forced-alignment timing corrections and OCR Find/Replace/nOCR database optimization. A Cyrillic database is bundled without replacing an existing user database. Engine/model downloads remain available from the interface.

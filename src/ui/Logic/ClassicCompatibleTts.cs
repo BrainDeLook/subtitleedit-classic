@@ -80,7 +80,8 @@ namespace Nikse.SubtitleEdit.Logic
             if(!string.IsNullOrWhiteSpace(instructions) && !model.StartsWith("tts-1",StringComparison.OrdinalIgnoreCase))body["instructions"]=instructions.Trim();
             return JsonConvert.SerializeObject(body);
         }
-        public async Task SpeakAsync(string text,string voice,string output,CancellationToken cancel)
+        public Task SpeakAsync(string text,string voice,string output,CancellationToken cancel)=>SpeakAsync(text,voice,output,cancel,null);
+        public async Task SpeakAsync(string text,string voice,string output,CancellationToken cancel,string instructions)
         {
             if(!Uri.TryCreate(_settings.Url,UriKind.Absolute,out var uri) || uri.Scheme!="https" && uri.Scheme!="http")throw new ArgumentException("Enter the full HTTP(S) speech endpoint");
             if(string.IsNullOrWhiteSpace(_settings.Model) || string.IsNullOrWhiteSpace(voice))throw new ArgumentException("Select a model and voice");
@@ -91,7 +92,7 @@ namespace Nikse.SubtitleEdit.Logic
                 using(var request=new HttpRequestMessage(HttpMethod.Post,uri))
                 {
                     if(!string.IsNullOrEmpty(_settings.ApiKey))request.Headers.Authorization=new AuthenticationHeaderValue("Bearer",_settings.ApiKey);
-                    request.Content=new StringContent(BuildRequestJson(text,_settings.Model,voice,format,_settings.Speed,_settings.Instructions),Encoding.UTF8,"application/json");
+                    request.Content=new StringContent(BuildRequestJson(text,_settings.Model,voice,format,_settings.Speed,instructions ?? _settings.Instructions),Encoding.UTF8,"application/json");
                     using(var response=await _client.SendAsync(request,HttpCompletionOption.ResponseContentRead,cancel).ConfigureAwait(false))
                     {
                         if(!response.IsSuccessStatusCode)

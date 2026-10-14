@@ -82,7 +82,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private async Task<bool> GenerateQwenAudioAsync(Subtitle subtitle,bool showProgress,string overrideFileName)
         {
             if(_qwenCancellation!=null)throw new InvalidOperationException("Qwen3 TTS is already running");
-            var settings=CaptureQwen();_qwenCancellation=new CancellationTokenSource();var cancel=_qwenCancellation.Token;SetQwenBusy(true);
+            var settings=CaptureQwen(_perLineOriginal==null);if(_perLineOriginal!=null && !settings.Supertonic){settings.Clone=true;settings.Design=false;}_qwenCancellation=new CancellationTokenSource();var cancel=_qwenCancellation.Token;SetQwenBusy(true);
             var wasGenerateEnabled=buttonGenerateTTS.Enabled;if(!showProgress)buttonGenerateTTS.Enabled=false;
             progressBar1.Maximum=Math.Max(1,subtitle.Paragraphs.Count);progressBar1.Value=0;progressBar1.Visible=showProgress;
             try
@@ -97,6 +97,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                         if(string.IsNullOrWhiteSpace(text))continue;
                         var actor=_actorAndVoices.FirstOrDefault(a=>a.Actor==p.Actor);
                         var voice=settings.Clone ? ClassicQwenReference.List().FirstOrDefault(v=>v.Name==actor?.Voice)?.Id ?? settings.Voice : actor!=null && (SupertonicSelected ? ClassicQwenTts.SupertonicVoices : ClassicQwenTts.Voices).Contains(actor.Voice) ? actor.Voice : settings.Voice;
+                        if(_perLineOriginal!=null && settings.Clone)voice=await PerLineReferenceAsync(p,cancel) ?? voice;
                         labelProgress.Text=(QwenRussian ? "Озвучка " : "Generating ")+(i+1)+" / "+subtitle.Paragraphs.Count;
                         await engine.SpeakAsync(text,voice,Path.Combine(_waveFolder,string.IsNullOrEmpty(overrideFileName) ? i+".wav" : overrideFileName),cancel);
                         progressBar1.Value=i+1;
@@ -105,7 +106,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 return true;
             }
             catch(OperationCanceledException){_abort=true;return false;}
-            finally{_qwenCancellation.Dispose();_qwenCancellation=null;SetQwenBusy(false);if(!showProgress)buttonGenerateTTS.Enabled=wasGenerateEnabled;progressBar1.Visible=false;labelProgress.Text="";}
+            finally{CleanupPerLineReferences();_qwenCancellation.Dispose();_qwenCancellation=null;SetQwenBusy(false);if(!showProgress)buttonGenerateTTS.Enabled=wasGenerateEnabled;progressBar1.Visible=false;labelProgress.Text="";}
         }
     }
 }

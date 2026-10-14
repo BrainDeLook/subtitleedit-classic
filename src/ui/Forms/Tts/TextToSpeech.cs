@@ -228,6 +228,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             checkBoxAudioEncoding.Checked = Configuration.Settings.Tools.TextToSpeechCustomAudio;
             checkBoxAddToVideoFile.Enabled = _videoFileName != null;
             InitializeClassicDubbing();
+            InitializeClassicCast();
         }
 
         private void SetActor(ActorAndVoice actor)
@@ -272,6 +273,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             {
                 buttonGenerateTTS.Enabled = false;
                 _abort = true;
+                _castCancellation?.Cancel();
                 _qwenCancellation?.Cancel();
                 _dubbingCancellation?.Cancel();
                 _compatibleCancellation?.Cancel();
@@ -279,6 +281,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 return;
             }
 
+            PersistClassicCast();
             if(!CaptureSpeechActors())return;
             if(!ChooseSpeechExport())return;
             if(!PrepareSpeechLines())return;
@@ -415,6 +418,12 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private async Task<bool> GenerateParagraphAudioAsync(Subtitle subtitle, bool showProgressBar, string overrideFileName)
         {
             subtitle = SpeakingSubtitle(subtitle, showProgressBar);
+            if(HasClassicCast(subtitle)) return await GenerateClassicCastAsync(subtitle,overrideFileName);
+            return await GenerateDefaultAudioAsync(subtitle, showProgressBar, overrideFileName);
+        }
+
+        private async Task<bool> GenerateDefaultAudioAsync(Subtitle subtitle, bool showProgressBar, string overrideFileName)
+        {
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
             if (IsLocalCrispTts(engine.Id))
                 return await GenerateQwenAudioAsync(subtitle, showProgressBar, overrideFileName);
@@ -629,8 +638,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     return new List<FileNameAndSpeedFactor>();
                 }
 
-                var waveInfo = UiUtil.GetVideoInfo(outputFileName1);
-                if (waveInfo.TotalMilliseconds <= p.DurationTotalMilliseconds + addDuration)
+                var waveMilliseconds = Nikse.SubtitleEdit.Logic.ClassicCast.ClassicVoiceAssets.WaveSeconds(outputFileName1)*1000;
+                if (waveMilliseconds <= p.DurationTotalMilliseconds + addDuration)
                 {
                     fileNames.Add(new FileNameAndSpeedFactor { Filename = outputFileName1, Factor = 1 });
                     continue;
@@ -644,7 +653,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     continue;
                 }
 
-                var factor = (decimal)waveInfo.TotalMilliseconds / divisor;
+                var factor = (decimal)waveMilliseconds / divisor;
                 var outputFileName2 = Path.Combine(_waveFolder, $"{index}_{Guid.NewGuid()}{ext}");
                 if (!string.IsNullOrEmpty(overrideFileName) && File.Exists(Path.Combine(_waveFolder, overrideFileName)))
                 {
@@ -1910,7 +1919,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             _actorAndVoices.Clear();
 
-            if (SubtitleFormatHasActors())
+            if (_actors.Any())
             {
                 if (_actors.Any())
                 {
@@ -1920,11 +1929,14 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                         {
                             Actor = actor,
                             UseCount = _subtitle.Paragraphs.Count(p => p.Actor == actor),
+                            Voice = _castSettings.Get(actor)?.Voice ?? "",
+                            VoiceIndex = Math.Max(0, CastVoiceIndex(_castSettings.Get(actor)?.Voice)),
                         };
 
                         _actorAndVoices.Add(actorAndVoice);
                     }
 
+                    foreach(var row in _castSettings.Rows.Where(r=>r.Selected))_checkedSpeechActors.Add(row.Actor);
                     FillActorListView();
 
                     contextMenuStripActors.Items.Clear();
@@ -2688,7 +2700,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             }
 
             var waveFileNameOnly = Guid.NewGuid() + GetEngineAudioExtension();
-            var ok = await GenerateParagraphAudioAsync(sub, false, waveFileNameOnly);
+            _castRegenerationVoice=voice;
+            bool ok;
+            try{ok = await GenerateParagraphAudioAsync(sub, false, waveFileNameOnly);}
+            finally{_castRegenerationVoice=null;}
             if (!ok)
             {
                 return null;
@@ -2803,7 +2818,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         {
             if (_qwenCancellation != null || _compatibleCancellation != null || _converting)
             {
-                _abort=true; _qwenCancellation?.Cancel(); _dubbingCancellation?.Cancel(); _compatibleCancellation?.Cancel(); e.Cancel=true; return;
+                _abort=true; _castCancellation?.Cancel(); _qwenCancellation?.Cancel(); _dubbingCancellation?.Cancel(); _compatibleCancellation?.Cancel(); e.Cancel=true; return;
             }
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
 
@@ -2854,6 +2869,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         public string GetParagraphAudio(Paragraph paragraph)
         {
+            var cast=_castSettings.Get(paragraph.Actor);
+            if(cast!=null && !string.IsNullOrEmpty(cast.Voice))return ClassicQwenReference.List().FirstOrDefault(v=>v.Id==cast.Voice)?.Name ?? cast.Voice;
             if (_actorsOn && _actorAndVoices.Count > 0 && !string.IsNullOrEmpty(paragraph.Actor))
             {
                 var f = _actorAndVoices.FirstOrDefault(x => x.Actor == paragraph.Actor);

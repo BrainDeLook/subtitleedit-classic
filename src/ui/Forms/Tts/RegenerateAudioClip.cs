@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.VideoPlayers;
 using System;
@@ -26,7 +26,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             _subtitle = subtitle;
             _textToSpeech = textToSpeech;
             _index = idx;
-            _engine = engine;
+            _engine = textToSpeech.GetParagraphEngine(subtitle.Paragraphs[idx]);
+            engine=_engine;
 
             Text = LanguageSettings.Current.ExportCustomText.Edit;
             labelText.Text = LanguageSettings.Current.General.Text;
@@ -40,7 +41,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             UiUtil.FixLargeFonts(this, buttonCancel);
 
             TextBoxReGenerate.Text = subtitle.Paragraphs[idx].Text;
-            textToSpeech.SetCurrentVoices(nikseComboBoxVoice);
+            textToSpeech.SetCurrentVoices(nikseComboBoxVoice,subtitle.Paragraphs[idx]);
             buttonPlay.Enabled = false;
             nikseUpDownStability.Value = (int)Math.Round(Configuration.Settings.Tools.TextToSpeechElevenLabsStability * 100.0);
             nikseUpDownSimilarity.Value = (int)Math.Round(Configuration.Settings.Tools.TextToSpeechElevenLabsSimilarity * 100.0);
@@ -101,7 +102,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             {
                 Cursor = Cursors.WaitCursor;
                 buttonReGenerate.Enabled = false;
-                var fileNameAndSpeedFactor = await _textToSpeech.ReGenerateAudioAsync(paragraph, next, nikseComboBoxVoice.Text);
+                var fileNameAndSpeedFactor = await _textToSpeech.ReGenerateAudioAsync(paragraph, next, (nikseComboBoxVoice.SelectedItem as ClassicQwenReference)?.Id ?? nikseComboBoxVoice.Text);
                 if (fileNameAndSpeedFactor != null)
                 {
                     FileNameAndSpeedFactor = fileNameAndSpeedFactor;
@@ -110,6 +111,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     buttonPlay_Click(null, null);
                 }
             }
+            catch(Exception error){MessageBox.Show(this,error.Message,Text);}
             finally
             {
                 Cursor = Cursors.Default;

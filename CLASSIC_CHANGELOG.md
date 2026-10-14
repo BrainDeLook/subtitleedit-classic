@@ -1,5 +1,17 @@
 # Subtitle Edit Classic changelog
 
+## 4.0.23 — local preview
+
+- Fixed burn-in quality hints overlapping the CQ input and moved the total-bitrate explanation into its own bounded row.
+- Cast settings persist each actor's engine, voice, model, language and instructions. Qwen3/Supertonic/API casts can be mixed with the existing engines; audio review regenerates each actor through the correct engine. Voice-name tags can be moved into speech-session actor metadata without removing them from the editor text.
+- Clone voices from video using Sortformer speaker labels or existing subtitle actors. Review actor names and exact reference transcripts before importing. Per-line Qwen3 cloning uses original-language subtitle text, with temporary references cleaned after synthesis.
+- Voice manager: edit names/transcripts, trim a reference into a new copy, import/export voice packs, copy references to another engine's folder and download the stable upstream voice packs. Attribution is retained where supplied.
+- Qwen3 VoiceDesign and Sidon reference restoration use the stable v5.3 model/runtime definitions, validated downloads and cancellable local processing.
+
+Native checks covered mixed Qwen3/Supertonic casts, actor-specific regeneration/cancellation, Russian/English VoiceDesign, cross-language per-line cloning, Sidon CPU restoration and an official English voice-pack download/import. Independent ASR recovered the generated test sentences. Sortformer ran successfully but merged two short synthetic voices into one in the test fixture; automatic speaker results require review. Existing subtitle actors offer a direct alternative. Paid cloud-provider synthesis was not exercised.
+
+This preview remains local; no release has been published.
+
 ## 4.0.22
 
 Feature ports are based on the stable upstream v5.3.0 tag. This release preserves the classic Windows Forms interface.
