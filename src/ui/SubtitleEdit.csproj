@@ -23,6 +23,8 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\eng_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.eng.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\rus_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.rus.xml" />
     <Reference Include="Interop.QuartzTypeLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>DLLs\Interop.QuartzTypeLib.dll</HintPath>

@@ -157,6 +157,12 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
             return errorMessage;
         }
 
+        public OcrFixEngine(string threeLetterIsoLanguageName, string hunspellName, Form parentForm, bool isBinaryImageCompareOrNOcr, OcrFixReplaceList replaceList)
+            : this(threeLetterIsoLanguageName, hunspellName, parentForm, isBinaryImageCompareOrNOcr)
+        {
+            if (replaceList != null) _ocrFixReplaceList = replaceList;
+        }
+
         private void LoadSpellingDictionaries(string threeLetterIsoLanguageName, string hunspellName)
         {
             var dictionaryFolder = Utilities.DictionaryFolder;

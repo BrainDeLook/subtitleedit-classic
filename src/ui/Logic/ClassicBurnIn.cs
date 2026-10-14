@@ -75,6 +75,15 @@ namespace Nikse.SubtitleEdit.Logic
 
         public static void ApplyEffects(Subtitle subtitle, ClassicBurnInOptions options, int width, int height, int fontSize)
         {
+            // ASS position/move tags use the script canvas, not output video pixels.
+            // Keeping output dimensions here moves low-resolution ASS off screen.
+            var scriptWidth = ReadScriptDimension(subtitle.Header, "PlayResX");
+            var scriptHeight = ReadScriptDimension(subtitle.Header, "PlayResY");
+            if (scriptWidth > 0 && scriptHeight > 0)
+            {
+                width = scriptWidth;
+                height = scriptHeight;
+            }
             foreach (var paragraph in subtitle.Paragraphs)
             {
                 var size = fontSize;
@@ -85,6 +94,26 @@ namespace Nikse.SubtitleEdit.Logic
                 }
                 paragraph.Text = GetEffectTags(options.Effects, width, height, size, (int)paragraph.DurationTotalMilliseconds) + paragraph.Text;
             }
+        }
+
+        private static int ReadScriptDimension(string header, string key)
+        {
+            if (string.IsNullOrEmpty(header)) return 0;
+            var inScriptInfo = false;
+            foreach (var raw in header.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var line = raw.Trim();
+                if (line.StartsWith("[", StringComparison.Ordinal))
+                {
+                    inScriptInfo = line.Equals("[Script Info]", StringComparison.OrdinalIgnoreCase);
+                    continue;
+                }
+                var separator = line.IndexOf(':');
+                if (inScriptInfo && separator > 0 && line.Substring(0, separator).Trim().Equals(key, StringComparison.OrdinalIgnoreCase) &&
+                    int.TryParse(line.Substring(separator + 1).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) && value > 0)
+                    return value;
+            }
+            return 0;
         }
 
         public static void ApplyTextStyle(SsaStyle style, ClassicBurnInOptions options)

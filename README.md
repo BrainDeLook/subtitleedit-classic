@@ -18,6 +18,17 @@ For the reported 23.976 fps H.264/AAC exports, disabling edit lists produced a f
 
 The timing fix remains enabled for MP4/MOV exports. The editor and classic panels are retained from the legacy branch.
 
+## Classic 4.0.21: video OCR and local speech generation
+
+Extract burned-in subtitles through **Video > OCR burned-in subtitles** using Paddle OCR or CrispEmbed (GLM-OCR, DeepSeek-OCR-2, PP-OCRv6). Select the scan area, test a frame, edit the extracted cues and accept them into the classic editor. The stable v5.2.0 pipeline provides grouping, duplicate merging and frame-based timing refinement. English/Russian correction tables are included; engines and models can be downloaded in the dialog.
+
+The classic text-to-speech window adds **Qwen3 TTS (CrispASR)** with nine CustomVoice speakers and imported-reference Voice clone. Select an audio/video range, provide its exact transcript and confirm permission to use the reference. The application normalizes the recording to 24 kHz mono. An incorrect transcript can make cloning repeat unrelated phrases or produce unclear speech; the text must match the selected recording.
+
+Choose the final WAV or dubbed-video destination before generating speech. The selected folder is remembered, successful output is published to that location, and temporary render jobs are cleaned up. Reusable models and voice references remain in the application data directory.
+
+This release also fixes OCR settings scrolling and clipped crop buttons, and fixes burn-in motion effects using the output video dimensions instead of ASS script coordinates. Existing speech recognition, classic panels and the Audition MP4 timing fix are retained.
+
+Validation covered Russian/English OCR and TTS, actual burned-in video, native cancellation, timed audio mixing, export replacement and temporary-job cleanup. Voice cloning was checked with a permitted synthetic reference; speaker similarity on arbitrary recordings is not guaranteed. Full v5 OCR/AI/TTS coverage and automatic per-line speaker cloning have not been migrated.
 ## Classic 4.0.20 speech recognition
 
 Local speech recognition now includes Crisp ASR (GigaAM, Parakeet and Qwen3), Qwen3 ASR CPP, Whisper CPP Vulkan and standalone WhisperX CPU. Choose an engine/model and use the model download button or start transcription to fetch the required runtime and weights. New standalone engines do not need a separate Python installation. CPU, CPU legacy, Vulkan and CUDA 13 are available where supported.

@@ -1736,6 +1736,7 @@ namespace Nikse.SubtitleEdit.Forms
             toolStripMenuItemStatistics.Text = _language.Menu.File.Statistics;
             toolStripMenuItemPlugins.Text = _language.Menu.File.Plugins;
             toolStripMenuItemImportDvdSubtitles.Text = _language.Menu.File.ImportOcrFromDvd;
+            InitializeClassicVideoOcrMenu();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -34118,14 +34119,18 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ToolStripMenuItemImportOcrHardSubClick(object sender, EventArgs e)
         {
-            using (var form = new HardSubExtract(_videoFileName))
+            using (var form = new ClassicVideoOcr(_videoFileName))
             {
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
-                    if (!string.IsNullOrEmpty(form.OcrFileName))
+                    if (form.SubtitleFromOcr.Paragraphs.Count > 0)
                     {
                         MakeHistoryForUndo(_language.BeforeAutoBalanceSelectedLines);
-                        OpenSubtitle(form.OcrFileName, null);
+                        _subtitle.Paragraphs.Clear();
+                        _subtitle.Paragraphs.AddRange(form.SubtitleFromOcr.Paragraphs);
+                        SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
+                        _subtitleListViewIndex = -1;
+                        SubtitleListview1.SelectIndexAndEnsureVisibleFaster(0);
                     }
                 }
             }

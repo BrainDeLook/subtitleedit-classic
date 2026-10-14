@@ -95,6 +95,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             Tortoise,
             Coqui,
             MsSpeechSynthesizer,
+            Qwen3Crisp,
         }
 
         public TextToSpeech(Subtitle subtitle, SubtitleFormat subtitleFormat, string videoFileName, VideoInfo videoInfo)
@@ -162,6 +163,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             _engines = new List<TextToSpeechEngine>();
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Piper, "Piper (fast/good)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Qwen3Crisp, "Qwen3 TTS (CrispASR / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.AllTalk, "All Talk TTS (Coqui based)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.ElevenLabs, "ElevenLabs TTS (online/pay/good)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.AzureTextToSpeech, "Microsoft Azure TTS (online/pay/good)", _engines.Count));
@@ -209,7 +211,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             nikseComboBoxEngine_SelectedIndexChanged(null, null);
             nikseComboBoxEngine.SelectedIndexChanged += nikseComboBoxEngine_SelectedIndexChanged;
-            nikseComboBoxVoice.Text = Configuration.Settings.Tools.TextToSpeechLastVoice;
+            if (_engines.First(p=>p.Index==nikseComboBoxEngine.SelectedIndex).Id!=TextToSpeechEngineId.Qwen3Crisp)
+                nikseComboBoxVoice.Text = Configuration.Settings.Tools.TextToSpeechLastVoice;
             checkBoxAddToVideoFile.Checked = Configuration.Settings.Tools.TextToSpeechAddToVideoFile;
             checkBoxShowPreview.Checked = Configuration.Settings.Tools.TextToSpeechPreview;
             checkBoxAudioEncoding.Checked = Configuration.Settings.Tools.TextToSpeechCustomAudio;
@@ -254,10 +257,12 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             {
                 buttonGenerateTTS.Enabled = false;
                 _abort = true;
+                _qwenCancellation?.Cancel();
                 Application.DoEvents();
                 return;
             }
 
+            if(!ChooseSpeechExport())return;
             try
             {
                 buttonGenerateTTS.Text = LanguageSettings.Current.General.Cancel;
@@ -345,14 +350,19 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
                 }
 
-                UiUtil.OpenFolder(_waveFolder);
+                if(_abort){HandleAbort();return;}
+                PublishSpeechExport(checkBoxAddToVideoFile.Checked && _videoFileName!=null ? _ttsMuxedPath : resultAudioFileName);
+                UiUtil.OpenFolder(Path.GetDirectoryName(_ttsExportPath));
                 HandleAbort();
             }
             catch (Exception exception)
             {
+                _abort=true;
+                HandleAbort();
                 MessageBox.Show("Oops: " + exception.Message + Environment.NewLine + exception.Message);
                 SeLogger.Error(exception, $"{Text}: Error running engine {nikseComboBoxEngine.Text} with video {_videoFileName}");
             }
+            finally { CleanupSpeechJob(); }
         }
 
         private void HandleAbort()
@@ -365,7 +375,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 Cleanup(_waveFolder, string.Empty);
             }
 
-            buttonGenerateTTS.Text = "Generate text to speech";
+            buttonGenerateTTS.Text = LanguageSettings.Current.TextToSpeech.GenerateSpeech;
             buttonGenerateTTS.Enabled = true;
             _abort = false;
             _converting = false;
@@ -375,6 +385,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private async Task<bool> GenerateParagraphAudioAsync(Subtitle subtitle, bool showProgressBar, string overrideFileName)
         {
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
+            if (engine.Id == TextToSpeechEngineId.Qwen3Crisp)
+                return await GenerateQwenAudioAsync(subtitle, showProgressBar, overrideFileName);
             if (engine.Id == TextToSpeechEngineId.MsSpeechSynthesizer)
             {
                 GenerateParagraphAudioMs(subtitle, showProgressBar, overrideFileName);
@@ -471,6 +483,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     break;
                 }
             }
+            addAudioProcess.WaitForExit();
+            if(!_abort && addAudioProcess.ExitCode!=0)throw new InvalidOperationException("Could not add generated audio to the video");
+            _ttsMuxedPath=outputFileName;
+            addAudioProcess.Dispose();
             labelProgress.Text = string.Empty;
         }
 
@@ -691,6 +707,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     Application.DoEvents();
                     if (_abort)
                     {
+                        mergeProcess.Kill();
+                        mergeProcess.WaitForExit();
+                        mergeProcess.Dispose();
                         return string.Empty;
                     }
                 }
@@ -1611,6 +1630,18 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 {
                     nikseComboBoxVoice.Items.Add(voice.ToString());
                 }
+            }
+
+            if (engine.Id == TextToSpeechEngineId.Qwen3Crisp)
+                FillQwenControls();
+            if (_qwenDownloadButton != null)
+                _qwenDownloadButton.Visible = engine.Id == TextToSpeechEngineId.Qwen3Crisp;
+            if (_qwenSettingsButton != null)
+                _qwenSettingsButton.Visible = engine.Id == TextToSpeechEngineId.Qwen3Crisp;
+            if (engine.Id != TextToSpeechEngineId.Qwen3Crisp)
+            {
+                labelApiKey.Text = LanguageSettings.Current.VobSubOcr.ApiKey;
+                nikseTextBoxApiKey.ReadOnly=false;
             }
 
             if (engine.Id == TextToSpeechEngineId.Tortoise)
@@ -2655,6 +2686,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 var ok = await GenerateParagraphAudioAsync(sub, false, waveFileNameOnly);
                 if (!ok)
                 {
+                    if (_abort) { _abort=false; return; }
                     MessageBox.Show(this, "Oops, voice generation failed!");
                     return;
                 }
@@ -2694,6 +2726,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private void SaveConfiguration()
         {
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
+            if (engine.Id == TextToSpeechEngineId.Qwen3Crisp && _qwenCancellation==null)
+                CaptureQwen(false);
             if (engine.Id == TextToSpeechEngineId.ElevenLabs)
             {
                 Configuration.Settings.Tools.TextToSpeechElevenLabsStability = (double)nikseUpDownStability.Value / 100.0;
@@ -2721,6 +2755,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private void TextToSpeech_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if (_qwenCancellation != null || _converting)
+            {
+                _abort=true; _qwenCancellation?.Cancel(); e.Cancel=true; return;
+            }
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
 
             SaveConfiguration();
@@ -2810,6 +2848,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private void buttonCancel_Click(object sender, EventArgs e)
         {
+            if (_qwenCancellation != null) { _abort=true; _qwenCancellation.Cancel(); return; }
             if (_converting)
             {
                 _abort = true;

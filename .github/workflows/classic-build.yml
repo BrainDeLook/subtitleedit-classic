@@ -37,7 +37,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $exeVersion = (Get-Item 'src/ui/bin/Release/net48/SubtitleEdit.exe').VersionInfo.FileVersion
           Write-Output "Compiled application version: $exeVersion"
-          if ($exeVersion -notmatch '^4\.0\.20\.') { throw "Expected Classic 4.0.20, got $exeVersion." }
+          if ($exeVersion -notmatch '^4\.0\.21\.') { throw "Expected Classic 4.0.21, got $exeVersion." }
       - name: Find or install the Inno Setup compiler
         shell: pwsh
         run: |
@@ -57,15 +57,15 @@ jobs:
           $outputDirectory = Join-Path $env:GITHUB_WORKSPACE 'artifacts'
           & $env:CLASSIC_ISCC /DCLASSIC_FORK "/O$outputDirectory" installer/Subtitle_Edit_installer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $setup = Join-Path $outputDirectory 'SubtitleEdit-Classic-4.0.20-Setup.exe'
+          $setup = Join-Path $outputDirectory 'SubtitleEdit-Classic-4.0.21-Setup.exe'
           if (-not (Test-Path -LiteralPath $setup)) { throw 'Installer output was not found.' }
           $hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  SubtitleEdit-Classic-4.0.20-Setup.exe" | Set-Content artifacts/SHA256SUMS.txt -Encoding ascii
+          "$hash  SubtitleEdit-Classic-4.0.21-Setup.exe" | Set-Content artifacts/SHA256SUMS.txt -Encoding ascii
       - name: Test installer and application startup on the CI machine
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $setup = Join-Path $env:GITHUB_WORKSPACE 'artifacts/SubtitleEdit-Classic-4.0.20-Setup.exe'
+          $setup = Join-Path $env:GITHUB_WORKSPACE 'artifacts/SubtitleEdit-Classic-4.0.21-Setup.exe'
           $installDirectory = Join-Path $env:RUNNER_TEMP 'SubtitleEditClassicTest'
           $install = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$installDirectory", '/NOICONS', '/TASKS=') -WindowStyle Hidden -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "Installer failed with exit code $($install.ExitCode)." }
@@ -84,10 +84,15 @@ jobs:
           Write-Output 'Installer extraction and application startup passed.'
           & ./installer/speech-tests/Test-Speech.ps1 -ApplicationDirectory $installDirectory -OutputDirectory (Join-Path $env:RUNNER_TEMP 'ClassicSpeechTests') -DownloadSmoke
           if ($LASTEXITCODE -ne 0) { throw 'Installed speech/scrolling tests failed.' }
+      - name: Test installed OCR, TTS and ASS canvas
+        shell: pwsh
+        run: |
+          & ./installer/Test-ClassicMedia.ps1 -ApplicationDirectory (Join-Path $env:RUNNER_TEMP 'SubtitleEditClassicTest') -OutputDirectory (Join-Path $env:RUNNER_TEMP 'ClassicMediaTests')
+          if ($LASTEXITCODE -ne 0) { throw 'Installed OCR/TTS/canvas checks failed' }
       - uses: actions/upload-artifact@v4
         with:
           name: SubtitleEdit-Classic-Installer
           path: |
-            artifacts/SubtitleEdit-Classic-4.0.20-Setup.exe
+            artifacts/SubtitleEdit-Classic-4.0.21-Setup.exe
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
