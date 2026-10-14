@@ -1,6 +1,7 @@
-param(
+﻿param(
     [Parameter(Mandatory=$true)][string]$ApplicationDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
+    [string]$FFmpegLocation,
     [switch]$Unused
 )
 $ErrorActionPreference='Stop'
@@ -27,6 +28,7 @@ $tests=@{
     TestClassic53Ocr='video-ocr-tests/TestClassic53Ocr.cs'
     TestClassicTiming='TestClassicTiming.cs'
     TestClassicNOcr='video-ocr-tests/TestClassicNOcr.cs'
+    TestClassicActors='tts-tests/TestClassicActors.cs'
 }
 foreach($name in $tests.Keys) {
     $arguments=@('/nologo','/target:exe','/platform:x64','/langversion:latest',('/out:"'+(Join-Path $OutputDirectory "$name.exe")+'"'))+$refs+('"'+(Join-Path $PSScriptRoot $tests[$name])+'"')
@@ -55,3 +57,9 @@ if($LASTEXITCODE -ne 0){throw 'Timing UI regression failed'}
 & "$OutputDirectory/TestClassicNOcr.exe" (Join-Path $PSScriptRoot '../Ocr/Cyrillic.nocr')
 if($LASTEXITCODE -ne 0){throw 'nOCR database/optimizer regression failed'}
 
+
+if ($FFmpegLocation) {
+    if (-not (Test-Path -LiteralPath $FFmpegLocation)) { throw 'FFmpeg executable was not found.' }
+    & "$OutputDirectory/TestClassicActors.exe" (Join-Path $OutputDirectory 'actor-dubbing') $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw 'Actor selection, removal scope and audio preservation regression failed.' }
+}

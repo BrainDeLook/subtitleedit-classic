@@ -87,7 +87,14 @@ jobs:
       - name: Test installed OCR, TTS and ASS canvas
         shell: pwsh
         run: |
-          & ./installer/Test-ClassicMedia.ps1 -ApplicationDirectory (Join-Path $env:RUNNER_TEMP 'SubtitleEditClassicTest') -OutputDirectory (Join-Path $env:RUNNER_TEMP 'ClassicMediaTests')
+          $ErrorActionPreference = 'Stop'
+          $ffmpeg = Get-Command ffmpeg -ErrorAction SilentlyContinue
+          if (-not $ffmpeg) {
+            choco install ffmpeg --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $ffmpeg = Get-Command ffmpeg -ErrorAction Stop
+          }
+          & ./installer/Test-ClassicMedia.ps1 -FFmpegLocation $ffmpeg.Source -ApplicationDirectory (Join-Path $env:RUNNER_TEMP 'SubtitleEditClassicTest') -OutputDirectory (Join-Path $env:RUNNER_TEMP 'ClassicMediaTests')
           if ($LASTEXITCODE -ne 0) { throw 'Installed OCR/TTS/canvas checks failed' }
       - uses: actions/upload-artifact@v4
         with:
