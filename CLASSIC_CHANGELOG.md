@@ -1,6 +1,6 @@
 # Subtitle Edit Classic changelog
 
-## 4.0.23 — local preview
+## 4.0.23
 
 - Added CosyVoice 3, VoxCPM 2 and Chatterbox from stable v5.3.0. Ten model choices include CosyVoice RL variants and Chatterbox Base/F16/Q4_K/Turbo. Model bundles download through the classic interface with pinned sizes and SHA-256 checks; all CosyVoice companion files are staged together.
 - These engines share the reference-voice library, support actor-specific casts and audio-review regeneration, and can use original subtitle references for per-line cloning. CosyVoice also exposes eight presets. Chatterbox Turbo is restricted to English; VoxCPM infers the language from text. Compute, model, reference language and voice preferences persist separately for each engine.
@@ -13,7 +13,7 @@
 
 Native checks covered mixed Qwen3/Supertonic casts, actor-specific regeneration/cancellation, Russian/English VoiceDesign, cross-language per-line cloning, Sidon CPU restoration and an official English voice-pack download/import. Independent ASR recovered the generated test sentences. Sortformer ran successfully but merged two short synthetic voices into one in the test fixture; automatic speaker results require review. Existing subtitle actors offer a direct alternative. Paid cloud-provider synthesis was not exercised.
 
-This preview remains local; no release has been published.
+This stable release preserves the classic Windows Forms interface and includes the normal Windows installer. Engines and model weights download on demand; large model files are not bundled with the installer.
 
 ## 4.0.22
 

@@ -346,6 +346,9 @@ Source: {#bindir}\SubtitleEdit.exe;                DestDir: {app};              
 ; Keep all managed/native dependencies produced by the current legacy build.
 Source: {#bindir}\*.dll;                          DestDir: {app};                                    Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
 Source: {#bindir}\SubtitleEdit.exe.config;         DestDir: {app};                                    Flags: ignoreversion skipifsourcedoesntexist; Components: main
+Source: ..\CLASSIC_CHANGELOG.md;                   DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: ..\README.md;                             DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: ..\README.ru.md;                          DestDir: {app};                                    Flags: ignoreversion; Components: main
 #else
 Source: {#bindir}\Hunspellx64.dll;                 DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\Hunspellx86.dll;                 DestDir: {app};                                    Flags: ignoreversion; Components: main

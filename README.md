@@ -6,17 +6,17 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 
 English · [Русский](README.ru.md)
 
-## Local 4.0.23 preview
+## Classic 4.0.23
 
-CosyVoice 3, VoxCPM 2 and Chatterbox are available locally with model downloads, shared reference voices and actor casts. Select the model in the engine's Settings dialog; CosyVoice also offers preset voices. Chatterbox Turbo is English-only. The default models were tested on CUDA 13 in Russian and English; the remaining quantizations/backends have narrower coverage.
+CosyVoice 3, VoxCPM 2 and Chatterbox are available with model downloads, shared reference voices and actor casts. Select the model in the engine's Settings dialog; CosyVoice also offers preset voices. Chatterbox Turbo is English-only. The default models were tested on CUDA 13 in Russian and English; the remaining quantizations/backends have narrower coverage.
 
-Actor-specific cast settings, cloning from video/original subtitle lines, a voice manager with pack import/export and reference trimming, Qwen3 VoiceDesign and Sidon cleaning are being tested locally in the classic interface. Automatic speaker detection can merge voices; review its results or use existing subtitle actors. The published stable release remains 4.0.22.
+The classic interface includes actor-specific cast settings, cloning from video/original subtitle lines, a voice manager with pack import/export and reference trimming, Qwen3 VoiceDesign and Sidon cleaning. Automatic speaker detection can merge voices; review its results or use existing subtitle actors. Download the normal Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). Engines and models download on demand from the application.
 
-## Classic 4.0.22
+## Features inherited from Classic 4.0.22
 
 This release ports stable v5.3 features into the classic interface: 3D burn-in and NVENC preset migration, Supertonic-3 and OpenAI-compatible TTS, speech-line preparation, original-speech removal with HTDemucs/RoFormer, reviewed forced-alignment timing corrections and OCR Find/Replace/nOCR database optimization. A Cyrillic database is bundled without replacing an existing user database. Engine/model downloads remain available from the interface.
 
-Download the stable Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). The full v5 engine catalog, voice-pack management, Sidon cleaning and per-line voice cloning are not part of this release. See [the changelog](CLASSIC_CHANGELOG.md) for validation and limits.
+The complete v5 engine catalog has not yet been ported. See [the changelog](CLASSIC_CHANGELOG.md) for validation and limits.
 
 Select actors with the checkboxes in the speech window; right-click assigns their voices. Removal settings can target either all original speech or only generated cue intervals; selective mode retains audio outside those intervals. In selective mode, overlaps with unchecked actors keep the original mix.
 
