@@ -29,8 +29,8 @@ class TestClassicLocalTts
  }
  static void Unit(string folder)
  {
-  Check(ClassicLocalTts.Catalog.Length==9,"nine stable local engines registered");
-  foreach(var e in ClassicLocalTts.Catalog)foreach(var model in e.Models)foreach(var file in model.Files)Check(file.Bytes>0 && file.Hash.Length==64 && file.File.EndsWith(".gguf"),e.Id+" / "+model.Key+" complete model manifest");
+  Check(ClassicLocalTts.Catalog.Length==19,"nineteen stable local engines registered");
+  foreach(var e in ClassicLocalTts.Catalog)foreach(var model in e.Models)foreach(var file in model.Files)Check(file.Bytes>0 && file.Hash.Length==64 && (file.File.EndsWith(".gguf") || file.Url != null),e.Id+" / "+model.Key+" complete model manifest");
   var cosy=ClassicLocalTts.Catalog.First(x=>x.Id=="cosy");Check(cosy.Models.All(m=>m.Files.Length==6) && cosy.Presets.Length==8,"CosyVoice stages all six companions and eight presets");
   var chatter=ClassicLocalTts.Catalog.First(x=>x.Id=="chatter");Check(chatter.LanguageChoices("Turbo").Single()=="en|English" && chatter.Languages.Any(l=>l.StartsWith("ru|")),"Turbo restricted to English; Base advertises Russian");
   var s=ClassicLocalTtsSettings.Load("cosy");s.Variant="cuda13";s.Model="RL Q4_K";s.SourceLanguage="en";s.Speed=1.1;s.Save("cosy");var round=ClassicLocalTtsSettings.Load("cosy");Check(round.Variant=="cuda13" && round.Model=="RL Q4_K" && round.SourceLanguage=="en" && round.Speed==1.1,"engine settings round trip");

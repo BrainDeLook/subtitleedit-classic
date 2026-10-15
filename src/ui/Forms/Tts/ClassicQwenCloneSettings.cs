@@ -31,9 +31,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
     {
         public ClassicQwenReference Reference { get; private set; }
         private CancellationTokenSource _operation;
-        public ClassicQwenReferenceImport(ClassicQwenReference voice) : this()
+        public ClassicQwenReferenceImport(ClassicQwenReference voice, bool requireTranscript = true) : this(requireTranscript)
         {
-            ClassicQwenReference.Validate(voice.Id);
+            ClassicQwenReference.Validate(voice.Id, requireTranscript);
             var file=System.IO.Path.Combine(ClassicQwenReference.Folder,voice.Id+".wav");
             ((TextBox)Controls.Find("textReferencePath",true)[0]).Text=file;
             ((TextBox)Controls.Find("textVoiceName",true)[0]).Text=voice.Name+" (clip)";
@@ -41,7 +41,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             ((NumericUpDown)Controls.Find("referenceDuration",true)[0]).Value=(decimal)Math.Min(8,Nikse.SubtitleEdit.Logic.ClassicCast.ClassicVoiceAssets.WaveSeconds(file));
             ((CheckBox)Controls.Find("referenceConsent",true)[0]).Checked=voice.Consent;
         }
-        public ClassicQwenReferenceImport()
+        public ClassicQwenReferenceImport(bool requireTranscript = true)
         {
             var ru=Nikse.SubtitleEdit.Core.Common.Configuration.Settings.General.Language.StartsWith("ru",StringComparison.OrdinalIgnoreCase);Func<string,string,string> l=(r,e)=>ru ? r : e;
             Text=l("Импорт голоса","Import voice");Size=new Size(650,500);MinimumSize=Size;StartPosition=FormStartPosition.CenterParent;
@@ -51,11 +51,11 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             table.Controls.Add(open,0,0);table.Controls.Add(path,0,1);
             var name=new TextBox{Name="textVoiceName",Dock=DockStyle.Fill};var nameBar=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2};nameBar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,100));nameBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));nameBar.Controls.Add(new Label{Text=l("Имя голоса","Voice name"),AutoSize=true},0,0);nameBar.Controls.Add(name,1,0);table.Controls.Add(nameBar,0,2);
             var start=new NumericUpDown{DecimalPlaces=2,Maximum=86400,Width=100};var duration=new NumericUpDown{Name="referenceDuration",Minimum=1,Maximum=30,Value=8,DecimalPlaces=2,Width=80};var range=new FlowLayoutPanel{Dock=DockStyle.Fill,WrapContents=false};range.Controls.Add(new Label{Text=l("Начало, сек","Start, sec"),AutoSize=true});range.Controls.Add(start);range.Controls.Add(new Label{Text=l("Длительность, сек","Duration, sec"),AutoSize=true});range.Controls.Add(duration);table.Controls.Add(range,0,3);
-            table.Controls.Add(new Label{Text=l("Точный текст выбранного фрагмента записи:","Exact transcript of the selected recording range:"),AutoSize=true},0,4);var transcript=new TextBox{Name="textTranscript",Dock=DockStyle.Fill,Multiline=true,ScrollBars=ScrollBars.Vertical};table.Controls.Add(transcript,0,5);
+            table.Controls.Add(new Label{Text=requireTranscript ? l("Точный текст выбранного фрагмента записи:","Exact transcript of the selected recording range:") : l("Текст образца (необязательно для этого движка):", "Reference transcript (optional for this engine):"),AutoSize=true},0,4);var transcript=new TextBox{Name="textTranscript",Dock=DockStyle.Fill,Multiline=true,ScrollBars=ScrollBars.Vertical};table.Controls.Add(transcript,0,5);
             var consent=new CheckBox{Name="referenceConsent",Text=l("Это мой голос или у меня есть разрешение владельца голоса.","This is my voice or I have the speaker's permission."),Dock=DockStyle.Fill};table.Controls.Add(consent,0,6);path.TextChanged+=(s,e)=>consent.Checked=false;
             var buttons=new FlowLayoutPanel{Dock=DockStyle.Fill,FlowDirection=FlowDirection.RightToLeft};var cancel=new Button{Text=l("Отмена","Cancel")};var import=new Button{Text=l("Импорт","Import")};buttons.Controls.Add(cancel);buttons.Controls.Add(import);table.Controls.Add(buttons,0,7);
             cancel.Click+=(s,e)=>{if(_operation!=null)_operation.Cancel();else Close();};FormClosing+=(s,e)=>{if(_operation!=null){_operation.Cancel();e.Cancel=true;}};
-            import.Click+=async(s,e)=>{_operation=new CancellationTokenSource();import.Enabled=open.Enabled=false;try{Reference=await ClassicQwenReference.ImportAsync(path.Text,name.Text,transcript.Text,(double)start.Value,(double)duration.Value,consent.Checked,_operation.Token);}catch(OperationCanceledException){}catch(Exception error){MessageBox.Show(this,error.Message,Text);}finally{_operation.Dispose();_operation=null;import.Enabled=open.Enabled=true;if(Reference!=null){DialogResult=DialogResult.OK;Close();}}};Controls.Add(table);AcceptButton=import;
+            import.Click+=async(s,e)=>{_operation=new CancellationTokenSource();import.Enabled=open.Enabled=false;try{Reference=await ClassicQwenReference.ImportAsync(path.Text,name.Text,transcript.Text,(double)start.Value,(double)duration.Value,consent.Checked,_operation.Token, requireTranscript);}catch(OperationCanceledException){}catch(Exception error){MessageBox.Show(this,error.Message,Text);}finally{_operation.Dispose();_operation=null;import.Enabled=open.Enabled=true;if(Reference!=null){DialogResult=DialogResult.OK;Close();}}};Controls.Add(table);AcceptButton=import;
         }
     }
 }

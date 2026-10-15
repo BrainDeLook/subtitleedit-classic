@@ -16,7 +16,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
     {
         private Button _localDownload, _localSettings;
         private CancellationTokenSource _localCancellation;
-        private static string LocalId(TextToSpeechEngineId id) => id == TextToSpeechEngineId.CosyVoice3 ? "cosy" : id == TextToSpeechEngineId.VoxCpm2 ? "vox" : id == TextToSpeechEngineId.Chatterbox ? "chatter" : id == TextToSpeechEngineId.FishAudio ? "fish" : id == TextToSpeechEngineId.IndexTts25 ? "index25" : id == TextToSpeechEngineId.HiggsAudio ? "higgs" : id == TextToSpeechEngineId.FireRedTts3 ? "firered" : id == TextToSpeechEngineId.KugelAudio ? "kugel" : id == TextToSpeechEngineId.BreezeTts ? "breeze" : null;
+        private static string LocalId(TextToSpeechEngineId id) => id == TextToSpeechEngineId.CosyVoice3 ? "cosy" : id == TextToSpeechEngineId.VoxCpm2 ? "vox" : id == TextToSpeechEngineId.Chatterbox ? "chatter" : id == TextToSpeechEngineId.FishAudio ? "fish" : id == TextToSpeechEngineId.IndexTts25 ? "index25" : id == TextToSpeechEngineId.HiggsAudio ? "higgs" : id == TextToSpeechEngineId.FireRedTts3 ? "firered" : id == TextToSpeechEngineId.KugelAudio ? "kugel" : id == TextToSpeechEngineId.BreezeTts ? "breeze" : id == TextToSpeechEngineId.KokoroLocal ? "kokoro" : id == TextToSpeechEngineId.F5Crisp ? "f5" : id == TextToSpeechEngineId.PocketCrisp ? "pocket" : id == TextToSpeechEngineId.VibeCrisp ? "vibe" : id == TextToSpeechEngineId.IndexCrisp ? "index" : id == TextToSpeechEngineId.DotsCrisp ? "dots" : id == TextToSpeechEngineId.ConfuciusCrisp ? "confucius" : id == TextToSpeechEngineId.MossCrisp ? "moss" : id == TextToSpeechEngineId.OmniCrisp ? "omni" : id == TextToSpeechEngineId.OmniStandalone ? "omnicpp" : null;
         private string SelectedLocalId => LocalId(_engines.First(e => e.Index == nikseComboBoxEngine.SelectedIndex).Id);
         private bool AcceptAudioLicense(string id, ClassicLocalTtsSettings settings)
         {
@@ -42,14 +42,14 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             if (nikseComboBoxVoice.SelectedIndex < 0 && nikseComboBoxVoice.Items.Count > 0) nikseComboBoxVoice.SelectedIndex = 0;
             labelRegion.Text = CL("Вычисления", "Compute");
             labelRegion.Visible = nikseComboBoxRegion.Visible = true;
-            nikseComboBoxRegion.Items.Clear(); nikseComboBoxRegion.Items.AddRange(definition.IsAudioCpp ? new object[] {"cpu", "vulkan", "cuda"} : new object[] {"cpu", "cpu-legacy", "vulkan", "cuda", "cuda13"}); nikseComboBoxRegion.Text = settings.Variant;
+            nikseComboBoxRegion.Items.Clear(); nikseComboBoxRegion.Items.AddRange(definition.ComputeVariants); nikseComboBoxRegion.Text = settings.Variant;
             var languages = definition.LanguageChoices(settings.Model);
             labelLanguage.Visible = nikseComboBoxLanguage.Visible = languages.Length > 0;
             nikseComboBoxLanguage.Items.Clear();
             foreach (var pair in languages) {var parts = pair.Split('|'); nikseComboBoxLanguage.Items.Add(new TtsLanguage(parts[1], parts[0]));}
             nikseComboBoxLanguage.SelectedItem = nikseComboBoxLanguage.Items.Cast<TtsLanguage>().FirstOrDefault(l => l.Code == settings.Language) ?? nikseComboBoxLanguage.Items.Cast<TtsLanguage>().FirstOrDefault();
             labelApiKey.Text = CL("Скорость", "Speed");
-            labelApiKey.Visible = nikseTextBoxApiKey.Visible = id == "index25" || id != "chatter" && !ClassicLocalTts.Catalog.First(e => e.Id == id).IsAudioCpp;
+            labelApiKey.Visible = nikseTextBoxApiKey.Visible = ClassicLocalTts.Catalog.First(e => e.Id == id).SupportsSpeed;
             nikseTextBoxApiKey.ReadOnly = false; nikseTextBoxApiKey.Text = settings.Speed.ToString(CultureInfo.CurrentCulture);
             if (_localDownload == null)
             {
@@ -72,13 +72,13 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             settings.Variant = nikseComboBoxRegion.Text;
             settings.Voice = (nikseComboBoxVoice.SelectedItem as ClassicQwenReference)?.Id ?? nikseComboBoxVoice.Text;
             settings.Language = (nikseComboBoxLanguage.SelectedItem as TtsLanguage)?.Code ?? "auto";
-            if (id == "index25" || id != "chatter" && !ClassicLocalTts.Catalog.First(e => e.Id == id).IsAudioCpp)
+            if (ClassicLocalTts.Catalog.First(e => e.Id == id).SupportsSpeed)
             {
                 if (!double.TryParse(nikseTextBoxApiKey.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out var speed) || double.IsNaN(speed) || speed < 0.25 || speed > 4)
                 {if (requireVoice) throw new ArgumentException(CL("Скорость должна быть от 0,25 до 4", "Speed must be between 0.25 and 4"));}
                 else settings.Speed = speed;
             }
-            if (requireVoice && !ClassicLocalTts.Catalog.First(e => e.Id == id).Presets.Contains(settings.Voice)) ClassicQwenReference.Validate(settings.Voice);
+            if (requireVoice && !ClassicLocalTts.Catalog.First(e => e.Id == id).Presets.Contains(settings.Voice)) ClassicQwenReference.Validate(settings.Voice, ClassicLocalTts.Catalog.First(e => e.Id == id).RequiresReferenceTranscript);
             settings.Save(id); return settings;
         }
         private void EditLocalSettings()
@@ -119,7 +119,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     cancel.ThrowIfCancellationRequested(); var p = subtitle.Paragraphs[i]; var text = Utilities.UnbreakLine(HtmlUtil.RemoveHtmlTags(p.Text)); if (string.IsNullOrWhiteSpace(text)) continue;
                     var actor = _actorAndVoices.FirstOrDefault(a => a.Actor == p.Actor);
                     var voice = _castRegenerationVoice ?? (string.IsNullOrWhiteSpace(actor?.Voice) ? settings.Voice : ClassicLocalTts.ResolveVoice(actor.Voice));
-                    if (_perLineOriginal != null) voice = await PerLineReferenceAsync(p, cancel) ?? voice;
+                    if (_perLineOriginal != null && ClassicLocalTts.Catalog.First(e => e.Id == id).SupportsCloning) voice = await PerLineReferenceAsync(p, cancel) ?? voice;
                     labelProgress.Text = CL("Озвучка ", "Generating ") + (i + 1) + " / " + subtitle.Paragraphs.Count;
                     await engine.SpeakAsync(text, voice, Path.Combine(_waveFolder, outputOverride ?? i + ".wav"), cancel, new Progress<SpeechProgress>(x => labelProgress.Text = x.Message));
                     progressBar1.Value = i + 1;
@@ -137,25 +137,80 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             var ru = (Configuration.Settings.General.Language ?? "").StartsWith("ru", StringComparison.OrdinalIgnoreCase);
             Func<string, string, string> l = (r, e) => ru ? r : e;
             var definition = ClassicLocalTts.Catalog.First(x => x.Id == id);
-            Text = definition.Name; ClientSize = new Size(600, 470); StartPosition = FormStartPosition.CenterParent;
-            var table = new TableLayoutPanel {Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 1, RowCount = 9};
-            foreach (var height in new[] {24, 32, 24, 32, 65, 56, 48, 40, 40}) table.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
-            table.Controls.Add(new Label {Text = l("Модель", "Model"), AutoSize = true}, 0, 0);
-            var model = new ComboBox {Name = "localModel", Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList}; model.Items.AddRange(definition.Models.Cast<object>().ToArray()); model.SelectedItem = definition.Model(settings.Model); table.Controls.Add(model, 0, 1);
-            table.Controls.Add(new Label {Text = l("Язык образца (для межъязыкового клонирования)", "Reference language (for cross-language cloning)"), AutoSize = true}, 0, 2);
-            var source = new ComboBox {Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList}; source.Items.AddRange(new object[] {"auto", "ru", "en", "zh", "ja", "ko", "de", "es", "fr", "it", "pt", "ar"}); source.Text = settings.SourceLanguage; source.Enabled = !definition.IsAudioCpp && id != "vox"; table.Controls.Add(source, 0, 3);
-            table.Controls.Add(new Label{Dock=DockStyle.Fill,Text=definition.IsAudioCpp ? l("audio.cpp: CPU, Vulkan или CUDA. Fish/Higgs/Index/FireRed используют образцы. Для FireRed лучше образец на языке озвучки. IndexTTS: zh/en/ja/es/ar. Kugel: готовые голоса. Breeze: en/zh. Условия модели принимаются отдельно.","audio.cpp: CPU, Vulkan or CUDA. Fish/Higgs/Index/FireRed use references. Prefer same-language references for FireRed. IndexTTS: zh/en/ja/es/ar. Kugel: presets. Breeze: en/zh. Model terms are accepted separately.") : l("CosyVoice поддерживает готовые голоса и клонирование. VoxCPM определяет язык по тексту. Chatterbox Turbo — только английский.","CosyVoice supports presets and cloning. VoxCPM infers language. Chatterbox Turbo is English-only.")},0,4);
-            if(definition.IsAudioCpp){table.RowStyles[2].Height=0;table.RowStyles[3].Height=0;source.Visible=false;table.GetControlFromPosition(0,2).Visible=false;}
-            table.RowStyles[5].Height=id=="breeze"?56:0;table.RowStyles[6].Height=id=="index25"?60:0;ClientSize=new Size(ClientSize.Width,285-(definition.IsAudioCpp?56:0)+(id=="breeze"?56:0)+(id=="index25"?60:0));MinimumSize=Size;
-            var instruction=new TextBox{Dock=DockStyle.Fill,Multiline=true,Text=settings.Instructions,Enabled=id=="breeze"};var instructionGroup=new GroupBox{Text=l("Стиль голоса (Breeze)","Voice instruction (Breeze)"),Dock=DockStyle.Fill};instructionGroup.Controls.Add(instruction);table.Controls.Add(instructionGroup,0,5);
-            var emotion=new ComboBox{Dock=DockStyle.Top,DropDownStyle=ComboBoxStyle.DropDownList,Enabled=id=="index25"};emotion.Items.AddRange(new object[]{"neutral","happy","angry","sad","afraid","disgusted","melancholic","surprised","calm"});emotion.Text=settings.Emotion;var emotionGroup=new GroupBox{Text=l("Эмоция (IndexTTS)","Emotion (IndexTTS)"),Dock=DockStyle.Fill};emotionGroup.Controls.Add(emotion);table.Controls.Add(emotionGroup,0,6);
-            var tools = new FlowLayoutPanel {Dock = DockStyle.Fill, WrapContents = false};
-            var import = new Button {Text = l("Импорт голоса…", "Import voice…"), AutoSize = true}; var manager = new Button {Text = l("Менеджер голосов…", "Voice manager…"), AutoSize = true}; import.Enabled=definition.SupportsCloning;tools.Controls.AddRange(new Control[] {import, manager}); table.Controls.Add(tools, 0, 7);
-            import.Click += (s, e) => {using (var dialog = new ClassicQwenReferenceImport()) if (dialog.ShowDialog(this) == DialogResult.OK) settings.Voice = dialog.Reference.Id;};
-            manager.Click += (s, e) => {using (var dialog = new ClassicVoiceManager()) dialog.ShowDialog(this);};
-            var buttons = new FlowLayoutPanel {Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft}; var cancel = new Button {Text = l("Отмена", "Cancel"), DialogResult = DialogResult.Cancel}; var ok = new Button {Text = "OK", DialogResult = DialogResult.OK}; buttons.Controls.AddRange(new Control[] {cancel, ok}); table.Controls.Add(buttons, 0, 8);
-            ok.Click += (s, e) => {settings.Model = ((ClassicLocalTtsModel)model.SelectedItem).Key; settings.SourceLanguage = source.Text;settings.Instructions=instruction.Text;settings.Emotion=emotion.Text; if (id == "chatter" && settings.Model == "Turbo") settings.Language = "en"; settings.Save(id);};
-            Controls.Add(table); AcceptButton = ok; CancelButton = cancel;
+            Text = definition.Name;
+            StartPosition = FormStartPosition.CenterParent;
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(12), ColumnCount = 1, RowCount = 0 };
+            var height = 24;
+            Action<Control, int> add = (control, rowHeight) =>
+            {
+                var row = table.RowCount++;
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, rowHeight));
+                control.Dock = DockStyle.Fill;
+                table.Controls.Add(control, 0, row);
+                height += rowHeight;
+            };
+            add(new Label { Text = l("Модель", "Model"), AutoSize = true }, 24);
+            var model = new ComboBox { Name = "localModel", DropDownStyle = ComboBoxStyle.DropDownList, IntegralHeight = false, MaxDropDownItems = 12, DropDownHeight = 320 };
+            model.Items.AddRange(definition.Models.Cast<object>().ToArray());
+            model.SelectedItem = definition.Model(settings.Model);
+            add(model, 32);
+            var source = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+            source.Items.AddRange(new object[] { "auto", "ru", "en", "zh", "ja", "ko", "de", "es", "fr", "it", "pt", "ar" });
+            source.Text = settings.SourceLanguage;
+            if (!definition.IsAudioCpp && !ClassicExtendedTts.Handles(id) && id != "vox")
+            {
+                add(new Label { Text = l("Язык образца (для межъязыкового клонирования)", "Reference language (for cross-language cloning)"), AutoSize = true }, 24);
+                add(source, 32);
+            }
+            var notes = ru ? definition.NotesRu ?? definition.Notes : definition.Notes;
+            if (string.IsNullOrEmpty(notes)) notes = definition.IsAudioCpp
+                ? l("audio.cpp: CPU, Vulkan или CUDA. Для FireRed лучше образец на языке озвучки. IndexTTS: zh/en/ja/es/ar. Kugel: готовые голоса. Breeze: en/zh. Условия модели принимаются отдельно.", "audio.cpp: CPU, Vulkan or CUDA. Prefer same-language references for FireRed. IndexTTS: zh/en/ja/es/ar. Kugel: presets. Breeze: en/zh. Model terms are accepted separately.")
+                : l("CosyVoice поддерживает готовые голоса и клонирование. VoxCPM определяет язык по тексту. Chatterbox Turbo — только английский.", "CosyVoice supports presets and cloning. VoxCPM infers language. Chatterbox Turbo is English-only.");
+            add(new Label { Text = notes, Padding = new Padding(0, 4, 0, 4) }, 82);
+            var instruction = new TextBox { Multiline = true, Text = settings.Instructions, Dock = DockStyle.Fill };
+            if (definition.SupportsInstructions)
+            {
+                var group = new GroupBox { Text = l("Описание голоса", "Voice instruction") };
+                group.Controls.Add(instruction); add(group, 72);
+            }
+            var emotion = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Top };
+            emotion.Items.AddRange(new object[] { "neutral", "happy", "angry", "sad", "afraid", "disgusted", "melancholic", "surprised", "calm" });
+            emotion.Text = settings.Emotion;
+            if (id == "index25")
+            {
+                var group = new GroupBox { Text = l("Эмоция (IndexTTS)", "Emotion (IndexTTS)") };
+                group.Controls.Add(emotion); add(group, 58);
+            }
+            var steps = new NumericUpDown { Name = "localOdeSteps", Minimum = id == "dots" ? 8 : 10, Maximum = id == "dots" ? 32 : 40, Value = ClassicExtendedTts.OdeSteps(id, settings), Dock = DockStyle.Top };
+            if (id == "dots" || id == "confucius")
+            {
+                var group = new GroupBox { Text = l("Шаги ODE (больше — медленнее)", "ODE steps (more is slower)") };
+                group.Controls.Add(steps); add(group, 58);
+            }
+            var tools = new FlowLayoutPanel { WrapContents = false };
+            var import = new Button { Text = l("Импорт голоса…", "Import voice…"), AutoSize = true, Enabled = definition.SupportsCloning };
+            var manager = new Button { Text = l("Менеджер голосов…", "Voice manager…"), AutoSize = true };
+            tools.Controls.AddRange(new Control[] { import, manager }); add(tools, 40);
+            import.Click += (s, e) => { using (var dialog = new ClassicQwenReferenceImport(definition.RequiresReferenceTranscript)) if (dialog.ShowDialog(this) == DialogResult.OK) settings.Voice = dialog.Reference.Id; };
+            manager.Click += (s, e) => { using (var dialog = new ClassicVoiceManager()) dialog.ShowDialog(this); };
+            var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
+            var cancel = new Button { Text = l("Отмена", "Cancel"), DialogResult = DialogResult.Cancel };
+            var ok = new Button { Text = "OK", DialogResult = DialogResult.OK };
+            buttons.Controls.AddRange(new Control[] { cancel, ok }); add(buttons, 40);
+            ok.Click += (s, e) =>
+            {
+                settings.Model = ((ClassicLocalTtsModel)model.SelectedItem).Key;
+                settings.SourceLanguage = source.Text;
+                if (definition.SupportsInstructions) settings.Instructions = instruction.Text;
+                if (id == "index25") settings.Emotion = emotion.Text;
+                if (id == "dots" || id == "confucius") settings.OdeSteps = (int)steps.Value;
+                settings.Save(id);
+            };
+            ClientSize = new Size(640, height);
+            MinimumSize = MaximumSize = Size;
+            MaximizeBox = false;
+            Controls.Add(table);
+            AcceptButton = ok; CancelButton = cancel;
         }
     }
 }

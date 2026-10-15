@@ -37,7 +37,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             return result.Append('\\', slashes * 2).Append('"').ToString();
         }
 
-        public static async Task RunProcessAsync(ProcessStartInfo start, CancellationToken cancel, IProgress<SpeechProgress> progress)
+        public static async Task RunProcessAsync(ProcessStartInfo start, CancellationToken cancel, IProgress<SpeechProgress> progress, string standardInput = null)
         {
             start.UseShellExecute = false;
             start.CreateNoWindow = true;
@@ -46,6 +46,10 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             start.RedirectStandardError = true;
             start.StandardOutputEncoding = Encoding.UTF8;
             start.StandardErrorEncoding = Encoding.UTF8;
+            if (standardInput != null)
+            {
+                start.RedirectStandardInput = true;
+            }
             var errors = new StringBuilder();
             using (var process = new Process { StartInfo = start })
             {
@@ -55,6 +59,12 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
                 {
                     var stdout = ReadLines(process.StandardOutput, errors, progress);
                     var stderr = ReadLines(process.StandardError, errors, progress);
+                    if (standardInput != null)
+                    {
+                        var inputBytes = new UTF8Encoding(false).GetBytes(standardInput);
+                        await process.StandardInput.BaseStream.WriteAsync(inputBytes, 0, inputBytes.Length, cancel).ConfigureAwait(false);
+                        process.StandardInput.BaseStream.Close();
+                    }
                     await Task.Run(() => process.WaitForExit()).ConfigureAwait(false);
                     await Task.WhenAll(stdout, stderr).ConfigureAwait(false);
                     cancel.ThrowIfCancellationRequested();

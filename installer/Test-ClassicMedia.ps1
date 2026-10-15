@@ -35,6 +35,7 @@ $tests=@{
     TestClassicNext='tts-tests/TestClassicNext.cs'
     TestModelessSpeech='tts-tests/TestModelessSpeech.cs'
     TestSpeechPlayer='tts-tests/TestSpeechPlayer.cs'
+    TestExtendedTts='tts-tests/TestExtendedTts.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -96,4 +97,9 @@ if ($LASTEXITCODE -ne 0) { throw "Modeless speech window regression failed." }
 if ($FFmpegLocation) {
     & "$OutputDirectory/TestSpeechPlayer.exe" (Join-Path $OutputDirectory "native-speech-player") (Join-Path $PSScriptRoot "speech-tests/english-sample.wav")
     if ($LASTEXITCODE -ne 0) { throw "Native MPV speech playback regression failed." }
+}
+
+if ($FFmpegLocation) {
+    & "$OutputDirectory/TestExtendedTts.exe" unit (Join-Path $OutputDirectory "extended-tts") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "Extended TTS protocol/settings regression failed." }
 }

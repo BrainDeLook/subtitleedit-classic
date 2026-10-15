@@ -102,6 +102,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             VoxCpm2,
             Chatterbox,
             FishAudio, IndexTts25, HiggsAudio, FireRedTts3, KugelAudio, BreezeTts,
+            KokoroLocal, F5Crisp, PocketCrisp, VibeCrisp, IndexCrisp, DotsCrisp, ConfuciusCrisp, MossCrisp, OmniCrisp, OmniStandalone,
         }
 
         public TextToSpeech(Subtitle subtitle, SubtitleFormat subtitleFormat, string videoFileName, VideoInfo videoInfo)
@@ -186,6 +187,16 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.FireRedTts3, "FireRedTTS3 (audio.cpp / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.KugelAudio, "KugelAudio (audio.cpp / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.BreezeTts, "Breeze TTS 2 (audio.cpp / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.F5Crisp, "F5-TTS (CrispASR / experimental)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.PocketCrisp, "Pocket TTS (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.VibeCrisp, "VibeVoice (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.IndexCrisp, "IndexTTS 1.5 (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.DotsCrisp, "Dots-TTS SOAR (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.ConfuciusCrisp, "Confucius4-TTS (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.MossCrisp, "MOSS-TTS (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.OmniCrisp, "OmniVoice (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.KokoroLocal, "Kokoro TTS (local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.OmniStandalone, "OmniVoice (standalone / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.OpenAiCompatible, "OpenAI-compatible (API)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.AllTalk, "All Talk TTS (Coqui based)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.ElevenLabs, "ElevenLabs TTS (online/pay/good)", _engines.Count));

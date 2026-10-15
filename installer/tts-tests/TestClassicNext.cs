@@ -51,7 +51,7 @@ class TestClassicNext
   Check(started.SequenceEqual(new[]{0,1}),"real muted MPV plays two clips and advances across EOF");Check(video.Volume==80 && !video.IsPlaying,"native speech playback restores source volume and pause state");
  }
  static void Unit(string folder){
-  Check(ClassicLocalTts.Catalog.Length==9,"nine classic local engines");
+  Check(ClassicLocalTts.Catalog.Length==19,"nineteen classic local engines");
   foreach(var e in ClassicLocalTts.Catalog){foreach(var m in e.Models)foreach(var f in m.Files)Check(f.Bytes>0 && f.Hash.Length==64,"pinned "+e.Id+" "+m.Key);
    if(e.IsAudioCpp){var s=ClassicLocalTtsSettings.Load(e.Id);s.Variant="cuda";s.Language=e.Languages.FirstOrDefault()?.Split('|')[0];var voice=e.Presets.FirstOrDefault() ?? "reference";var p=ClassicAudioCpp.Payload(e,s,"Hello",voice,"Exact reference transcript",folder);Check(!p.ContainsKey("consent_attestation") && !p.ContainsKey("speed"),"audio.cpp-specific protocol "+e.Id);if(e.Id=="firered")Check((string)((Dictionary<string,object>)p["options"])["language"]=="English","FireRed uses model language tags");if(e.Id=="kugel")Check(!p.ContainsKey("voice_ref"),"Kugel preset-only request");}
    using(var f=new ClassicLocalTtsSettingsForm(e.Id,ClassicLocalTtsSettings.Load(e.Id))){f.ShowInTaskbar=false;f.StartPosition=FormStartPosition.Manual;f.Location=new Point(-20000,-20000);f.Show();Application.DoEvents();using(var bmp=new Bitmap(f.Width,f.Height)){f.DrawToBitmap(bmp,new Rectangle(0,0,bmp.Width,bmp.Height));bmp.Save(Path.Combine(folder,e.Id+"-settings.png"));}Check(f.Controls[0].Controls.Cast<Control>().All(c=>c.Bottom<=f.Controls[0].Height),"settings fit "+e.Id);f.Close();}
