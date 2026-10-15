@@ -14,6 +14,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         public string Size { get; set; }
         public string[] Urls { get; set; }
         public bool Aligner { get; set; }
+        public ClassicLocalTtsFile[] Assets { get; set; }
         public override string ToString() => Name + (string.IsNullOrEmpty(Size) ? "" : "  (" + Size + ")");
     }
 
@@ -129,6 +130,9 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         public string Model { get; set; } = "";
         public string Aligner { get; set; } = "";
         public bool UseVad { get; set; }
+        public string Vad { get; set; } = "auto";
+        public bool IsolateSpeech { get; set; }
+        public bool DetectSpeakers { get; set; }
         public bool WhisperXAlignWords { get; set; } = true;
         public bool TranslateToEnglish { get; set; }
         public bool RetryWithoutVad { get; set; } = true;

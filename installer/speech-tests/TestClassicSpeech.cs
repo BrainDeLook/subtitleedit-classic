@@ -46,7 +46,7 @@ internal static class TestClassicSpeech
     }
     private static void Unit(string directory)
     {
-        Check(ClassicSpeechCatalog.Engines.Count==17,"Stable catalog count");
+        Check(ClassicSpeechCatalog.Engines.Count==18,"Stable catalog count");
         foreach(var catalogEngine in ClassicSpeechCatalog.Engines)
         {
             Check(catalogEngine.Models.Count>0 && catalogEngine.Languages.Count>0,"Missing models/languages "+catalogEngine.Name);

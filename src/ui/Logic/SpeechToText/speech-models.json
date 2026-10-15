@@ -2077,6 +2077,198 @@
           "https://huggingface.co/cstr/parakeet-tdt_ctc-1.1b-GGUF/resolve/main/parakeet-tdt_ctc-1.1b.gguf"
         ],
         "Aligner": false
+      },
+      {
+        "Name": "parakeet-ultra-q4_k.gguf",
+        "Size": "402 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-ultra-GGUF/resolve/main/parakeet-ultra-q4_k.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "parakeet-ultra-q4_k.gguf",
+            "Repository": "cstr/parakeet-ultra-GGUF",
+            "Bytes": 402226496,
+            "Hash": "09bb4a91da4c14f158ad01829b9bb3d81eedc85156d884e9a9c483dfe09238c6"
+          }
+        ]
+      },
+      {
+        "Name": "parakeet-ultra-q8_0.gguf",
+        "Size": "674 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-ultra-GGUF/resolve/main/parakeet-ultra-q8_0.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "parakeet-ultra-q8_0.gguf",
+            "Repository": "cstr/parakeet-ultra-GGUF",
+            "Bytes": 674342400,
+            "Hash": "ebf1186c3dc7e77f71877a5380a73e39d5c0aaf5cb55e65e56b077b1b2aacef1"
+          }
+        ]
+      },
+      {
+        "Name": "parakeet-ultra-f16.gguf",
+        "Size": "1.26 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-ultra-GGUF/resolve/main/parakeet-ultra-f16.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "parakeet-ultra-f16.gguf",
+            "Repository": "cstr/parakeet-ultra-GGUF",
+            "Bytes": 1255338880,
+            "Hash": "d717e660ee98189bdb067980ce0a88dc26e8ac9e81388ecf5fac6d4940982395"
+          }
+        ]
+      },
+      {
+        "Name": "phonon2-q4_k.gguf",
+        "Size": "402 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/phonon2-GGUF/resolve/main/phonon2-q4_k.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "phonon2-q4_k.gguf",
+            "Repository": "cstr/phonon2-GGUF",
+            "Bytes": 402226656,
+            "Hash": "c8a55e1009da474f9ae96b1500a6901e739e862cc7b1c3923251bc37e72b16db"
+          }
+        ]
+      },
+      {
+        "Name": "phonon2-q8_0.gguf",
+        "Size": "674 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/phonon2-GGUF/resolve/main/phonon2-q8_0.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "phonon2-q8_0.gguf",
+            "Repository": "cstr/phonon2-GGUF",
+            "Bytes": 674342560,
+            "Hash": "a8c4a874195b83604ceb5d87c0e9b5ddf641ef1d5ec2d8e1ca2a040d25b2563a"
+          }
+        ]
+      },
+      {
+        "Name": "phonon2-f16.gguf",
+        "Size": "1.26 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/phonon2-GGUF/resolve/main/phonon2-f16.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "phonon2-f16.gguf",
+            "Repository": "cstr/phonon2-GGUF",
+            "Bytes": 1255339232,
+            "Hash": "57e9d16382a81282b4f03da60e6c9351c6ea9fdfcf25cdab8143b4314518148c"
+          }
+        ]
+      },
+      {
+        "Name": "reazonspeech-nemo-v2-q4_k.gguf",
+        "Size": "406 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/reazonspeech-nemo-v2-GGUF/resolve/main/reazonspeech-nemo-v2-q4_k.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "reazonspeech-nemo-v2-q4_k.gguf",
+            "Repository": "cstr/reazonspeech-nemo-v2-GGUF",
+            "Bytes": 406194752,
+            "Hash": "06d4ee835719ce544cc23a45b2eda85b71540cd73b92724bfac8dc368a2cd968"
+          }
+        ]
+      },
+      {
+        "Name": "reazonspeech-nemo-v2-q8_0.gguf",
+        "Size": "667 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/reazonspeech-nemo-v2-GGUF/resolve/main/reazonspeech-nemo-v2-q8_0.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "reazonspeech-nemo-v2-q8_0.gguf",
+            "Repository": "cstr/reazonspeech-nemo-v2-GGUF",
+            "Bytes": 667147072,
+            "Hash": "20b828d05f859a4b0ea0bdcc232cb6e02543d6ddd0b3a1ad1ce37aa56fd7cfd2"
+          }
+        ]
+      },
+      {
+        "Name": "reazonspeech-nemo-v2-f16.gguf",
+        "Size": "1.24 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/reazonspeech-nemo-v2-GGUF/resolve/main/reazonspeech-nemo-v2-f16.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "reazonspeech-nemo-v2-f16.gguf",
+            "Repository": "cstr/reazonspeech-nemo-v2-GGUF",
+            "Bytes": 1240435584,
+            "Hash": "aa44f0e9adb44301fe247be98ff4e8a7065437f96831940e19af38b9ecbb25d1"
+          }
+        ]
+      },
+      {
+        "Name": "parakeet-ctc-1.1b-ja-q4_k.gguf",
+        "Size": "672 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-ctc-1.1b-ja-GGUF/resolve/main/parakeet-ctc-1.1b-ja-q4_k.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "parakeet-ctc-1.1b-ja-q4_k.gguf",
+            "Repository": "cstr/parakeet-ctc-1.1b-ja-GGUF",
+            "Bytes": 671549216,
+            "Hash": "7e6d9bc6127565d6b95c6e28b06b64b78ef21bf56dadf7bbbee99646a3aa7930"
+          }
+        ]
+      },
+      {
+        "Name": "parakeet-ctc-1.1b-ja-q8_0.gguf",
+        "Size": "1.14 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-ctc-1.1b-ja-GGUF/resolve/main/parakeet-ctc-1.1b-ja-q8_0.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "parakeet-ctc-1.1b-ja-q8_0.gguf",
+            "Repository": "cstr/parakeet-ctc-1.1b-ja-GGUF",
+            "Bytes": 1137330464,
+            "Hash": "4fca7a83833012d515b4a71ab3df9a0abcf3362107369850d89dda962dfd34b4"
+          }
+        ]
+      },
+      {
+        "Name": "parakeet-ctc-1.1b-ja-f16.gguf",
+        "Size": "2.13 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/parakeet-ctc-1.1b-ja-GGUF/resolve/main/parakeet-ctc-1.1b-ja-f16.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "parakeet-ctc-1.1b-ja-f16.gguf",
+            "Repository": "cstr/parakeet-ctc-1.1b-ja-GGUF",
+            "Bytes": 2134533952,
+            "Hash": "34dd3128275c9bca2b4296f53c5f831feb258fcf3fdd28c29c0dc2d2f7d5ede7"
+          }
+        ]
       }
     ]
   },
@@ -2403,6 +2595,22 @@
           "https://huggingface.co/cstr/voxtral-mini-3b-2507-GGUF/resolve/main/voxtral-mini-3b-2507-q8_0.gguf"
         ],
         "Aligner": false
+      },
+      {
+        "Name": "voxtral-mini-3b-2507-f16.gguf",
+        "Size": "9.36 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/voxtral-mini-3b-2507-GGUF/resolve/main/voxtral-mini-3b-2507-f16.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "voxtral-mini-3b-2507-f16.gguf",
+            "Repository": "cstr/voxtral-mini-3b-2507-GGUF",
+            "Bytes": 9363264128,
+            "Hash": "b15fbb737a5b148d8e8c041ea3213778e6e1170352099b695db6c58da13d1655"
+          }
+        ]
       }
     ]
   },
@@ -2573,6 +2781,74 @@
           "https://huggingface.co/OpenVoiceOS/qwen3-forced-aligner-0.6b-q4-k-m/resolve/main/qwen3-forced-aligner-0.6b-q4_k_m.gguf"
         ],
         "Aligner": true
+      }
+    ]
+  },
+  {
+    "Name": "Crisp ASR Index-Echo",
+    "Family": "crisp",
+    "Backend": "index-echo",
+    "NativeTimings": true,
+    "Languages": [
+      {
+        "Code": "en",
+        "Name": "Chinese → English"
+      },
+      {
+        "Code": "ja",
+        "Name": "Chinese → Japanese"
+      },
+      {
+        "Code": "es",
+        "Name": "Chinese → Spanish"
+      }
+    ],
+    "Models": [
+      {
+        "Name": "index-echo-2b-q8_0.gguf",
+        "Size": "2.7 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/index-echo-2b-GGUF/resolve/main/index-echo-2b-q8_0.gguf",
+          "https://huggingface.co/cstr/index-echo-2b-GGUF/resolve/main/index-echo-2b-decoder-q8_0.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "index-echo-2b-q8_0.gguf",
+            "Repository": "cstr/index-echo-2b-GGUF",
+            "Bytes": 702951040,
+            "Hash": "c1d0d99086204c8640452666ca854f0140261c9654c47ace4e9eee4a72e7e06a"
+          },
+          {
+            "File": "index-echo-2b-decoder-q8_0.gguf",
+            "Repository": "cstr/index-echo-2b-GGUF",
+            "Bytes": 2012012256,
+            "Hash": "4c18f70d402600f74fce568ebe7fddff9d3d14ba3b97c19c59e79b11636c3ce1"
+          }
+        ]
+      },
+      {
+        "Name": "index-echo-2b-f16.gguf",
+        "Size": "5.1 GB",
+        "Urls": [
+          "https://huggingface.co/cstr/index-echo-2b-GGUF/resolve/main/index-echo-2b-f16.gguf",
+          "https://huggingface.co/cstr/index-echo-2b-GGUF/resolve/main/index-echo-2b-decoder-f16.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "index-echo-2b-f16.gguf",
+            "Repository": "cstr/index-echo-2b-GGUF",
+            "Bytes": 1313848896,
+            "Hash": "fcb3f431c5898ce2029b96b04ef01d9bb8ed913ab1aad3d0ee01e1e17f8a0f44"
+          },
+          {
+            "File": "index-echo-2b-decoder-f16.gguf",
+            "Repository": "cstr/index-echo-2b-GGUF",
+            "Bytes": 3775708896,
+            "Hash": "3f503cbd23ba45fd3b9f83db4d7d0060cb95ba227b5f133237ed539ad2bdde44"
+          }
+        ]
       }
     ]
   }

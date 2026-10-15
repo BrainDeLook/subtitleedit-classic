@@ -14,7 +14,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         public ClassicSpeechSettings(SpeechEngine engine, ClassicSpeechOptions options)
         {
             Text = L("Параметры распознавания речи", "Speech-to-text settings");
-            StartPosition = FormStartPosition.CenterParent; MinimumSize = new Size(640, 430); ClientSize = new Size(660, 430);
+            StartPosition = FormStartPosition.CenterParent; MinimumSize = new Size(680, 530); ClientSize = new Size(700, 500);
             UiUtil.PreInitialize(this);
             var label = new Label { Text = L("Режим вычислений", "Compute backend"), AutoSize = true, Left = 15, Top = 20 };
             var variant = new ComboBox { Left = 230, Top = 16, Width = 250, DropDownStyle = ComboBoxStyle.DropDownList };
@@ -24,7 +24,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             var alignerLabel = new Label { Text = L("Выравнивание таймингов", "Forced aligner"), AutoSize = true, Left = 15, Top = 55 };
             var aligner = new ComboBox { Left = 230, Top = 51, Width = 410, DropDownStyle = ComboBoxStyle.DropDownList, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
             var alignerModels = engine.Models.Where(m => m.Aligner).ToList();
-            if (engine.Family == "crisp") alignerModels = ClassicSpeechCatalog.Engines.First(e => e.Backend == "qwen3").Models.Where(m => m.Aligner).ToList();
+            if (engine.Family == "crisp") alignerModels = ClassicSpeechExtras.RankedAligners(options.Language).Select(a => a.Model).ToList();
             aligner.Items.Add(L("Встроенное (native timings)", "Built-in (native timings)"));
             foreach (var model in alignerModels) aligner.Items.Add(model);
             aligner.SelectedIndex = 0;
@@ -33,28 +33,34 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             aligner.Enabled = engine.Family == "crisp" || engine.Family == "qwen";
             var vad = new CheckBox { Text = L("VAD — обнаружение участков речи", "VAD — voice activity detection"), Checked = options.UseVad, Left = 15, Top = 90, AutoSize = true, Enabled = engine.Family == "crisp" };
             vad.Visible = engine.Family != "whisperx";
+            if (ClassicSpeechExtras.NeedsVad(engine)) {vad.Checked = true; vad.Enabled = false;}
+            var vadModel = new ComboBox {Name = "comboVadModel", Left = 420, Top = 86, Width = 220, DropDownStyle = ComboBoxStyle.DropDownList, Visible = engine.Family != "whisperx", Enabled = engine.Family == "crisp" && engine.Backend != "index-echo"};
+            vadModel.Items.AddRange(ClassicSpeechExtras.VadNames); var vadChoice = engine.Backend == "index-echo" ? "silero" : options.Vad; vadModel.SelectedIndex = Math.Max(0, Array.IndexOf(ClassicSpeechExtras.VadChoices, vadChoice));
+            var isolate = new CheckBox {Name = "checkIsolateSpeech", Text = L("Выделить речь перед распознаванием (Mel-Band RoFormer)", "Isolate speech before recognition (Mel-Band RoFormer)"), Checked = options.IsolateSpeech, Left = 15, Top = 150, AutoSize = true, Enabled = engine.Family == "crisp"};
+            var speakers = new CheckBox {Name = "checkDetectSpeakers", Text = L("Определить говорящих (Sortformer)", "Detect speakers (Sortformer)"), Checked = options.DetectSpeakers, Left = 15, Top = 180, AutoSize = true, Enabled = ClassicSpeechExtras.CanDiarize(engine)};
             var alignWords = new CheckBox { Text = L("WhisperX: уточнять тайминги по словам (нужна модель выравнивания)", "WhisperX: align word timings (requires an alignment model)"), Checked = options.WhisperXAlignWords,
                 Left = 15, Top = 90, AutoSize = true, Visible = engine.Family == "whisperx" };
             var retry = new CheckBox { Text = L("Повторить без VAD, если результат пустой", "Retry without VAD when the result is empty"), Checked = options.RetryWithoutVad, Left = 15, Top = 120, AutoSize = true, Enabled = engine.Family == "crisp" };
-            var sounds = new CheckBox { Text = L("Удалять строки, содержащие только звуки/музыку", "Remove sound/music-only lines"), Checked = options.RemoveNonSpeech, Left = 15, Top = 150, AutoSize = true };
-            var repeats = new CheckBox { Text = L("Удалять подряд повторяющиеся строки", "Remove consecutive repeated lines"), Checked = options.RemoveRepeats, Left = 15, Top = 180, AutoSize = true };
-            var argumentsLabel = new Label { Text = L("Дополнительные параметры этого движка", "Extra arguments for this engine"), Left = 15, Top = 220, AutoSize = true };
-            var arguments = new TextBox { Left = 15, Top = 245, Width = 625, Height = 110, Multiline = true, ScrollBars = ScrollBars.Vertical,
+            var sounds = new CheckBox { Text = L("Удалять строки, содержащие только звуки/музыку", "Remove sound/music-only lines"), Checked = options.RemoveNonSpeech, Left = 15, Top = 210, AutoSize = true };
+            var repeats = new CheckBox { Text = L("Удалять подряд повторяющиеся строки", "Remove consecutive repeated lines"), Checked = options.RemoveRepeats, Left = 15, Top = 240, AutoSize = true };
+            var argumentsLabel = new Label { Text = L("Дополнительные параметры этого движка", "Extra arguments for this engine"), Left = 15, Top = 280, AutoSize = true };
+            var arguments = new TextBox { Left = 15, Top = 305, Width = 660, Height = 110, Multiline = true, ScrollBars = ScrollBars.Vertical,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 Text = options.ExtraArguments.TryGetValue(engine.Name, out var extra) ? extra : "" };
-            var ok = new Button { Text = "OK", Width = 110, Left = 405, Top = 390, Anchor = AnchorStyles.Bottom | AnchorStyles.Right };
-            var cancel = new Button { Text = L("Отмена", "Cancel"), Width = 110, Left = 530, Top = 390, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, DialogResult = DialogResult.Cancel };
+            var ok = new Button { Text = "OK", Width = 110, Left = 440, Top = 450, Anchor = AnchorStyles.Bottom | AnchorStyles.Right };
+            var cancel = new Button { Text = L("Отмена", "Cancel"), Width = 110, Left = 565, Top = 450, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, DialogResult = DialogResult.Cancel };
             ok.Click += (s, e) =>
             {
                 options.Variant = (string)variant.SelectedItem;
                 options.Aligner = aligner.SelectedItem is SpeechModel selected ? selected.Name : "";
                 options.UseVad = vad.Checked; options.RetryWithoutVad = retry.Checked;
+                options.Vad = ClassicSpeechExtras.VadChoices[vadModel.SelectedIndex]; options.IsolateSpeech = isolate.Checked; options.DetectSpeakers = speakers.Checked;
                 options.WhisperXAlignWords = alignWords.Checked;
                 options.RemoveNonSpeech = sounds.Checked; options.RemoveRepeats = repeats.Checked;
                 options.ExtraArguments[engine.Name] = arguments.Text.Trim();
                 options.Save(); DialogResult = DialogResult.OK;
             };
-            Controls.AddRange(new Control[] { label, variant, alignerLabel, aligner, vad, alignWords, retry, sounds, repeats, argumentsLabel, arguments, ok, cancel });
+            Controls.AddRange(new Control[] { label, variant, alignerLabel, aligner, vad, vadModel, alignWords, retry, isolate, speakers, sounds, repeats, argumentsLabel, arguments, ok, cancel });
             AcceptButton = ok; CancelButton = cancel; UiUtil.FixFonts(this);
         }
     }

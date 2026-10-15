@@ -36877,6 +36877,8 @@ namespace Nikse.SubtitleEdit.Forms
                 MakeHistoryForUndo(string.Format(_language.BeforeX, string.Format(LanguageSettings.Current.Main.Menu.Video.VideoAudioToTextX, "Whisper")));
                 _subtitle.Paragraphs.Clear();
                 _subtitle.Paragraphs.AddRange(form.TranscribedSubtitle.Paragraphs);
+                if (_subtitle.Paragraphs.Any(p => !string.IsNullOrEmpty(p.Actor)) && !(GetCurrentSubtitleFormat() is AdvancedSubStationAlpha) && !(GetCurrentSubtitleFormat() is SubStationAlpha))
+                    SetFormatTo(new AdvancedSubStationAlpha());
                 var idx = FirstSelectedIndex;
                 SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
                 _subtitleListViewIndex = -1;

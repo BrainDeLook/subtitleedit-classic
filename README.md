@@ -6,6 +6,10 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 
 English · [Русский](README.ru.md)
 
+## Local 4.0.24 preview
+
+ASR adds selectable VAD, speech isolation, speaker detection and new stable v5.3 models, including Parakeet Ultra, Phonon-2, Voxtral and Index-Echo. Speaker metadata survives postprocessing; batch subtitles use ASS when actors are present. Time-code review adds editable original/proposed waveforms and twelve language-specific wav2vec2 aligners. The published stable installer remains 4.0.23. Native checks focus on Russian and English; see [the changelog](CLASSIC_CHANGELOG.md) for coverage and limits.
+
 ## Classic 4.0.23
 
 CosyVoice 3, VoxCPM 2 and Chatterbox are available with model downloads, shared reference voices and actor casts. Select the model in the engine's Settings dialog; CosyVoice also offers preset voices. Chatterbox Turbo is English-only. The default models were tested on CUDA 13 in Russian and English; the remaining quantizations/backends have narrower coverage.

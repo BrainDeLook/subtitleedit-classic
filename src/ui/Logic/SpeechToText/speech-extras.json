@@ -1,0 +1,395 @@
+{
+  "Aligners": [
+    {
+      "Choice": "qwen3-forced",
+      "Language": "",
+      "Display": "Qwen3 (10 languages)",
+      "Model": {
+        "Name": "qwen3-forced-aligner-0.6b-q8_0.gguf",
+        "Size": "986 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/qwen3-forced-aligner-0.6b-GGUF/resolve/main/qwen3-forced-aligner-0.6b-q8_0.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "qwen3-forced-aligner-0.6b-q8_0.gguf",
+            "Repository": "cstr/qwen3-forced-aligner-0.6b-GGUF",
+            "Bytes": 985594624,
+            "Hash": "539df5dd0fe1721e378ac13bfac9a26b1260dafb62d892c518c1f21244762636"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "canary-ctc",
+      "Language": "",
+      "Display": "Canary CTC (25 languages)",
+      "Model": {
+        "Name": "canary-ctc-aligner-q8_0.gguf",
+        "Size": "650 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/canary-ctc-aligner-GGUF/resolve/main/canary-ctc-aligner-q8_0.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "canary-ctc-aligner-q8_0.gguf",
+            "Repository": "cstr/canary-ctc-aligner-GGUF",
+            "Bytes": 666894464,
+            "Hash": "f72d2beb52348e6cbc80f6993e6a10fda63629cbcf6ba14244c0c1211f91e8bd"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-en",
+      "Language": "en",
+      "Display": "wav2vec2 aligner (English)",
+      "Model": {
+        "Name": "wav2vec2-xlsr-en-q4_k.gguf",
+        "Size": "~212 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-english-GGUF/resolve/main/wav2vec2-xlsr-en-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-xlsr-en-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-english-GGUF",
+            "Bytes": 221901472,
+            "Hash": "e28e4131af7eb4cc2dc2c15464801f4a6437a5f7cd51f45e5b12883ef7e8bc8f"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-de",
+      "Language": "de",
+      "Display": "wav2vec2 aligner (German)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-german-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-german-GGUF/resolve/main/wav2vec2-large-xlsr-53-german-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-german-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-german-GGUF",
+            "Bytes": 222038272,
+            "Hash": "d134f7470d6b1f24a47fd165840697340b5259dc93b7d35cf43e14fb0d0213e7"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-fr",
+      "Language": "fr",
+      "Display": "wav2vec2 aligner (French)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-french-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-french-GGUF/resolve/main/wav2vec2-large-xlsr-53-french-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-french-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-french-GGUF",
+            "Bytes": 222124576,
+            "Hash": "15437b1e5628317fc094d1feb431f1af48d17a5c8cfd54f440b4fd434478c427"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-es",
+      "Language": "es",
+      "Display": "wav2vec2 aligner (Spanish)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-spanish-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-spanish-GGUF/resolve/main/wav2vec2-large-xlsr-53-spanish-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-spanish-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-spanish-GGUF",
+            "Bytes": 222050624,
+            "Hash": "6ff79dfd9ae82fd678170e7f77d92ec4f8d893c42ddbeda5a6b341b413226621"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-it",
+      "Language": "it",
+      "Display": "wav2vec2 aligner (Italian)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-italian-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-italian-GGUF/resolve/main/wav2vec2-large-xlsr-53-italian-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-italian-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-italian-GGUF",
+            "Bytes": 222062944,
+            "Hash": "f13dba10cc2ec32590dffd901352ad20874b88a133b31c48aa40b8bc5323f5f0"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-ja",
+      "Language": "ja",
+      "Display": "wav2vec2 aligner (Japanese)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-japanese-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-japanese-GGUF/resolve/main/wav2vec2-large-xlsr-53-japanese-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-japanese-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-japanese-GGUF",
+            "Bytes": 231505920,
+            "Hash": "080cf27f2ab700a296ceb9bccd61275ec29424a7eb9a80009f3dd0b10d52f29b"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-zh",
+      "Language": "zh",
+      "Display": "wav2vec2 aligner (Chinese)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-chinese-zh-cn-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-chinese-zh-cn-GGUF/resolve/main/wav2vec2-large-xlsr-53-chinese-zh-cn-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-chinese-zh-cn-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-chinese-zh-cn-GGUF",
+            "Bytes": 236282848,
+            "Hash": "d3a1aa7ec614e3cbe511c1367a725ce910311ff979e27254012c16ea107039a0"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-nl",
+      "Language": "nl",
+      "Display": "wav2vec2 aligner (Dutch)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-dutch-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-dutch-GGUF/resolve/main/wav2vec2-large-xlsr-53-dutch-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-dutch-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-dutch-GGUF",
+            "Bytes": 222042368,
+            "Hash": "47b93577151f7e9bc42b34e988a2c1eb5a72c68e1853ed629b967d2fb7f556af"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-pt",
+      "Language": "pt",
+      "Display": "wav2vec2 aligner (Portuguese)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-portuguese-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-portuguese-GGUF/resolve/main/wav2vec2-large-xlsr-53-portuguese-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-portuguese-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-portuguese-GGUF",
+            "Bytes": 222071136,
+            "Hash": "9fe6cef9cecb6510e6a5958d3b1cede276b6ceb30f97cad0bb2ac508d147c19a"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-ar",
+      "Language": "ar",
+      "Display": "wav2vec2 aligner (Arabic)",
+      "Model": {
+        "Name": "wav2vec2-large-xlsr-53-arabic-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-large-xlsr-53-arabic-GGUF/resolve/main/wav2vec2-large-xlsr-53-arabic-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-large-xlsr-53-arabic-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-large-xlsr-53-arabic-GGUF",
+            "Bytes": 222091744,
+            "Hash": "d1b186a975a1e3506ff61ca90c301caeadfc78c1f483f4b3cd2d899409ce1be7"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-uk",
+      "Language": "uk",
+      "Display": "wav2vec2 aligner (Ukrainian)",
+      "Model": {
+        "Name": "wav2vec2-xls-r-300m-uk-with-small-lm-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-xls-r-300m-uk-with-small-lm-GGUF/resolve/main/wav2vec2-xls-r-300m-uk-with-small-lm-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-xls-r-300m-uk-with-small-lm-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-xls-r-300m-uk-with-small-lm-GGUF",
+            "Bytes": 222046496,
+            "Hash": "e4518c87e67aa2f477729ea19d2d44e1ae0a41a679153e323e39e29b0fe20f9e"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "wav2vec2-aligner-cs",
+      "Language": "cs",
+      "Display": "wav2vec2 aligner (Czech)",
+      "Model": {
+        "Name": "wav2vec2-xls-r-300m-cs-250-q4_k.gguf",
+        "Size": "~300 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/wav2vec2-xls-r-300m-cs-250-GGUF/resolve/main/wav2vec2-xls-r-300m-cs-250-q4_k.gguf"
+        ],
+        "Aligner": true,
+        "Assets": [
+          {
+            "File": "wav2vec2-xls-r-300m-cs-250-q4_k.gguf",
+            "Repository": "cstr/wav2vec2-xls-r-300m-cs-250-GGUF",
+            "Bytes": 222071136,
+            "Hash": "15a9f3f738a57f8400bed5bba47d3e3f733f3998c42551ff7093b2e852b931cb"
+          }
+        ]
+      }
+    }
+  ],
+  "Auxiliary": [
+    {
+      "Choice": "firered",
+      "Model": {
+        "Name": "firered-vad.gguf",
+        "Size": "2.4 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/firered-vad-GGUF/resolve/main/firered-vad.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "firered-vad.gguf",
+            "Repository": "cstr/firered-vad-GGUF",
+            "Bytes": 2357952,
+            "Hash": "72d37db1a5d2a9db386d1452b3f54d13f97bea79710105fc65acd050ea7db600"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "whisper-vad",
+      "Model": {
+        "Name": "whisper-vad-asmr-q4_k.gguf",
+        "Size": "25 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/whisper-vad-encdec-asmr-GGUF/resolve/main/whisper-vad-asmr-q4_k.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "whisper-vad-asmr-q4_k.gguf",
+            "Repository": "cstr/whisper-vad-encdec-asmr-GGUF",
+            "Bytes": 25418080,
+            "Hash": "b5b984de4e390158f33f307104635423409c2638ab07977caf836b05671c455d"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "silero",
+      "Model": {
+        "Name": "ggml-silero-v6.2.0.bin",
+        "Size": "885 KB",
+        "Urls": [
+          "https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "ggml-silero-v6.2.0.bin",
+            "Repository": "ggml-org/whisper-vad",
+            "Bytes": 885098,
+            "Hash": "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "sortformer",
+      "Model": {
+        "Name": "Nemotron-3-Diarization.q8_0.gguf",
+        "Size": "107 MB",
+        "Urls": [
+          "https://huggingface.co/nvidia/Nemotron-3-Diarization/resolve/main/Nemotron-3-Diarization.q8_0.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "Nemotron-3-Diarization.q8_0.gguf",
+            "Repository": "nvidia/Nemotron-3-Diarization",
+            "Bytes": 107012128,
+            "Hash": "08456d9e22cd9a323c0364d98375f3746d6e68507ebb705cd46438c534c7a3a1"
+          }
+        ]
+      }
+    },
+    {
+      "Choice": "roformer",
+      "Model": {
+        "Name": "mel-band-roformer-vocals-f16.gguf",
+        "Size": "457 MB",
+        "Urls": [
+          "https://huggingface.co/cstr/mel-band-roformer-vocals-GGUF/resolve/main/mel-band-roformer-vocals-f16.gguf"
+        ],
+        "Aligner": false,
+        "Assets": [
+          {
+            "File": "mel-band-roformer-vocals-f16.gguf",
+            "Repository": "cstr/mel-band-roformer-vocals-GGUF",
+            "Bytes": 457014016,
+            "Hash": "fe94b114bce12653dae4e94968d28cbab36dcdd0c783fc052c3b656218233f24"
+          }
+        ]
+      }
+    }
+  ]
+}

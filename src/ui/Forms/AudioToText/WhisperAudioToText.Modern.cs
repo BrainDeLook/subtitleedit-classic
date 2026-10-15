@@ -65,7 +65,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             // Start with the backends verified on the Windows execution path. The
             // full stable catalog stays available for subsequent backend validation.
             foreach (var engine in ClassicSpeechCatalog.Engines.Where(e => e.Family == "crisp" &&
-                new[] { "parakeet", "gigaam", "qwen3" }.Contains(e.Backend))) _modernBackend.Items.Add(engine);
+                new[] { "parakeet", "gigaam", "qwen3", "voxtral", "index-echo" }.Contains(e.Backend))) _modernBackend.Items.Add(engine);
             _modernBackend.SelectedItem = _modernBackend.Items.Cast<SpeechEngine>().FirstOrDefault(e => e.Backend == _modernOptions.Backend) ?? _modernBackend.Items[0];
             _modernBackend.SelectedIndexChanged += (s, e) => { if (!_modernUpdating && IsModernSpeech) RefreshModernSpeech(); };
             _modernStatus = new Label { Name = "classicSpeechRuntimeStatus", Left = 320, Top = 79, Width = groupBoxModels.Width - 330,
@@ -183,7 +183,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private SpeechModel ModernAligner(SpeechEngine engine)
         {
             if (engine.NativeTimings && string.IsNullOrEmpty(_modernOptions.Aligner)) return null;
-            var models = (engine.Family == "crisp" ? ClassicSpeechCatalog.Engines.First(e => e.Backend == "qwen3") : engine).Models.Where(m => m.Aligner).ToList();
+            var models = engine.Family == "crisp" ? ClassicSpeechExtras.RankedAligners(_modernOptions.Language).Select(a => a.Model).ToList() : engine.Models.Where(m => m.Aligner).ToList();
             return models.FirstOrDefault(m => m.Name == _modernOptions.Aligner) ?? (engine.NativeTimings ? null : models.FirstOrDefault());
         }
 
@@ -193,6 +193,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             await ClassicSpeechDownload.EnsureModelAsync(engine, model, cancel, progress);
             var aligner = ModernAligner(engine);
             if (aligner != null) await ClassicSpeechDownload.EnsureModelAsync(engine, aligner, cancel, progress);
+            await ClassicSpeechExtras.EnsureAsync(engine, _modernOptions, cancel, progress);
         }
 
         private IProgress<SpeechProgress> ModernProgress(Stopwatch watch)
@@ -260,6 +261,8 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 MessageBox.Show(this, ClassicSpeechSettings.L("Эта модель предназначена только для английского. Выбери English или многоязычную модель.",
                     "This model is English-only. Choose English or a multilingual model."), Text); return;
             }
+            if ((model.Name.StartsWith("reazonspeech-",StringComparison.OrdinalIgnoreCase) || model.Name.Contains("-ja-")) && _modernOptions.Language != "ja")
+            {MessageBox.Show(this,ClassicSpeechSettings.L("Эта модель предназначена для японского. Выбери Japanese.","This model is Japanese-only. Choose Japanese."),Text);return;}
             var inputs = _batchMode ? listViewInputFiles.Items.Cast<ListViewItem>().Select(i => i.Text).ToList() : new List<string> { _videoFileName };
             if (inputs.Count == 0 || inputs.Any(f => !File.Exists(f))) { MessageBox.Show(this, ClassicSpeechSettings.L("Выбери входной файл.", "Choose an input file."), Text); return; }
             BeginModernOperation();
@@ -286,23 +289,25 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                         if (transcript.Paragraphs.Count == 0) throw new InvalidDataException(ClassicSpeechSettings.L("Движок не обнаружил речь. Проверь язык, модель и VAD.", "No speech detected. Check language, model and VAD."));
                         _qualityReport = new SpeechToTextQualityReport();
                         var previous = "";
+                        var previousActor = "";
                         for (var i = 0; i < transcript.Paragraphs.Count; i++)
                         {
                             var p = transcript.Paragraphs[i];
                             var sound = SpeechToTextQualityReport.IsNonSpeechLine(p.Text);
-                            var repeated = SpeechToTextQualityReport.IsRepeatOf(p.Text, previous);
+                            var repeated = (p.Actor ?? "") == previousActor && SpeechToTextQualityReport.IsRepeatOf(p.Text, previous);
                             if (_modernOptions.RemoveNonSpeech && sound || _modernOptions.RemoveRepeats && repeated)
                             {
                                 _qualityReport.Removed.Add(SpeechToTextQualityReport.MakeIssue(sound ? SpeechToTextQualityIssueType.NonSpeech : SpeechToTextQualityIssueType.Repeated, p, i + 1, "Removed"));
                                 transcript.Paragraphs.RemoveAt(i--); continue;
                             }
                             previous = p.Text;
+                            previousActor = p.Actor ?? "";
                         }
                         var post = new AudioToTextPostProcessor(_modernOptions.TranslateToEnglish ? "en" : _modernOptions.Language);
-                        TranscribedSubtitle = post.Fix(AudioToTextPostProcessor.Engine.Whisper, transcript, checkBoxUsePostProcessing.Checked,
+                        TranscribedSubtitle = ClassicSpeechExtras.ProcessByActor(transcript, actorGroup => post.Fix(AudioToTextPostProcessor.Engine.Whisper, actorGroup, checkBoxUsePostProcessing.Checked,
                             Configuration.Settings.Tools.WhisperPostProcessingAddPeriods, Configuration.Settings.Tools.WhisperPostProcessingMergeLines,
                             Configuration.Settings.Tools.WhisperPostProcessingFixCasing, Configuration.Settings.Tools.WhisperPostProcessingFixShortDuration,
-                            Configuration.Settings.Tools.WhisperPostProcessingSplitLines);
+                            Configuration.Settings.Tools.WhisperPostProcessingSplitLines));
                         if (checkBoxAutoAdjustTimings.Checked && _wavePeaks != null && !_batchMode)
                             TranscribedSubtitle = WhisperTimingFixer.ShortenViaWavePeaks(TranscribedSubtitle, _wavePeaks);
                         var settings = Configuration.Settings.General;
@@ -311,9 +316,10 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                         {
                             var suffix = string.IsNullOrEmpty(engine.Backend) ? engine.Family : engine.Backend;
                             var stem = Path.Combine(Path.GetDirectoryName(input), Path.GetFileNameWithoutExtension(input) + ".asr." + suffix);
-                            var output = stem + ".srt";
-                            for (var number = 2; File.Exists(output); number++) output = stem + "." + number + ".srt";
-                            File.WriteAllText(output, new SubRip().ToText(TranscribedSubtitle, null), new UTF8Encoding(false)); completed.Add(output);
+                            SubtitleFormat outputFormat = TranscribedSubtitle.Paragraphs.Any(p => !string.IsNullOrEmpty(p.Actor)) ? (SubtitleFormat)new AdvancedSubStationAlpha() : new SubRip();
+                            var output = stem + outputFormat.Extension;
+                            for (var number = 2; File.Exists(output); number++) output = stem + "." + number + outputFormat.Extension;
+                            File.WriteAllText(output, outputFormat.ToText(TranscribedSubtitle, null), new UTF8Encoding(false)); completed.Add(output);
                         }
                     }
                     finally { if (Directory.Exists(job)) Directory.Delete(job, true); }
@@ -331,7 +337,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             if (singleSucceeded && !IsDisposed) DialogResult = DialogResult.OK;
         }
 
-        private static bool EnglishOnly(SpeechModel model) => model.Name.Contains(".en") || model.Name.StartsWith("distil-", StringComparison.OrdinalIgnoreCase);
+        private static bool EnglishOnly(SpeechModel model) => model.Name.Contains(".en") || model.Name.StartsWith("distil-", StringComparison.OrdinalIgnoreCase) || model.Name.StartsWith("phonon2-", StringComparison.OrdinalIgnoreCase);
 
         private void ShowModernError(Exception exception)
         {

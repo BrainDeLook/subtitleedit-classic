@@ -1,5 +1,15 @@
 # Subtitle Edit Classic changelog
 
+## 4.0.24 — local preview
+
+- Speech recognition: selectable Silero, FireRedVAD, Whisper-VAD and WebRTC; optional Mel-Band RoFormer speech isolation; Sortformer speaker detection in the ordinary ASR window. Crisp-only flags stay disabled for other runtimes. Postprocessing and duplicate removal respect speaker changes; diarized batch output uses ASS to retain actors.
+- Added stable v5.3 Parakeet Ultra, Phonon-2 and additional Japanese Parakeet/Reazon models, Voxtral F16 and Index-Echo with its matching decoder. New model bundles carry pinned sizes and SHA-256 hashes. Phonon-2 is English-only; Index-Echo translates Chinese speech into English, Japanese or Spanish, preserving bilingual cue timing while discarding the original-language line.
+- Time-code review now contains synchronized original/proposed waveforms. Drag cue boundaries or whole cues, zoom, listen and reset a selected cue. Manual edits mark the cue for selective application; source time codes remain unchanged until Apply, with the existing main-window undo path retained.
+- Added twelve language-specific wav2vec2 forced aligners alongside Canary/Qwen. Language-aware ordering and guards avoid selecting an aligner for the wrong language. Speech checks prefer an installed Parakeet Ultra model when available.
+- Validation includes native CUDA 13 Russian/English ASR, all four VAD families, ordinary Sortformer labels, speech isolation, English Phonon/Voxtral, Chinese-to-English Index-Echo, English wav2vec2 and Russian Canary alignment. Waveform tests cover repeated mouse moves, grid synchronization, invalid ranges and selective application. Other quantizations and languages have narrower native coverage; diarization can still merge speakers and separation can leave artifacts.
+
+This preview remains local; no release has been published.
+
 ## 4.0.23
 
 - Added CosyVoice 3, VoxCPM 2 and Chatterbox from stable v5.3.0. Ten model choices include CosyVoice RL variants and Chatterbox Base/F16/Q4_K/Turbo. Model bundles download through the classic interface with pinned sizes and SHA-256 checks; all CosyVoice companion files are staged together.

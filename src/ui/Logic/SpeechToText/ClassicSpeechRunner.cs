@@ -102,17 +102,21 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             var modelPath = ClassicSpeechCatalog.ModelPath(engine, model);
             if (engine.Family == "crisp")
             {
-                args.AddRange(new[] { "--backend", engine.Backend, "-l", options.Language, "-m", modelPath,
+                args.AddRange(new[] { "--backend", engine.Backend, engine.Backend == "index-echo" ? "--target-lang" : "-l", options.Language, "-m", modelPath,
                     "-f", inputWave, "--output-srt", "--output-file", outputPrefix, "--print-progress" });
                 // Native ASR chunks can span a minute of uninterrupted speech.
                 // Split while the engine still has word timestamps, before SRT
                 // discards that information; later text splitting cannot recover it.
                 var maxChars = Configuration.Settings.Tools.AudioToTextLineMaxChars;
                 if (maxChars < 20 || maxChars > 120) maxChars = 86;
-                args.AddRange(new[] { "--max-len", maxChars.ToString(CultureInfo.InvariantCulture), "--split-on-word", "--split-on-punct" });
+                // Index-Echo emits original + translation in one cue. Splitting that
+                // bilingual text here breaks it into separate cues and loses their pairing.
+                if (engine.Backend != "index-echo") args.AddRange(new[] { "--max-len", maxChars.ToString(CultureInfo.InvariantCulture), "--split-on-word", "--split-on-punct" });
                 if (!string.IsNullOrEmpty(alignerPath)) args.AddRange(new[] { "-am", alignerPath });
                 if (!engine.NativeTimings && string.IsNullOrEmpty(alignerPath)) throw new InvalidOperationException("This backend requires a forced aligner for subtitle timings.");
-                if (useVad) args.AddRange(new[] { "--vad", "--vad-model", "auto" });
+                if (useVad) args.AddRange(new[] { "--vad", "--vad-model", ClassicSpeechExtras.VadPath(engine, options) });
+                if (options.DetectSpeakers && ClassicSpeechExtras.CanDiarize(engine))
+                    args.AddRange(new[] {"--diarize", "--diarize-method", "sortformer", "--diarize-model", ClassicSpeechExtras.DiarizationPath});
             }
             else if (engine.Family == "qwen")
             {
@@ -143,11 +147,17 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             string waveFile, string jobFolder, string alignerPath, CancellationToken cancel, IProgress<SpeechProgress> progress,
             string executableOverride = null)
         {
+            jobFolder = Path.GetFullPath(jobFolder);
             Directory.CreateDirectory(jobFolder);
+            if (executableOverride == null && engine.Family == "crisp")
+            {
+                await ClassicSpeechExtras.EnsureAsync(engine, options, cancel, progress).ConfigureAwait(false);
+                if (options.IsolateSpeech) waveFile = await ClassicSpeechExtras.IsolateAsync(waveFile, jobFolder, options.Variant, cancel, progress).ConfigureAwait(false);
+            }
             if (engine.Family == "whisperx" && options.Language == "ru" && options.WhisperXAlignWords && !options.TranslateToEnglish)
                 await ClassicSpeechDownload.EnsureWhisperXRussianAlignerAsync(cancel, progress).ConfigureAwait(false);
             var output = Path.Combine(jobFolder, "transcript");
-            var useVad = options.UseVad && engine.Family == "crisp";
+            var useVad = engine.Family == "crisp" && (options.UseVad || ClassicSpeechExtras.NeedsVad(engine));
             for (var attempt = 0; attempt < 2; attempt++)
             {
                 cancel.ThrowIfCancellationRequested();
@@ -177,6 +187,9 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
                     throw new InvalidDataException("The engine finished without producing a transcript. Check its log and output parameters.");
                 }
                 var subtitle = engine.Family == "qwen" ? ParseWordJson(File.ReadAllText(file)) : ParseSrt(File.ReadAllText(file));
+                if (engine.Backend == "index-echo") foreach (var p in subtitle.Paragraphs) p.Text = IndexEchoTranslation(p.Text);
+                if (engine.Family == "crisp" && (options.DetectSpeakers || engine.Backend == "moss-diarize"))
+                    Nikse.SubtitleEdit.Logic.ClassicCast.SpeakerLabelParser.MoveLabelsToActors(subtitle);
                 if (subtitle.Paragraphs.Count > 0 || !useVad || !options.RetryWithoutVad) return subtitle;
                 useVad = false;
                 File.Delete(file);
@@ -190,6 +203,15 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             var result = new Subtitle();
             new SubRip().LoadSubtitle(result, text.TrimStart('\uFEFF').Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).ToList(), null);
             Validate(result);
+            return result;
+        }
+
+        public static string IndexEchoTranslation(string text)
+        {
+            var lines = text.Replace("\r\n", "\n").Split('\n'); if (lines.Length < 2) return text;
+            var result = string.Join(Environment.NewLine, lines.Skip(1)).Trim();
+            if (result.StartsWith("「") && result.EndsWith("」") && result.IndexOf("「", 1, StringComparison.Ordinal) < 0) result = result.Substring(1, result.Length - 2).Trim();
+            if (Nikse.SubtitleEdit.Logic.ClassicCast.SpeakerLabelParser.TrySplit(lines[0], out var speaker, out _) && !Nikse.SubtitleEdit.Logic.ClassicCast.SpeakerLabelParser.TrySplit(result, out _, out _)) result = "(" + speaker + ") " + result;
             return result;
         }
 

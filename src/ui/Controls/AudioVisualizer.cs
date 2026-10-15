@@ -495,6 +495,7 @@ namespace Nikse.SubtitleEdit.Controls
                 _allSelectedParagraphs.Add(primaryParagraph);
             }
 
+            if (selectedIndexes == null) return;
             foreach (int index in selectedIndexes)
             {
                 var p = subtitle.GetParagraphOrDefault(index);

@@ -19,6 +19,8 @@ namespace Nikse.SubtitleEdit.Logic.ClassicTiming
         public double TotalSeconds { get; private set; }
         private IProgress<SpeechProgress> _progress;
         public async Task<SubtitleRetimer.LineResult[]> RunAsync(Subtitle subtitle,string video,double seconds,string variant,bool qwen,bool checkSpeech,string language,SubtitleRetimer.Options options,CancellationToken cancel,IProgress<SpeechProgress> progress,int audioTrack=0)
+            => await RunAsync(subtitle,video,seconds,variant,qwen ? "qwen3-forced" : "canary-ctc",checkSpeech,language,options,cancel,progress,audioTrack).ConfigureAwait(false);
+        public async Task<SubtitleRetimer.LineResult[]> RunAsync(Subtitle subtitle,string video,double seconds,string variant,string alignerChoice,bool checkSpeech,string language,SubtitleRetimer.Options options,CancellationToken cancel,IProgress<SpeechProgress> progress,int audioTrack=0)
         {
             if(seconds<=0 || !File.Exists(video))throw new ArgumentException("Open a local video or audio file first");
             _folder=Path.Combine(Path.GetTempPath(),"se-retime-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_folder);
@@ -27,10 +29,10 @@ namespace Nikse.SubtitleEdit.Logic.ClassicTiming
             {
                 await ClassicSpeechDownload.EnsureRuntimeAsync(Engine,variant,cancel,progress).ConfigureAwait(false);
                 _executable=ClassicSpeechCatalog.Executable(Engine,variant);
-                var name=qwen ? "qwen3-forced-aligner-0.6b-q8_0.gguf" : "canary-ctc-aligner-q8_0.gguf";
-                var models=Path.Combine(ClassicSpeechCatalog.Root,"Models","crisp");
-                await ClassicQwenTts.EnsureModel(name,qwen ? "qwen3-forced-aligner-0.6b-GGUF" : "canary-ctc-aligner-GGUF",qwen ? 985594624L : 666894464L,qwen ? "539df5dd0fe1721e378ac13bfac9a26b1260dafb62d892c518c1f21244762636" : "f72d2beb52348e6cbc80f6993e6a10fda63629cbcf6ba14244c0c1211f91e8bd",cancel,progress,models).ConfigureAwait(false);
-                _model=Path.Combine(models,name);_audio=Path.Combine(_folder,"source.wav");
+                var selected=ClassicSpeechExtras.Catalog.Aligners.FirstOrDefault(a=>a.Choice==alignerChoice) ?? throw new ArgumentException("Unknown forced aligner: "+alignerChoice);
+                if(!string.IsNullOrEmpty(selected.Language) && language!="auto" && selected.Language!=language)throw new ArgumentException("The selected wav2vec2 aligner is for "+selected.Language+", not "+language);
+                await ClassicSpeechDownload.EnsureModelAsync(Engine,selected.Model,cancel,progress).ConfigureAwait(false);
+                _model=ClassicSpeechCatalog.ModelPath(Engine,selected.Model);_audio=Path.Combine(_folder,"source.wav");
                 await Ffmpeg("-nostdin -y -i "+Q(video)+" -map 0:a:"+Math.Max(0,audioTrack)+" -vn -af aresample=async=1:first_pts=0 -ar 16000 -ac 1 -c:a pcm_s16le "+Q(_audio),cancel).ConfigureAwait(false);
                 List<SpeechToTextCheck.HeardWord> heard=null;
                 if(checkSpeech)heard=await HearAsync(variant,language,cancel).ConfigureAwait(false);
@@ -51,7 +53,7 @@ namespace Nikse.SubtitleEdit.Logic.ClassicTiming
         private async Task<List<SpeechToTextCheck.HeardWord>> HearAsync(string variant,string language,CancellationToken cancel)
         {
             var engine=ClassicSpeechCatalog.Get(ClassicSpeechCatalog.Crisp,"parakeet");
-            var model=engine.Models.First(m=>m.Name=="parakeet-tdt-0.6b-v3-q4_k.gguf");
+            var model=engine.Models.FirstOrDefault(m=>m.Name.StartsWith("parakeet-ultra-") && File.Exists(ClassicSpeechCatalog.ModelPath(engine,m))) ?? engine.Models.First(m=>m.Name=="parakeet-tdt-0.6b-v3-q4_k.gguf");
             await ClassicSpeechDownload.EnsureModelAsync(engine,model,cancel,_progress).ConfigureAwait(false);
             var output=Path.Combine(_folder,"heard");
             var args="--backend parakeet -l "+Q(language)+" -m "+Q(ClassicSpeechCatalog.ModelPath(engine,model))+" -f "+Q(_audio)+" --output-srt -of "+Q(output)+" -ml 1 -sow --print-progress";

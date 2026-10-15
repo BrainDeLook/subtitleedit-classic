@@ -5,6 +5,8 @@ param(
 )
 $ErrorActionPreference='Stop'
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
+$OutputDirectory=(Resolve-Path $OutputDirectory).Path
+$ApplicationDirectory=(Resolve-Path $ApplicationDirectory).Path
 Copy-Item "$ApplicationDirectory/SubtitleEdit.exe", "$ApplicationDirectory/SubtitleEdit.exe.config", "$ApplicationDirectory/*.dll" $OutputDirectory -Force
 Copy-Item "$ApplicationDirectory/Languages" $OutputDirectory -Recurse -Force
 Copy-Item "$PSScriptRoot/english-sample.wav" $OutputDirectory -Force

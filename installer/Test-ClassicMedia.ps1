@@ -31,6 +31,7 @@ $tests=@{
     TestClassicActors='tts-tests/TestClassicActors.cs'
     TestClassicCastFeatures='tts-tests/TestClassicCastFeatures.cs'
     TestClassicLocalTts='tts-tests/TestClassicLocalTts.cs'
+    TestClassicSpeechExtensions='speech-tests/TestClassicSpeechExtensions.cs'
 }
 foreach($name in $tests.Keys) {
     $arguments=@('/nologo','/target:exe','/platform:x64','/langversion:latest',('/out:"'+(Join-Path $OutputDirectory "$name.exe")+'"'))+$refs+('"'+(Join-Path $PSScriptRoot $tests[$name])+'"')
@@ -68,4 +69,8 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw 'Cast/voice library/layout regression failed.' }
     & "$OutputDirectory/TestClassicLocalTts.exe" unit (Join-Path $OutputDirectory 'local-tts-features') $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw 'Local TTS model/settings/layout regression failed.' }
+    & "$OutputDirectory/TestClassicSpeechExtensions.exe" unit (Join-Path $OutputDirectory 'speech-extensions') $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw 'ASR extensions/settings regression failed.' }
+    & "$OutputDirectory/TestClassicSpeechExtensions.exe" wave (Join-Path $OutputDirectory 'timing-waveform') $FFmpegLocation (Join-Path $PSScriptRoot 'speech-tests/english-sample.wav')
+    if ($LASTEXITCODE -ne 0) { throw 'Timing waveform interaction regression failed.' }
 }

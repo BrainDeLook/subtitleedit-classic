@@ -160,6 +160,15 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         public static async Task EnsureModelAsync(SpeechEngine engine, SpeechModel model, CancellationToken cancel, IProgress<SpeechProgress> progress)
         {
             if (engine.Family == "whisperx") return; // WhisperX downloads to its private HF/model cache on first inference.
+            if (model.Assets != null && model.Assets.Length > 0)
+            {
+                foreach (var asset in model.Assets)
+                {
+                    var assetPath = Path.Combine(Path.GetDirectoryName(ClassicSpeechCatalog.ModelPath(engine, model)), asset.File);
+                    await Nikse.SubtitleEdit.Logic.ClassicCast.ClassicVoiceAssets.EnsureFileAsync("https://huggingface.co/" + asset.Repository + "/resolve/main/" + asset.File, assetPath, asset.Bytes, asset.Hash, asset.File.EndsWith(".gguf", StringComparison.OrdinalIgnoreCase), cancel, progress).ConfigureAwait(false);
+                }
+                return;
+            }
             var path = ClassicSpeechCatalog.ModelPath(engine, model);
             if (File.Exists(path) && new FileInfo(path).Length > 1000000) return;
             if (model.Urls == null || model.Urls.Length == 0) throw new InvalidDataException("No model download URL.");
