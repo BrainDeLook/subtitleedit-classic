@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.Ocr;
@@ -17,12 +17,10 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 {
     public sealed partial class VobSubNOcrTrain : Form
     {
-        private readonly Color _subtitleColor = Color.White;
-        private string _subtitleFontName = "Verdana";
-        private float _subtitleFontSize = 25.0f;
-        private readonly Color _borderColor = Color.Black;
-        private const float BorderWidth = 2.0f;
         private bool _abort;
+        private bool _training;
+        private ComboBox _lineAlgorithm;
+        private TextBox _trainingCharacters;
 
         public VobSubNOcrTrain()
         {
@@ -30,6 +28,17 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             InitializeComponent();
             UiUtil.FixFonts(this);
 
+            var ru=(Configuration.Settings.General.Language ?? "").StartsWith("ru",StringComparison.OrdinalIgnoreCase);
+            checkBoxBold.Text=ru?"Обучать жирный":"Also train bold";checkBoxItalic.Text=ru?"Обучать курсив":"Also train italic";
+            var extra=new TableLayoutPanel{Location=new Point(12,buttonTrain.Top),Width=ClientSize.Width-24,Anchor=AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right,Height=104,ColumnCount=2,RowCount=2,Padding=new Padding(8)};
+            extra.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,130));extra.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
+            extra.RowStyles.Add(new RowStyle(SizeType.Absolute,32));extra.RowStyles.Add(new RowStyle(SizeType.Percent,100));
+            _lineAlgorithm=new ComboBox{Dock=DockStyle.Fill,DropDownStyle=ComboBoxStyle.DropDownList};_lineAlgorithm.Items.AddRange(Enum.GetNames(typeof(NOcrLineAlgorithm)));_lineAlgorithm.SelectedIndex=(int)ClassicNOcrPreferences.LoadAlgorithm();_lineAlgorithm.SelectedIndexChanged+=(s,e)=>ClassicNOcrPreferences.SaveAlgorithm((NOcrLineAlgorithm)_lineAlgorithm.SelectedIndex);
+            _trainingCharacters=new TextBox{Dock=DockStyle.Fill,Multiline=true,ScrollBars=ScrollBars.Vertical,Text=NOcrTrainer.DefaultTrainingCharacters+"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"};
+            extra.Controls.Add(new Label{Text=ru?"Алгоритм линий":"Line algorithm",AutoSize=true},0,0);extra.Controls.Add(_lineAlgorithm,1,0);
+            extra.Controls.Add(new Label{Text=ru?"Символы без SRT":"Characters without SRT",AutoSize=true},0,1);extra.Controls.Add(_trainingCharacters,1,1);
+            ClientSize=new Size(ClientSize.Width,ClientSize.Height+114);MinimumSize=new Size(MinimumSize.Width,MinimumSize.Height+114);
+            groupBoxTrainingOptions.Height-=114;Controls.Add(extra);extra.BringToFront();
             var language = LanguageSettings.Current.VobSubOcr;
             Text = language.OcrTraining;
             groupBoxInput.Text = LanguageSettings.Current.BatchConvert.Input;
@@ -81,92 +90,17 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 return;
             }
 
-            if (!File.Exists(textBoxInputFile.Text))
-            {
-                return;
+            var chars=_trainingCharacters.Text;
+            if(File.Exists(textBoxInputFile.Text)) {
+                var sub=new Subtitle();sub.LoadSubtitle(textBoxInputFile.Text,out _,null);chars=string.Concat(sub.Paragraphs.Select(p=>HtmlUtil.RemoveHtmlTags(p.Text)));
             }
-
-            _abort = false;
-            buttonTrain.Text = LanguageSettings.Current.SpellCheck.Abort;
-            buttonOK.Enabled = false;
-
-            int numberOfCharactersLearned = 0;
-            int numberOfCharactersSkipped = 0;
-            var nOcrD = new NOcrDb(null);
-            var lines = new List<string>();
-            foreach (string line in File.ReadAllLines(textBoxInputFile.Text))
-            {
-                lines.Add(line);
-            }
-
-            var format = new SubRip();
-            var sub = new Subtitle();
-            format.LoadSubtitle(sub, lines, textBoxInputFile.Text);
-
-            foreach (ListViewItem item in listViewFonts.Items)
-            {
-                if (item.Checked)
-                {
-                    _subtitleFontName = item.Text;
-                    _subtitleFontSize = Convert.ToInt32(comboBoxSubtitleFontSize.Items[comboBoxSubtitleFontSize.SelectedIndex].ToString());
-                    var charactersLearned = new List<string>();
-
-                    foreach (var p in sub.Paragraphs)
-                    {
-                        foreach (char ch in p.Text)
-                        {
-                            if (!char.IsWhiteSpace(ch))
-                            {
-                                var s = ch.ToString();
-                                if (!charactersLearned.Contains(s))
-                                {
-                                    charactersLearned.Add(s);
-                                    TrainLetter(ref numberOfCharactersLearned, ref numberOfCharactersSkipped, nOcrD, s, false, false, false);
-                                    if (checkBoxBold.Checked)
-                                    {
-                                        TrainLetter(ref numberOfCharactersLearned, ref numberOfCharactersSkipped, nOcrD, s, true, false, false);
-                                    }
-                                    if (checkBoxItalic.Checked)
-                                    {
-                                        TrainLetter(ref numberOfCharactersLearned, ref numberOfCharactersSkipped, nOcrD, s, false, true, false);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (_abort)
-                        {
-                            break;
-                        }
-                    }
-
-                    foreach (var text in textBoxMerged.Text.Split(' '))
-                    {
-                        if (!string.IsNullOrWhiteSpace(text))
-                        {
-                            if (!charactersLearned.Contains(text) && text.Length > 1 && text.Length <= 3)
-                            {
-                                charactersLearned.Add(text);
-                                TrainLetter(ref numberOfCharactersLearned, ref numberOfCharactersSkipped, nOcrD, text, false, false, true);
-                                if (checkBoxBold.Checked)
-                                {
-                                    TrainLetter(ref numberOfCharactersLearned, ref numberOfCharactersSkipped, nOcrD, text, true, false, true);
-                                }
-                                if (checkBoxItalic.Checked)
-                                {
-                                    TrainLetter(ref numberOfCharactersLearned, ref numberOfCharactersSkipped, nOcrD, text, false, true, true);
-                                }
-                            }
-                        }
-                    }
-
-                    if (_abort)
-                    {
-                        break;
-                    }
-                }
-            }
-
+            if(string.IsNullOrWhiteSpace(chars) || listViewFonts.CheckedItems.Count==0)return;
+            _training=true;try {
+            _abort=false;buttonTrain.Text=LanguageSettings.Current.SpellCheck.Abort;buttonOK.Enabled=false;
+            var nOcrD=new NOcrDb(null);
+            var settings=new NOcrTrainerSettings{FontNames=listViewFonts.CheckedItems.Cast<ListViewItem>().Select(x=>x.Text).ToList(),FontSize=float.Parse(comboBoxSubtitleFontSize.Text),IncludeBold=checkBoxBold.Checked,IncludeItalic=checkBoxItalic.Checked,NumberOfLineSegments=(int)numericUpDownSegmentsPerCharacter.Value,CharactersToTrain=chars,MergedLetterCombinations=textBoxMerged.Text,LineSegmentAlgorithm=(NOcrLineAlgorithm)_lineAlgorithm.SelectedIndex};
+            new NOcrTrainer().Train(settings,nOcrD,()=>_abort,p=>{labelInfo.Text=p.CurrentFontName+" / "+p.CurrentText+" — "+p.CharactersLearned+" / "+p.CharactersSkipped;Application.DoEvents();});
+            if(_abort){labelInfo.Text=LanguageSettings.Current.General.Cancel;return;}
             labelInfo.Text = "Saving...";
             labelInfo.Refresh();
             saveFileDialog1.Filter = "nOCR DB|*.nocr";
@@ -183,210 +117,12 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 labelInfo.Text = "Saving aborted";
             }
 
-            buttonOK.Enabled = true;
-            buttonTrain.Text = "Start training";
-            _abort = false;
-        }
-
-        private void TrainLetter(ref int numberOfCharactersLearned, ref int numberOfCharactersSkipped, NOcrDb nOcrD, string s, bool bold, bool italic, bool doubleLetter)
-        {
-            var bmp = GenerateImageFromTextWithStyle("H   " + s, bold, italic);
-            var nikseBitmap = new NikseBitmap(bmp);
-            nikseBitmap.MakeTwoColor(280);
-            nikseBitmap.CropTop(0, Color.FromArgb(0, 0, 0, 0));
-            var list = NikseBitmapImageSplitter.SplitBitmapToLettersNew(nikseBitmap, 10, false, false, 25, false);
-            if (list.Count == 3)
-            {
-                var item = list[2];
-                var match = nOcrD.GetMatch(item.NikseBitmap, item.Top, false, 25);
-                if (match == null || match.Text != s)
-                {
-                    labelInfo.Refresh();
-                    Application.DoEvents();
-                    var nOcrChar = new NOcrChar(s)
-                    {
-                        Width = item.NikseBitmap.Width,
-                        Height = item.NikseBitmap.Height,
-                        MarginTop = item.Top,
-                        Italic = italic,
-                    };
-                    VobSubOcrNOcrCharacter.GenerateLineSegments((int)numericUpDownSegmentsPerCharacter.Value + (doubleLetter ? 20 : 0), false, nOcrChar, item.NikseBitmap);
-                    nOcrD.Add(nOcrChar);
-
-                    numberOfCharactersLearned++;
-                    labelInfo.Text = string.Format(LanguageSettings.Current.VobSubOcr.NowTraining, numberOfCharactersLearned, _subtitleFontName, numberOfCharactersSkipped);
-                    bmp.Dispose();
-                }
-                else
-                {
-                    numberOfCharactersSkipped++;
-                }
-            }
-            else if (!doubleLetter)
-            {
-
-                if (list.Count == 4 && list[2].NikseBitmap != null && list[3].NikseBitmap != null)
-                {
-                    // e.g. quote (")
-                    var expandItem = VobSubOcr.GetExpandedSelectionNew(nikseBitmap, new List<ImageSplitterItem> { list[2], list[3] });
-                    var match = nOcrD.GetMatchExpanded(nikseBitmap, expandItem, 2, list);
-                    if (match != null && match.Text == s)
-                    {
-                        numberOfCharactersSkipped++;
-                        return;
-                    }
-
-                    var nOcrChar = new NOcrChar(s)
-                    {
-                        Width = expandItem.NikseBitmap.Width,
-                        Height = expandItem.NikseBitmap.Height,
-                        MarginTop = expandItem.Top,
-                        Italic = italic,
-                        ExpandCount = 2,
-                    };
-                    VobSubOcrNOcrCharacter.GenerateLineSegments((int)numericUpDownSegmentsPerCharacter.Value + 5, false, nOcrChar, expandItem.NikseBitmap);
-                    nOcrD.Add(nOcrChar);
-                    return;
-                }
-
-                if (list.Count == 5 && list[2].NikseBitmap != null && list[3].NikseBitmap != null && list[4].NikseBitmap != null)
-                {
-                    // e.g. "%"
-                    var expandItem = VobSubOcr.GetExpandedSelectionNew(nikseBitmap, new List<ImageSplitterItem> { list[2], list[3], list[4] });
-                    var match = nOcrD.GetMatchExpanded(nikseBitmap, expandItem, 2, list);
-                    if (match != null && match.Text == s)
-                    {
-                        numberOfCharactersSkipped++;
-                        return;
-                    }
-
-                    var nOcrChar = new NOcrChar(s)
-                    {
-                        Width = expandItem.NikseBitmap.Width,
-                        Height = expandItem.NikseBitmap.Height,
-                        MarginTop = expandItem.Top,
-                        Italic = italic,
-                        ExpandCount = 3,
-                    };
-                    nOcrD.Add(nOcrChar);
-                    VobSubOcrNOcrCharacter.GenerateLineSegments((int)numericUpDownSegmentsPerCharacter.Value + 10, false, nOcrChar, expandItem.NikseBitmap);
-                    return;
-                }
-
-                numberOfCharactersSkipped++;
-            }
-        }
-
-        private Bitmap GenerateImageFromTextWithStyle(string text, bool bold, bool italic)
-        {
-            text = HtmlUtil.RemoveHtmlTags(text);
-            Font font;
-            try
-            {
-                var fontStyle = FontStyle.Regular;
-                if (bold)
-                {
-                    fontStyle = FontStyle.Bold;
-                }
-                else if (italic)
-                {
-                    fontStyle = FontStyle.Italic;
-                }
-
-                font = new Font(_subtitleFontName, _subtitleFontSize, fontStyle);
-            }
-            catch (Exception exception)
-            {
-                MessageBox.Show(exception.Message);
-                font = new Font(FontFamily.Families[0].Name, _subtitleFontSize);
-            }
-            var bmp = new Bitmap(400, 200);
-            var g = Graphics.FromImage(bmp);
-
-            SizeF textSize = g.MeasureString("Hj!", font);
-            var lineHeight = textSize.Height * 0.64f;
-
-            textSize = g.MeasureString(HtmlUtil.RemoveHtmlTags(text), font);
-            g.Dispose();
-            bmp.Dispose();
-            int sizeX = (int)(textSize.Width * 0.8) + 40;
-            int sizeY = (int)(textSize.Height * 0.8) + 30;
-            if (sizeX < 1)
-            {
-                sizeX = 1;
-            }
-
-            if (sizeY < 1)
-            {
-                sizeY = 1;
-            }
-
-            bmp = new Bitmap(sizeX, sizeY);
-            g = Graphics.FromImage(bmp);
-
-            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.CompositingQuality = CompositingQuality.HighQuality;
-
-            var sf = new StringFormat
-            {
-                Alignment = StringAlignment.Near,
-                LineAlignment = StringAlignment.Near
-            };
-            // draw the text to a path
-            var path = new GraphicsPath();
-
-            // display italic
-            var sb = new StringBuilder();
-            int i = 0;
-            const float left = 5f;
-            float top = 5;
-            bool newLine = false;
-            const float leftMargin = left;
-            int newLinePathPoint = -1;
-            Color c = _subtitleColor;
-            int textLen = text.Length;
-            while (i < textLen)
-            {
-                char ch = text[i];
-                if (ch == '\n' || ch == '\r')
-                {
-                    TextDraw.DrawText(font, sf, path, sb, italic, bold, false, left, top, ref newLine, leftMargin, ref newLinePathPoint);
-
-                    top += lineHeight;
-                    newLine = true;
-                    if (i + 1 < textLen && text[i + 1] == '\n' && text[i] == '\r')
-                    {
-                        i += 2; // CR+LF (Microsoft Windows)
-                    }
-                    else
-                    {
-                        i++; // LF (Unix and Unix-like systems )
-                    }
-                }
-                else
-                {
-                    sb.Append(ch);
-                }
-                i++;
-            }
-            if (sb.Length > 0)
-            {
-                TextDraw.DrawText(font, sf, path, sb, italic, bold, false, left, top, ref newLine, leftMargin, ref newLinePathPoint);
-            }
-
-            sf.Dispose();
-
-            g.DrawPath(new Pen(_borderColor, BorderWidth), path);
-            g.FillPath(new SolidBrush(c), path);
-            g.Dispose();
-            var nbmp = new NikseBitmap(bmp);
-            nbmp.CropTransparentSidesAndBottom(2, true);
-            return nbmp.GetBitmap();
+            } catch(Exception ex){MessageBox.Show(this,ex.Message);}finally{_training=false;buttonOK.Enabled=true;buttonTrain.Text=LanguageSettings.Current.VobSubOcr.StartTraining;_abort=false;}
         }
 
         private void VobSubNOcrTrain_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if(_training){_abort=true;e.Cancel=true;return;}
             var sb = new StringBuilder();
             foreach (ListViewItem item in listViewFonts.Items)
             {

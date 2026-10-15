@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Controls;
+using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.BluRaySup;
 using Nikse.SubtitleEdit.Core.Common;
@@ -2639,6 +2639,8 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             }
         }
 
+        private NOcrCaseFixer _classicCaseFixer = new NOcrCaseFixer();
+        private NOcrSpaceDetector _classicSpaceDetector=new NOcrSpaceDetector();
         private static NOcrChar NOcrFindBestMatchNew(ImageSplitterItem targetItem, NOcrDb nOcrDb, bool deepSeek, int maxWrongPixels)
         {
             return nOcrDb?.GetMatch(targetItem.NikseBitmap, targetItem.Top, deepSeek, maxWrongPixels);
@@ -2738,7 +2740,8 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 return new CompareMatch(expandedResult.Text, expandedResult.Italic, expandedResult.ExpandCount, null, expandedResult) { ImageSplitterItem = targetItem };
             }
 
-            var result = NOcrFindBestMatchNew(targetItem, nOcrDb, deepSeek, (int)numericUpDownNOcrMaxWrongPixels.Value);
+            ClassicNOcrBitmap.SetBaselines(list);
+            var result = nOcrDb.GetMatch(parentBitmap,list,targetItem,targetItem.Top,deepSeek,(int)numericUpDownNOcrMaxWrongPixels.Value);
             if (result == null)
             {
 
@@ -2775,8 +2778,8 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 }
             }
 
-            var text = FixUppercaseLowercaseIssues(targetItem, result);
-            return new CompareMatch(text, result.Italic, 0, null, result) { Y = targetItem.Y };
+            string text;lock(_classicCaseFixer)text = _classicCaseFixer.FixUppercaseLowercaseIssues(targetItem, result);
+            return new CompareMatch(text, result.Italic, result.ExpandCount, null, result) { Y = targetItem.Y };
         }
 
         public static int _italicFixes = 0;
@@ -3909,7 +3912,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
         private void NOCRIntialize(Bitmap bitmap)
         {
             var nikseBitmap = new NikseBitmap(bitmap);
-            var list = NikseBitmapImageSplitter.SplitBitmapToLettersNew(nikseBitmap, _numericUpDownPixelsIsSpace, checkBoxRightToLeft.Checked, Configuration.Settings.VobSubOcr.TopToBottom, 12, _autoLineHeight);
+            var list = ClassicNOcrBitmap.Split(nikseBitmap, _numericUpDownPixelsIsSpace, checkBoxRightToLeft.Checked, Configuration.Settings.VobSubOcr.TopToBottom, 12, _autoLineHeight);
             UpdateLineHeights(list);
             foreach (var item in list)
             {
@@ -3945,7 +3948,8 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             if (string.IsNullOrEmpty(line))
             {
                 matches = new List<CompareMatch>();
-                var listTemp = NikseBitmapImageSplitter.SplitBitmapToLettersNew(nbmpInput, _numericUpDownPixelsIsSpace, checkBoxRightToLeftNOCR.Checked, Configuration.Settings.VobSubOcr.TopToBottom, GetMinLineHeight(), _autoLineHeight);
+                var listTemp = ClassicNOcrBitmap.Split(nbmpInput, NOcrSpaceDetector.SplitPixelsAreSpace, checkBoxRightToLeftNOCR.Checked, Configuration.Settings.VobSubOcr.TopToBottom, GetMinLineHeight(), _autoLineHeight);
+                listTemp=_classicSpaceDetector.RemoveFalseSpaces(listTemp,out _);
                 var list = new List<ImageSplitterItem>();
                 foreach (var imageSplitterItem in listTemp)
                 {
@@ -4988,7 +4992,8 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 
 
             var minLineHeight = GetMinLineHeight();
-            var list = NikseBitmapImageSplitter.SplitBitmapToLettersNew(parentBitmap, p.NumberOfPixelsIsSpace, p.RightToLeft, Configuration.Settings.VobSubOcr.TopToBottom, minLineHeight, _autoLineHeight);
+            var list = ClassicNOcrBitmap.Split(parentBitmap, NOcrSpaceDetector.SplitPixelsAreSpace, p.RightToLeft, Configuration.Settings.VobSubOcr.TopToBottom, minLineHeight, _autoLineHeight);
+            list=_classicSpaceDetector.RemoveFalseSpaces(list,out _);
             p.ResultMatches = new List<CompareMatch>();
             int index = 0;
             while (index < list.Count)

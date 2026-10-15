@@ -1,5 +1,15 @@
 # Subtitle Edit Classic changelog
 
+## 4.0.25 — local preview
+
+- Added Fish Audio S2 Pro, IndexTTS 2.5, Higgs Audio v3, FireRedTTS3, KugelAudio and Breeze TTS 2 from stable v5.3.0. Their shared audio.cpp runtime offers CPU, Vulkan and CUDA builds with pinned archive checksums; twelve model choices download on demand with size/SHA-256 checks. Existing classic voice references, actor casts, review and export are reused. Fish/Higgs/Index/Breeze retain their separate first-download license acceptance.
+- IndexTTS exposes its supported language choices, emotion and duration control. FireRed uses the mandatory language tag, exact reference transcript and clone task. Higgs/FireRed reference copies receive the stable fade/silence-tail preparation. Kugel is preset-only; Breeze offers English/Chinese presets/design instructions and reference cloning.
+- Play with speech from the selected main-window line, using the current engine or actor cast. Three-line lookahead follows the video, with pause/resume, seek handling, volume ducking, capped speed-up and waiting for delayed speech. Temporary clips and owned engines are cleaned up on stop.
+- Ported the stable nOCR matcher: best candidate selection, exact-size indexing, content/parameter-aware match caches with mutation invalidation, expanded-glyph neighbour checks, small-glyph safeguards, italic retry and Cyrillic case/composition handling. The classic bitmap adapter retains V2 database compatibility and adapts relative word-spacing/baseline detection.
+- nOCR training uses the stable font trainer and discriminative glyph lines, with Random, SkeletonDistance and EdgeHough choices in the classic training/character windows. Train from subtitle text or a custom character set, with merged combinations, bold/italic and cancellation. Saving a database keeps a previous-file backup.
+
+Native CUDA checks cover all six new default TTS models. Independent ASR recovered the English test sentence from all six and Russian from Fish, Higgs, Kugel and FireRed with a Russian reference. FireRed cross-language cloning was poor with an English reference; prefer a same-language reference. IndexTTS does not advertise Russian; Breeze supports English/Chinese. Other quantizations/backends have narrower native coverage. Fifty adapted stable nOCR cases and separate Russian/English training round trips passed. Playback checks include real muted MPV clip transitions and scheduling/cancellation tests. This preview remains local; no release has been published.
+
 ## 4.0.24
 
 - Speech recognition: selectable Silero, FireRedVAD, Whisper-VAD and WebRTC; optional Mel-Band RoFormer speech isolation; Sortformer speaker detection in the ordinary ASR window. Crisp-only flags stay disabled for other runtimes. Postprocessing and duplicate removal respect speaker changes; diarized batch output uses ASS to retain actors.

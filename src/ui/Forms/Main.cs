@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Controls;
+using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AudioToText;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.BluRaySup;
@@ -37357,6 +37357,10 @@ namespace Nikse.SubtitleEdit.Forms
                 {
                     using (var form = new TextToSpeech(_subtitle, GetCurrentSubtitleFormat(), _videoFileName, _videoInfo,ClassicSelectedAudioIndex()))
                     {
+                        form.PlaybackFromIndex=Math.Max(0,FirstSelectedIndex);
+                        form.SeekPlaybackVideo=position=>mediaPlayer.CurrentPosition=position;
+                        form.PlaybackVideo=new ClassicSpeechVideoAdapter{Open=()=>!string.IsNullOrEmpty(_videoFileName),Playing=()=>mediaPlayer.VideoPlayer!=null && mediaPlayer.VideoPlayer.IsPlaying,GetPosition=()=>mediaPlayer.CurrentPosition,GetSpeed=()=>mediaPlayer.VideoPlayer?.PlayRate ?? 1,GetVolume=()=>mediaPlayer.Volume,SetVolume=value=>mediaPlayer.Volume=(int)Math.Round(value),Start=()=>mediaPlayer.Play(),Hold=()=>mediaPlayer.Pause()};
+
                         if (form.ShowDialog(this) == DialogResult.OK)
                         {
                             var idx = FirstSelectedIndex;

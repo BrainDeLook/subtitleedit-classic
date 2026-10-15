@@ -34,6 +34,9 @@ namespace Nikse.SubtitleEdit.Logic
         public string Id { get; set; }
         public string Name { get; set; }
         public string Backend { get; set; }
+        public string Runtime { get; set; }
+        public bool IsAudioCpp => Runtime == "audiocpp";
+        public bool SupportsCloning => Id != "kugel";
         public string[] Presets { get; set; }
         public string[] Languages { get; set; }
         public ClassicLocalTtsModel[] Models { get; set; }
@@ -49,6 +52,9 @@ namespace Nikse.SubtitleEdit.Logic
         public string Language { get; set; } = "ru";
         public string SourceLanguage { get; set; } = "auto";
         public double Speed { get; set; } = 1;
+        public string Instructions { get; set; } = "";
+        public string Emotion { get; set; } = "neutral";
+        public string LicenseAccepted { get; set; }
         public static string Root(string id) => Path.Combine(Configuration.DataDirectory, "TextToSpeech", "ClassicLocal", id);
         public static ClassicLocalTtsSettings Load(string id)
         {
@@ -88,13 +94,16 @@ namespace Nikse.SubtitleEdit.Logic
         public static object[] Voices(string id)
         {
             var e = Catalog.First(x => x.Id == id);
-            return e.Presets.Cast<object>().Concat(ClassicQwenReference.List().Cast<object>()).ToArray();
+            return e.Presets.Cast<object>().Concat(e.SupportsCloning ? ClassicQwenReference.List().Cast<object>() : Enumerable.Empty<object>()).ToArray();
         }
         public static async Task EnsureInstalledAsync(string id, ClassicLocalTtsSettings settings, CancellationToken cancel, IProgress<SpeechProgress> progress)
         {
             var e = Catalog.First(x => x.Id == id);
             var model = e.Model(settings.Model);
-            await ClassicSpeechDownload.EnsureRuntimeAsync(new SpeechEngine {Family = "crisp"}, settings.Variant, cancel, progress).ConfigureAwait(false);
+            var license=ClassicAudioCpp.License(id);
+            if(license!=null && settings.LicenseAccepted!=license[0])throw new InvalidOperationException("Accept the model license in TTS settings before downloading or generating speech.");
+            if (e.IsAudioCpp) await ClassicAudioCpp.EnsureAsync(settings.Variant, cancel, progress).ConfigureAwait(false);
+            else await ClassicSpeechDownload.EnsureRuntimeAsync(new SpeechEngine {Family = "crisp"}, settings.Variant, cancel, progress).ConfigureAwait(false);
             foreach (var file in model.Files)
             {
                 cancel.ThrowIfCancellationRequested();
@@ -115,6 +124,7 @@ namespace Nikse.SubtitleEdit.Logic
         public Dictionary<string, object> BuildPayload(string text, string voice, string transcript)
         {
             var imported = !_definition.Presets.Contains(voice);
+            if (_definition.IsAudioCpp) return ClassicAudioCpp.Payload(_definition, _settings, text, voice, transcript, _job);
             var payload = new Dictionary<string, object> {{"input", text}, {"response_format", "wav"}};
             if (_definition.Id != "chatter") payload["speed"] = _settings.Speed;
             if (_definition.LanguageChoices(_settings.Model).Length > 0)
@@ -150,10 +160,15 @@ namespace Nikse.SubtitleEdit.Logic
             Directory.CreateDirectory(_job);
             if (imported && !File.Exists(Path.Combine(_job, voice + ".wav")))
             {
-                var args = "-nostdin -y -i " + ClassicSpeechRunner.Quote(Path.Combine(ClassicQwenReference.Folder, voice + ".wav")) + " -vn -ar " + (_definition.Id == "cosy" ? "16000" : "24000") + " -ac 1 -c:a pcm_s16le " + ClassicSpeechRunner.Quote(Path.Combine(_job, voice + ".wav"));
+                var args = "-nostdin -y -i " + ClassicSpeechRunner.Quote(Path.Combine(ClassicQwenReference.Folder, voice + ".wav")) + " -vn -ar " + (_definition.Id == "cosy" ? "16000" : _definition.Id == "fish" ? "44100" : "24000") + " -ac 1 -c:a pcm_s16le " + ClassicSpeechRunner.Quote(Path.Combine(_job, voice + ".wav"));
+                if(_definition.Id=="higgs" || _definition.Id=="firered") {
+                    var peak=await ClassicTtsSilenceThreshold.MeasureAsync(Path.Combine(ClassicQwenReference.Folder,voice+".wav"),cancel).ConfigureAwait(false);
+                    var threshold=ClassicTtsSilenceThreshold.Amplitude(peak).ToString("0.########",System.Globalization.CultureInfo.InvariantCulture);
+                    args=args.Replace(" -vn -ar "," -af "+ClassicSpeechRunner.Quote("areverse,silenceremove=start_periods=1:start_silence=0:start_threshold="+threshold+",afade=t=in:d=0.05,areverse,apad=pad_dur=0.4")+" -vn -ar ");
+                }
                 await ClassicSpeechRunner.RunProcessAsync(new ProcessStartInfo(Configuration.Settings.General.FFmpegLocation, args), cancel, progress).ConfigureAwait(false);
             }
-            if (_server == null || (_definition.Id != "chatter" && _activeVoice != voice))
+            if (_server == null || (!_definition.IsAudioCpp && _definition.Id != "chatter" && _activeVoice != voice))
             {
                 StopServer(); await StartAsync(voice, transcript, cancel, progress).ConfigureAwait(false); _activeVoice = voice;
             }
@@ -173,7 +188,7 @@ namespace Nikse.SubtitleEdit.Logic
             var model = _definition.Model(_settings.Model);
             var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start(); var port = ((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop();
             _baseUrl = "http://127.0.0.1:" + port;
-            var exe = ClassicSpeechCatalog.Executable(new SpeechEngine {Family = "crisp"}, _settings.Variant);
+            var exe = _definition.IsAudioCpp ? ClassicAudioCpp.Executable(_settings.Variant) : ClassicSpeechCatalog.Executable(new SpeechEngine {Family = "crisp"}, _settings.Variant);
             var backend = _definition.Id == "chatter" && _settings.Model == "Turbo" ? "chatterbox-turbo" : _definition.Backend;
             var args = "--server --backend " + backend + " -m " + ClassicSpeechRunner.Quote(Path.Combine(ClassicLocalTtsSettings.Root(_definition.Id), "models", model.Files[0].File));
             if (_definition.Codec) args += " --codec-model " + ClassicSpeechRunner.Quote(Path.Combine(ClassicLocalTtsSettings.Root(_definition.Id), "models", model.Files[1].File));
@@ -182,6 +197,13 @@ namespace Nikse.SubtitleEdit.Logic
             {
                 args += " --voice " + ClassicSpeechRunner.Quote(_definition.Presets.Contains(voice) ? voice : Path.Combine(_job, voice + ".wav"));
                 if (!string.IsNullOrEmpty(transcript)) args += " --ref-text " + ClassicSpeechRunner.Quote(transcript);
+            }
+            if (_definition.IsAudioCpp)
+            {
+                var config = ClassicAudioCpp.Config(_definition, _settings, port);
+                var configPath = Path.Combine(_job, "server.json");
+                File.WriteAllText(configPath, JsonConvert.SerializeObject(config, Formatting.Indented), new UTF8Encoding(false));
+                args = "--config " + ClassicSpeechRunner.Quote(configPath);
             }
             _server = new Process {StartInfo = new ProcessStartInfo(exe, args) {WorkingDirectory = _job, UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true, StandardErrorEncoding = Encoding.UTF8, StandardOutputEncoding = Encoding.UTF8}};
             DataReceivedEventHandler capture = (s, e) => { if (e.Data != null) lock (_log) { _log.AppendLine(e.Data); if (_log.Length > 16000) _log.Remove(0, _log.Length - 16000); } };

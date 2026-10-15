@@ -337,5 +337,245 @@
       }
     ],
     "Codec": true
+  },
+  {
+    "Id": "fish",
+    "Name": "Fish Audio S2 Pro (audio.cpp / local)",
+    "Backend": "fish_audio",
+    "Runtime": "audiocpp",
+    "Presets": [],
+    "Languages": [],
+    "Models": [
+      {
+        "Key": "Q8_0",
+        "Files": [
+          {
+            "File": "Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 6317911232,
+            "Hash": "4ffc169447b7a26df8bf49e8637adb4000bfa763a22c018b6c03968564259d0b"
+          }
+        ]
+      },
+      {
+        "Key": "BF16",
+        "Files": [
+          {
+            "File": "Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-bf16.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 10229278080,
+            "Hash": "781fdece3ff837838c48f7d5a7b37e37c4d661a6416416ad57fe92fed47d96ff"
+          }
+        ]
+      }
+    ],
+    "Codec": false
+  },
+  {
+    "Id": "index25",
+    "Name": "IndexTTS 2.5 (audio.cpp / local)",
+    "Backend": "index_tts2",
+    "Runtime": "audiocpp",
+    "Presets": [],
+    "Languages": [
+      "auto|Auto",
+      "zh|Chinese",
+      "en|English",
+      "ja|Japanese",
+      "es|Spanish",
+      "ar|Arabic"
+    ],
+    "Models": [
+      {
+        "Key": "Q8_0",
+        "Files": [
+          {
+            "File": "IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 3502955328,
+            "Hash": "5e827b2072042e4a1b21ccf24a5cb4f71cb1011403067a0a9b039311d8b38628"
+          }
+        ]
+      },
+      {
+        "Key": "F16",
+        "Files": [
+          {
+            "File": "IndexTTS2.5-GGUF/index-tts2_5-f16.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 4547355072,
+            "Hash": "87bed9b82fc8f22119a1a1042332091016c28e37f29b0e93343ccdbfa76ef66a"
+          }
+        ]
+      }
+    ],
+    "Codec": false
+  },
+  {
+    "Id": "higgs",
+    "Name": "Higgs Audio v3 (audio.cpp / local)",
+    "Backend": "higgs_audio_tts",
+    "Runtime": "audiocpp",
+    "Presets": [],
+    "Languages": [],
+    "Models": [
+      {
+        "Key": "Q8_0",
+        "Files": [
+          {
+            "File": "Higgs-Audio-v3-TTS-4B-GGUF/higgs-audio-v3-tts-4b-q8_0.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 5095354048,
+            "Hash": "79746822045b5bf8f9ab2bda87b16cd3f8ea3d9e319cbcf887a87aa1b537a74a"
+          }
+        ]
+      },
+      {
+        "Key": "BF16",
+        "Files": [
+          {
+            "File": "Higgs-Audio-v3-TTS-4B-GGUF/higgs-audio-v3-tts-4b-bf16.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 8501587648,
+            "Hash": "2c04410d9ae6af9a48ce989c1b6d7dfaa0320c8e09ff7da8d3e04b8d9b0669dc"
+          }
+        ]
+      }
+    ],
+    "Codec": false
+  },
+  {
+    "Id": "firered",
+    "Name": "FireRedTTS3 (audio.cpp / local)",
+    "Backend": "fireredtts3",
+    "Runtime": "audiocpp",
+    "Presets": [],
+    "Languages": [
+      "English|English",
+      "Arabic|Arabic",
+      "Cantonese|Cantonese",
+      "Chinese|Chinese",
+      "Czech|Czech",
+      "Dutch|Dutch",
+      "Finnish|Finnish",
+      "French|French",
+      "German|German",
+      "Greek|Greek",
+      "Hindi|Hindi",
+      "Indonesian|Indonesian",
+      "Italian|Italian",
+      "Japanese|Japanese",
+      "Korean|Korean",
+      "Polish|Polish",
+      "Portuguese|Portuguese",
+      "Romanian|Romanian",
+      "Russian|Russian",
+      "Spanish|Spanish",
+      "Thai|Thai",
+      "Turkish|Turkish",
+      "Ukrainian|Ukrainian",
+      "Vietnamese|Vietnamese"
+    ],
+    "Models": [
+      {
+        "Key": "Q8_0",
+        "Files": [
+          {
+            "File": "FireRedTTS3-Base-GGUF/fireredtts3-base-q8_0.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 4180334848,
+            "Hash": "68acd5bce0d87a53bb5b88255c65e19df4cbc6017b4bab0824e96f1e2351c3a7"
+          }
+        ]
+      },
+      {
+        "Key": "ORIG",
+        "Files": [
+          {
+            "File": "FireRedTTS3-Base-GGUF/fireredtts3-base-orig.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 12301253120,
+            "Hash": "1af06f341044121ddebb389c1e6e5181a43f65e2591f77c7eda2ca5810e484c8"
+          }
+        ]
+      }
+    ],
+    "Codec": false
+  },
+  {
+    "Id": "kugel",
+    "Name": "KugelAudio (audio.cpp / local)",
+    "Backend": "kugelaudio",
+    "Runtime": "audiocpp",
+    "Presets": [
+      "default",
+      "clear",
+      "english_male",
+      "english_female"
+    ],
+    "Languages": [],
+    "Models": [
+      {
+        "Key": "Q4_K",
+        "Files": [
+          {
+            "File": "KugelAudio-0-Open-GGUF/kugelaudio-0-open-q4_k.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 5732997442,
+            "Hash": "38a79cf4ffdcdeed69dc05d6350fc88042f951f952924799f59a0b93bc3895e9"
+          }
+        ]
+      },
+      {
+        "Key": "Q8_0",
+        "Files": [
+          {
+            "File": "KugelAudio-0-Open-GGUF/kugelaudio-0-open-q8_0.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 9752398658,
+            "Hash": "9cff404eeafed33ac419f855002fa5fc6f6ef719f160b6fe333095b9cfb5be52"
+          }
+        ]
+      }
+    ],
+    "Codec": false
+  },
+  {
+    "Id": "breeze",
+    "Name": "Breeze TTS 2 (audio.cpp / local)",
+    "Backend": "breeze_tts",
+    "Runtime": "audiocpp",
+    "Presets": [
+      "Default"
+    ],
+    "Languages": [
+      "en|English",
+      "zh|Chinese"
+    ],
+    "Models": [
+      {
+        "Key": "Q8_0",
+        "Files": [
+          {
+            "File": "Breeze-TTS-2-GGUF/breeze-tts-2-q8_0.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 5079668352,
+            "Hash": "0de52d61560f9f6b2dfeca79f9100f8fce0c2b17c52ec30622e23e150df1ad88"
+          }
+        ]
+      },
+      {
+        "Key": "BF16",
+        "Files": [
+          {
+            "File": "Breeze-TTS-2-GGUF/breeze-tts-2-bf16.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Bytes": 7342916800,
+            "Hash": "a00c9f678b4c5ae03d1dcd228f636b329352cda200823faef4e01d3bd97c0a89"
+          }
+        ]
+      }
+    ],
+    "Codec": false
   }
 ]

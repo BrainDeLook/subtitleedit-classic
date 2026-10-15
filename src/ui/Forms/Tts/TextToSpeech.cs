@@ -101,6 +101,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             CosyVoice3,
             VoxCpm2,
             Chatterbox,
+            FishAudio, IndexTts25, HiggsAudio, FireRedTts3, KugelAudio, BreezeTts,
         }
 
         public TextToSpeech(Subtitle subtitle, SubtitleFormat subtitleFormat, string videoFileName, VideoInfo videoInfo)
@@ -179,6 +180,12 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.CosyVoice3, "CosyVoice 3 (CrispASR / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.VoxCpm2, "VoxCPM 2 (CrispASR / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Chatterbox, "Chatterbox (CrispASR / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.FishAudio, "Fish Audio S2 Pro (audio.cpp / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.IndexTts25, "IndexTTS 2.5 (audio.cpp / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.HiggsAudio, "Higgs Audio v3 (audio.cpp / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.FireRedTts3, "FireRedTTS3 (audio.cpp / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.KugelAudio, "KugelAudio (audio.cpp / local)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.BreezeTts, "Breeze TTS 2 (audio.cpp / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.OpenAiCompatible, "OpenAI-compatible (API)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.AllTalk, "All Talk TTS (Coqui based)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.ElevenLabs, "ElevenLabs TTS (online/pay/good)", _engines.Count));
@@ -235,6 +242,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             checkBoxAddToVideoFile.Enabled = _videoFileName != null;
             InitializeClassicDubbing();
             InitializeClassicCast();
+            InitializeClassicPlayback();
         }
 
         private void SetActor(ActorAndVoice actor)
@@ -2832,7 +2840,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         {
             if (_qwenCancellation != null || _localCancellation != null || _castCancellation != null || _compatibleCancellation != null || _converting)
             {
-                _abort=true; _castCancellation?.Cancel(); _qwenCancellation?.Cancel(); _localCancellation?.Cancel(); _dubbingCancellation?.Cancel(); _compatibleCancellation?.Cancel(); e.Cancel=true; return;
+                _abort=true; _playbackCancellation?.Cancel(); _castCancellation?.Cancel(); _qwenCancellation?.Cancel(); _localCancellation?.Cancel(); _dubbingCancellation?.Cancel(); _compatibleCancellation?.Cancel(); e.Cancel=true; return;
             }
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
 

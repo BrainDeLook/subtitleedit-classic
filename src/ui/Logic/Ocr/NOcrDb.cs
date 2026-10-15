@@ -1,61 +1,164 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
 using System;
+using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
+using Nikse.SubtitleEdit.Core.Common;
 using System.IO.Compression;
-using System.Linq;
 using System.Text;
 
 namespace Nikse.SubtitleEdit.Logic.Ocr
 {
-    public class NOcrDb
+
+public class NOcrDb
+{
+    public string FileName { get; set; }
+    public List<NOcrChar> OcrCharacters = new();
+    public List<NOcrChar> OcrCharactersExpanded = new();
+
+    public NOcrChar GetMatch(NikseBitmap bitmap, int topMargin, bool deepSeek, int maxWrongPixels) => GetMatchSingle(bitmap, topMargin, deepSeek, maxWrongPixels);
+    public int TotalCharacterCount => OcrCharacters.Count + OcrCharactersExpanded.Count;
+
+    private const string Version = "V2";
+
+    // An expanded or single match with too few lines matches almost anything of similar
+    // dimensions, so skip it. (Reject the trivial 0-lines case that would let any entry with
+    // the right dimensions win against a properly-trained match.)
+    private const int MinLinesForExpandedMatch = 1;
+    private const int MinLinesForSingleMatch = 1;
+
+    public NOcrDb(string fileName)
     {
-        public string FileName { get; set; }
-        public List<NOcrChar> OcrCharacters = new List<NOcrChar>();
-        public List<NOcrChar> OcrCharactersExpanded = new List<NOcrChar>();
+        FileName = fileName;
+        LoadOcrCharacters();
+    }
 
-        private const string Version = "V2";
+    public NOcrDb(NOcrDb db, string fileName)
+    {
+        FileName = fileName;
 
-        public NOcrDb(string fileName)
+        OcrCharacters = new List<NOcrChar>(db.OcrCharacters);
+        OcrCharactersExpanded = new List<NOcrChar>(db.OcrCharactersExpanded);
+    }
+
+    public IEnumerable<NOcrChar> OcrCharactersCombined => OcrCharacters.Concat(OcrCharactersExpanded);
+
+    private readonly object _lock = new object();
+
+    // Subtitle lines repeat the same glyph bitmaps over and over, so cache match results per
+    // exact pixel content. Unmatched glyphs benefit the most: a "no match" previously re-ran the
+    // whole pass cascade against the full database for every occurrence. The cache is cleared on
+    // any mutation (Add/Remove/Load) and on Save, because the edit dialogs mutate the character
+    // lists/lines directly and always call Save afterwards.
+    private readonly Dictionary<MatchCacheKey, MatchCacheEntry> _matchCache = new();
+    private const int MatchCacheMaxEntries = 5000;
+
+    // Exact-match candidates bucketed by (width, height) so the exact pass doesn't scan the
+    // whole single-character list per glyph. Rebuilt lazily after mutations; insertion order is
+    // preserved within a bucket so the first-match-wins semantics are unchanged.
+    private Dictionary<long, List<NOcrChar>> _exactSizeIndex;
+
+    private sealed class MatchCacheEntry
+    {
+        public NOcrChar ExactMatch;
+        public NOcrChar SingleMatch;
+    }
+
+    private readonly struct MatchCacheKey : IEquatable<MatchCacheKey>
+    {
+        private readonly byte[] _pixels;
+        private readonly int _width;
+        private readonly int _topMargin;
+        private readonly int _maxWrongPixels;
+        private readonly bool _deepSeek;
+        private readonly bool _lastDitch;
+        private readonly double _italicFactor;
+        private readonly int _hashCode;
+
+        public MatchCacheKey(NikseBitmap bitmap, int topMargin, bool deepSeek, int maxWrongPixels, bool lastDitch, double italicFactor)
         {
-            FileName = fileName;
-            LoadOcrCharacters();
-        }
+            _pixels = bitmap.GetPixelData().ToArray();
+            _width = bitmap.Width;
+            _topMargin = topMargin;
+            _maxWrongPixels = maxWrongPixels;
+            _deepSeek = deepSeek;
+            _lastDitch = lastDitch;
+            _italicFactor = italicFactor;
 
-        public NOcrDb(NOcrDb db, string fileName)
-        {
-            FileName = fileName;
-
-            OcrCharacters = new List<NOcrChar>(db.OcrCharacters);
-            OcrCharactersExpanded = new List<NOcrChar>(db.OcrCharactersExpanded);
-        }
-
-        public void Save()
-        {
-            if (File.Exists(FileName))
+            // FNV-1a over the pixel bytes plus the match parameters.
+            var hash = unchecked((int)2166136261);
+            foreach (var b in _pixels)
             {
-                File.Delete(FileName);
+                hash = unchecked((hash ^ b) * 16777619);
             }
 
-            using (Stream stream = new GZipStream(File.OpenWrite(FileName), CompressionMode.Compress))
+            hash = unchecked((hash ^ _width) * 16777619);
+            hash = unchecked((hash ^ _topMargin) * 16777619);
+            hash = unchecked((hash ^ _maxWrongPixels) * 16777619);
+            hash = unchecked((hash ^ (_deepSeek ? 1 : 0) ^ (_lastDitch ? 2 : 0)) * 16777619);
+            hash = unchecked((hash ^ _italicFactor.GetHashCode()) * 16777619);
+            _hashCode = hash;
+        }
+
+        public bool Equals(MatchCacheKey other)
+        {
+            return _hashCode == other._hashCode &&
+                   _width == other._width &&
+                   _topMargin == other._topMargin &&
+                   _maxWrongPixels == other._maxWrongPixels &&
+                   _deepSeek == other._deepSeek &&
+                   _lastDitch == other._lastDitch &&
+                   _italicFactor.Equals(other._italicFactor) &&
+                   _pixels.SequenceEqual(other._pixels);
+        }
+
+        public override bool Equals(object? obj) => obj is MatchCacheKey other && Equals(other);
+
+        public override int GetHashCode() => _hashCode;
+    }
+
+    private void InvalidateCaches()
+    {
+        _matchCache.Clear();
+        _exactSizeIndex = null;
+    }
+
+    public void Save()
+    {
+        lock (_lock)
+        {
+            var tempFileName = FileName + ".tmp";
+
+            // Characters are written a byte at a time - buffered, so the deflater gets 64 KB
+            // writes instead of ~2.5 million single-byte ones.
+            using (var gz = new GZipStream(File.Create(tempFileName), CompressionMode.Compress))
+            using (var buffered = new BufferedStream(gz, 1 << 16))
             {
                 var versionBuffer = Encoding.ASCII.GetBytes(Version);
-                stream.Write(versionBuffer, 0, versionBuffer.Length);
+                buffered.Write(versionBuffer, 0, versionBuffer.Length);
 
                 foreach (var ocrChar in OcrCharacters)
                 {
-                    ocrChar.Save(stream);
+                    ocrChar.Save(buffered);
                 }
 
                 foreach (var ocrChar in OcrCharactersExpanded)
                 {
-                    ocrChar.Save(stream);
+                    ocrChar.Save(buffered);
                 }
             }
-        }
 
-        public void LoadOcrCharacters()
+            if (File.Exists(FileName)) File.Replace(tempFileName, FileName, FileName + ".bak"); else File.Move(tempFileName, FileName);
+
+            // The edit dialogs mutate OcrCharacters/character lines directly and then call
+            // Save, so treat Save as a mutation barrier for the caches.
+            InvalidateCaches();
+        }
+    }
+
+    public void LoadOcrCharacters()
+    {
+        lock (_lock)
         {
             var list = new List<NOcrChar>();
             var listExpanded = new List<NOcrChar>();
@@ -64,9 +167,11 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
             {
                 OcrCharacters = list;
                 OcrCharactersExpanded = listExpanded;
+                InvalidateCaches();
                 return;
             }
 
+            byte[] buffer;
             using (var stream = new MemoryStream())
             {
                 using (var gz = new GZipStream(File.OpenRead(FileName), CompressionMode.Decompress))
@@ -74,43 +179,43 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
                     gz.CopyTo(stream);
                 }
 
-                stream.Position = 0;
-                bool isVersion2;
-                var versionBuffer = new byte[Version.Length];
-                stream.Read(versionBuffer, 0, versionBuffer.Length);
-                isVersion2 = Encoding.ASCII.GetString(versionBuffer) == Version;
-                stream.Position = 0;
-                bool done = false;
-                if (isVersion2)
+                buffer = stream.ToArray();
+            }
+
+            var versionBuffer = Encoding.ASCII.GetBytes(Version);
+            var isVersion2 = buffer.Length >= versionBuffer.Length &&
+                             buffer.Take(versionBuffer.Length).SequenceEqual(versionBuffer);
+            var position = isVersion2 ? versionBuffer.Length : 0;
+            var done = false;
+            while (!done)
+            {
+                var ocrChar = new NOcrChar(ref position, buffer, isVersion2);
+                if (ocrChar.LoadedOk)
                 {
-                    stream.Read(versionBuffer, 0, versionBuffer.Length);
-                }
-                while (!done)
-                {
-                    var ocrChar = new NOcrChar(stream, isVersion2);
-                    if (ocrChar.LoadedOk)
+                    if (ocrChar.ExpandCount > 0)
                     {
-                        if (ocrChar.ExpandCount > 0)
-                        {
-                            listExpanded.Add(ocrChar);
-                        }
-                        else
-                        {
-                            list.Add(ocrChar);
-                        }
+                        listExpanded.Add(ocrChar);
                     }
                     else
                     {
-                        done = true;
+                        list.Add(ocrChar);
                     }
+                }
+                else
+                {
+                    done = true;
                 }
             }
 
             OcrCharacters = list;
             OcrCharactersExpanded = listExpanded;
+            InvalidateCaches();
         }
+    }
 
-        public void Add(NOcrChar ocrChar)
+    public void Add(NOcrChar ocrChar)
+    {
+        lock (_lock)
         {
             if (ocrChar.ExpandCount > 0)
             {
@@ -120,9 +225,14 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
             {
                 OcrCharacters.Insert(0, ocrChar);
             }
-        }
 
-        public void Remove(NOcrChar ocrChar)
+            InvalidateCaches();
+        }
+    }
+
+    public void Remove(NOcrChar ocrChar)
+    {
+        lock (_lock)
         {
             if (ocrChar.ExpandCount > 0)
             {
@@ -132,398 +242,965 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
             {
                 OcrCharacters.Remove(ocrChar);
             }
+
+            InvalidateCaches();
         }
+    }
 
-        public NOcrChar GetMatchExpanded(NikseBitmap nikseBitmap, ImageSplitterItem targetItem, int listIndex, List<ImageSplitterItem> list)
+    public NOcrChar GetMatchExpanded(NikseBitmap nikseBitmap, ImageSplitterItem targetItem, int listIndex, List<ImageSplitterItem> list)
+    {
+        if (targetItem.NikseBitmap == null)
         {
-            int w = targetItem.NikseBitmap.Width;
-            for (var i = 0; i < OcrCharactersExpanded.Count; i++)
-            {
-                var oc = OcrCharactersExpanded[i];
-                if (oc.ExpandCount > 1 && oc.Width > w && targetItem.X + oc.Width < nikseBitmap.Width)
-                {
-                    bool ok = true;
-                    var index = 0;
-                    while (index < oc.LinesForeground.Count && ok)
-                    {
-                        var op = oc.LinesForeground[index];
-                        foreach (var point in op.GetPoints())
-                        {
-                            var p = new Point(point.X + targetItem.X, point.Y + targetItem.Y - oc.MarginTop);
-                            if (p.X >= 0 && p.Y >= 0 && p.X < nikseBitmap.Width && p.Y < nikseBitmap.Height)
-                            {
-                                var a = nikseBitmap.GetAlpha(p.X, p.Y);
-                                if (a <= 150)
-                                {
-                                    ok = false;
-                                    break;
-                                }
-                            }
-                            else if (p.X >= 0 && p.Y >= 0)
-                            {
-                                ok = false;
-                                break;
-                            }
-                        }
-
-                        index++;
-                    }
-
-                    index = 0;
-                    while (index < oc.LinesBackground.Count && ok)
-                    {
-                        var op = oc.LinesBackground[index];
-                        foreach (var point in op.GetPoints())
-                        {
-                            var p = new Point(point.X + targetItem.X, point.Y + targetItem.Y - oc.MarginTop);
-                            if (p.X >= 0 && p.Y >= 0 && p.X < nikseBitmap.Width && p.Y < nikseBitmap.Height)
-                            {
-                                var a = nikseBitmap.GetAlpha(p.X, p.Y);
-                                if (a > 150)
-                                {
-                                    ok = false;
-                                    break;
-                                }
-                            }
-                            else if (p.X >= 0 && p.Y >= 0)
-                            {
-                                ok = false;
-                                break;
-                            }
-                        }
-
-                        index++;
-                    }
-
-                    if (ok)
-                    {
-                        var size = GetTotalSize(listIndex, list, oc.ExpandCount);
-                        if (Math.Abs(size.X - oc.Width) < 3 && Math.Abs(size.Y - oc.Height) < 3)
-                        {
-                            return oc;
-                        }
-                    }
-                }
-            }
-
-            for (var i = 0; i < OcrCharactersExpanded.Count; i++)
-            {
-                var oc = OcrCharactersExpanded[i];
-                if (oc.ExpandCount > 1 && oc.Width > w && targetItem.X + oc.Width < nikseBitmap.Width)
-                {
-                    bool ok = true;
-                    var index = 0;
-                    while (index < oc.LinesForeground.Count && ok)
-                    {
-                        var op = oc.LinesForeground[index];
-                        foreach (var point in op.ScaledGetPoints(oc, oc.Width, oc.Height - 1))
-                        {
-                            var p = new Point(point.X + targetItem.X, point.Y + targetItem.Y - oc.MarginTop);
-                            if (p.X >= 0 && p.Y >= 0 && p.X < nikseBitmap.Width && p.Y < nikseBitmap.Height)
-                            {
-                                var a = nikseBitmap.GetAlpha(p.X, p.Y);
-                                if (a <= 150)
-                                {
-                                    ok = false;
-                                    break;
-                                }
-                            }
-                            else if (p.X >= 0 && p.Y >= 0)
-                            {
-                                ok = false;
-                                break;
-                            }
-                        }
-
-                        index++;
-                    }
-
-                    index = 0;
-                    while (index < oc.LinesBackground.Count && ok)
-                    {
-                        var op = oc.LinesBackground[index];
-                        foreach (var point in op.ScaledGetPoints(oc, oc.Width, oc.Height - 1))
-                        {
-                            var p = new Point(point.X + targetItem.X, point.Y + targetItem.Y - oc.MarginTop);
-                            if (p.X >= 0 && p.Y >= 0 && p.X < nikseBitmap.Width && p.Y < nikseBitmap.Height)
-                            {
-                                var a = nikseBitmap.GetAlpha(p.X, p.Y);
-                                if (a > 150)
-                                {
-                                    ok = false;
-                                    break;
-                                }
-                            }
-                            else if (p.X >= 0 && p.Y >= 0)
-                            {
-                                ok = false;
-                                break;
-                            }
-                        }
-
-                        index++;
-                    }
-
-                    if (ok)
-                    {
-                        var size = GetTotalSize(listIndex, list, oc.ExpandCount);
-                        var widthPercent = size.Y * 100.0 / size.X;
-                        if (Math.Abs(widthPercent - oc.WidthPercent) < 15 &&
-                            Math.Abs(size.X - oc.Width) < 25 && Math.Abs(size.Y - oc.Height) < 20)
-                        {
-                            return oc;
-                        }
-                    }
-                }
-            }
-
             return null;
         }
 
-        private static Point GetTotalSize(int listIndex, List<ImageSplitterItem> items, int count)
+        var w = targetItem.NikseBitmap.Width;
+        for (var i = 0; i < OcrCharactersExpanded.Count; i++)
         {
-            if (listIndex + count > items.Count)
+            var oc = OcrCharactersExpanded[i];
+            if (oc.ExpandCount > 1 && oc.Width > w && targetItem.X + oc.Width < nikseBitmap.Width &&
+                oc.LinesForeground.Count + oc.LinesBackground.Count >= MinLinesForExpandedMatch &&
+                IsExpandedLineMatch(oc, targetItem, nikseBitmap, list, listIndex))
+            {
+                var size = GetTotalSize(listIndex, list, oc.ExpandCount);
+                if (Math.Abs(size.X - oc.Width) < 3 && Math.Abs(size.Y - oc.Height) < 3)
+                {
+                    return oc;
+                }
+            }
+        }
+
+        for (var i = 0; i < OcrCharactersExpanded.Count; i++)
+        {
+            var oc = OcrCharactersExpanded[i];
+            if (oc.ExpandCount > 1 && oc.Width > w && targetItem.X + oc.Width < nikseBitmap.Width &&
+                oc.LinesForeground.Count + oc.LinesBackground.Count >= MinLinesForExpandedMatch)
+            {
+                var size = GetTotalSize(listIndex, list, oc.ExpandCount);
+                if (size.X <= 0 || size.Y <= 0)
+                {
+                    continue;
+                }
+
+                var heightToWidthPercent = size.Y * 100.0 / size.X;
+                if (Math.Abs(heightToWidthPercent - oc.HeightToWidthPercent) < 15 &&
+                    Math.Abs(size.X - oc.Width) < 25 && Math.Abs(size.Y - oc.Height) < 20 &&
+                    IsScaleRatioSane(size.X, oc.Width) && IsScaleRatioSane(size.Y, oc.Height) &&
+                    IsExpandedLineMatchScaled(oc, targetItem, nikseBitmap, size.X, size.Y, list, listIndex))
+                {
+                    return oc;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The scaled expanded pass may only bridge a moderate size difference between the trained
+    /// character and the target group. Without this gate the absolute size deltas (±25/±20 px)
+    /// let a tiny two-part glyph (a 10x12 double quote) be "scaled" onto a letter-pair group
+    /// three to four times its size.
+    /// </summary>
+    private static bool IsScaleRatioSane(int targetSize, int charSize)
+    {
+        if (targetSize <= 0 || charSize <= 0)
+        {
+            return false;
+        }
+
+        var big = Math.Max(targetSize, charSize);
+        var small = Math.Min(targetSize, charSize);
+        return big * 2 <= small * 5; // ratio <= 2.5
+    }
+
+    /// <summary>
+    /// Scaled expanded match against the actual bounding box of the target group. The old
+    /// "scaled" pass walked the character's lines at the character's own size, so an expanded
+    /// glyph (e.g. a two-part quote) rendered at a different size than it was trained at could
+    /// essentially never match; the single-part fallback then turned every cross-size " into '.
+    /// The error budget scales with the number of line points actually walked (~5%), NOT with
+    /// the target area: measured legit scaled matches stay under ~2-3% wrong points, while a
+    /// wrong expanded character claiming a group of ordinary neighboring letters (e.g. a
+    /// trained "fi" pair swallowing "t"+"i") runs at 9%+. An area-based budget grows with the
+    /// group being claimed, so it was loosest exactly for those letter-pair steals.
+    /// </summary>
+    private static bool IsExpandedLineMatchScaled(NOcrChar oc, ImageSplitterItem targetItem, NikseBitmap nikseBitmap, int targetWidth, int targetHeight, List<ImageSplitterItem> list, int listIndex)
+    {
+        var errors = 0;
+        var points = 0;
+        var scaledMarginTop = (int)Math.Round(oc.MarginTop * targetHeight / (double)Math.Max(1, oc.Height), MidpointRounding.AwayFromZero);
+        var originY = targetItem.Y - scaledMarginTop;
+
+        foreach (var op in oc.LinesForeground)
+        {
+            foreach (var point in op.ScaledWalkPoints(oc, targetWidth, targetHeight))
+            {
+                points++;
+                var p = new Point(point.X + targetItem.X, point.Y + originY);
+                // Out-of-bounds foreground points can't be on text - count them as errors.
+                if (p.X < 0 || p.Y < 0 || p.X >= nikseBitmap.Width || p.Y >= nikseBitmap.Height ||
+                    !IsGroupForeground(list, listIndex, oc.ExpandCount, p.X, p.Y))
+                {
+                    errors++;
+                }
+            }
+        }
+
+        foreach (var op in oc.LinesBackground)
+        {
+            foreach (var point in op.ScaledWalkPoints(oc, targetWidth, targetHeight))
+            {
+                points++;
+                var p = new Point(point.X + targetItem.X, point.Y + originY);
+                // Out-of-bounds background points are definitionally "not on text" - fine.
+                if (p.X < 0 || p.Y < 0 || p.X >= nikseBitmap.Width || p.Y >= nikseBitmap.Height)
+                {
+                    continue;
+                }
+
+                if (nikseBitmap.GetAlpha(p.X, p.Y) > 150)
+                {
+                    errors++;
+                }
+            }
+        }
+
+        return errors <= Math.Max(4, points / 20);
+    }
+
+    private static bool IsExpandedLineMatch(NOcrChar oc, ImageSplitterItem targetItem, NikseBitmap nikseBitmap, List<ImageSplitterItem> list, int listIndex)
+    {
+        foreach (var op in oc.LinesForeground)
+        {
+            foreach (var point in op.WalkPoints())
+            {
+                var p = new Point(point.X + targetItem.X, point.Y + targetItem.Y - oc.MarginTop);
+                // A foreground line point that falls outside the parent bitmap can't possibly be
+                // on text — reject the match. (Previously negative Y was silently skipped, which
+                // let large-MarginTop expanded chars match by leaving the upper part of every
+                // line unchecked.)
+                if (p.X < 0 || p.Y < 0 || p.X >= nikseBitmap.Width || p.Y >= nikseBitmap.Height)
+                {
+                    return false;
+                }
+
+                if (!IsGroupForeground(list, listIndex, oc.ExpandCount, p.X, p.Y))
+                {
+                    return false;
+                }
+            }
+        }
+
+        foreach (var op in oc.LinesBackground)
+        {
+            foreach (var point in op.WalkPoints())
+            {
+                var p = new Point(point.X + targetItem.X, point.Y + targetItem.Y - oc.MarginTop);
+                // For background lines, points that fall outside the bitmap are definitionally
+                // "not on text", so they pass; only in-bounds points that turn out to be on text
+                // (alpha > 150) cause a failure.
+                if (p.X < 0 || p.Y < 0 || p.X >= nikseBitmap.Width || p.Y >= nikseBitmap.Height)
+                {
+                    continue;
+                }
+
+                if (nikseBitmap.GetAlpha(p.X, p.Y) > 150)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Foreground test for an expanded candidate: the parent-bitmap pixel at (x, y) counts only
+    /// when it belongs to one of the splitter items the candidate would claim. Sampling the
+    /// parent bitmap directly let ink of a neighbouring, already-matched glyph satisfy the
+    /// candidate's lines - in italic "I'll" the apostrophe sits inside the x-range of the first
+    /// "l", so a trained "'ll" still matched when the scan started at that "l", and the
+    /// apostrophe came out twice (#14768). Every group item is a disjoint cut of the parent
+    /// bitmap, so its own pixels are the group's ink.
+    /// </summary>
+    private static bool IsGroupForeground(List<ImageSplitterItem> list, int listIndex, int count, int x, int y)
+    {
+        var end = Math.Min(list.Count, listIndex + count);
+        for (var i = listIndex; i < end; i++)
+        {
+            var item = list[i];
+            var bmp = item.NikseBitmap;
+            if (bmp == null)
+            {
+                continue;
+            }
+
+            var localX = x - item.X;
+            var localY = y - item.Y;
+            if (localX >= 0 && localY >= 0 && localX < bmp.Width && localY < bmp.Height && bmp.GetAlpha(localX, localY) > 150)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Point GetTotalSize(int listIndex, List<ImageSplitterItem> items, int count)
+    {
+        if (listIndex + count > items.Count)
+        {
+            return new Point(-100, -100);
+        }
+
+        var minimumX = int.MaxValue;
+        var maximumX = int.MinValue;
+        var minimumY = int.MaxValue;
+        var maximumY = int.MinValue;
+
+        for (var idx = listIndex; idx < listIndex + count; idx++)
+        {
+            var item = items[idx];
+            if (item.NikseBitmap == null)
             {
                 return new Point(-100, -100);
             }
 
-            var minimumX = int.MaxValue;
-            int maximumX = int.MinValue;
-            int minimumY = int.MaxValue;
-            int maximumY = int.MinValue;
-
-            for (var idx = listIndex; idx < listIndex + count; idx++)
+            if (item.Y < minimumY)
             {
-                var item = items[idx];
-                if (item.NikseBitmap == null)
-                {
-                    return new Point(-100, -100);
-                }
-
-                if (item.Y < minimumY)
-                {
-                    minimumY = item.Y;
-                }
-
-                if (item.Y + item.NikseBitmap.Height > maximumY)
-                {
-                    maximumY = item.Y + item.NikseBitmap.Height;
-                }
-
-                if (item.X < minimumX)
-                {
-                    minimumX = item.X;
-                }
-
-                if (item.X + item.NikseBitmap.Width > maximumX)
-                {
-                    maximumX = item.X + item.NikseBitmap.Width;
-                }
+                minimumY = item.Y;
             }
 
-            return new Point(maximumX - minimumX, maximumY - minimumY);
+            if (item.Y + item.NikseBitmap.Height > maximumY)
+            {
+                maximumY = item.Y + item.NikseBitmap.Height;
+            }
+
+            if (item.X < minimumX)
+            {
+                minimumX = item.X;
+            }
+
+            if (item.X + item.NikseBitmap.Width > maximumX)
+            {
+                maximumX = item.X + item.NikseBitmap.Width;
+            }
         }
 
-        public NOcrChar GetMatch(NikseBitmap bitmap, int topMargin, bool deepSeek, int maxWrongPixels)
+        return new Point(maximumX - minimumX, maximumY - minimumY);
+    }
+
+    /// <param name="italicFactor">
+    /// When greater than zero, a glyph that matches nothing upright is de-slanted by this factor
+    /// and matched again; a hit is returned as italic. Italic subtitles otherwise fail to match
+    /// against upright characters. Pass 0 to disable.
+    /// </param>
+    public NOcrChar GetMatch(NikseBitmap parentBitmap, List<ImageSplitterItem> list, ImageSplitterItem item, int topMargin, bool deepSeek, int maxWrongPixels, bool lastDitch = false, double italicFactor = 0)
+    {
+        if (item.NikseBitmap == null)
         {
-            // only very very accurate matches
-            foreach (var oc in OcrCharacters)
-            {
-                if (bitmap.Width == oc.Width && bitmap.Height == oc.Height && Math.Abs(oc.MarginTop - topMargin) < 5)
-                {
-                    if (IsMatch(bitmap, oc, 0))
-                    {
-                        return oc;
-                    }
-                }
-            }
-
-            // only very accurate matches
-            double widthPercent = bitmap.Height * 100.0 / bitmap.Width;
-            foreach (var oc in OcrCharacters)
-            {
-                if (Math.Abs(widthPercent - oc.WidthPercent) < 15 && Math.Abs(bitmap.Width - oc.Width) < 5 && Math.Abs(bitmap.Height - oc.Height) < 5 && Math.Abs(oc.MarginTop - topMargin) < 5)
-                {
-                    if (IsMatch(bitmap, oc, 0))
-                    {
-                        return oc;
-                    }
-                }
-            }
-
-            if (maxWrongPixels >= 1)
-            {
-                foreach (var oc in OcrCharacters)
-                {
-                    if (Math.Abs(bitmap.Width - oc.Width) < 4 && Math.Abs(bitmap.Height - oc.Height) < 4 && Math.Abs(oc.MarginTop - topMargin) < 8)
-                    {
-                        if (IsMatch(bitmap, oc, 1))
-                        {
-                            return oc;
-                        }
-                    }
-                }
-            }
-
-            if (maxWrongPixels >= 1)
-            {
-                foreach (var oc in OcrCharacters)
-                {
-                    if (Math.Abs(bitmap.Width - oc.Width) < 8 && Math.Abs(bitmap.Height - oc.Height) < 8 && Math.Abs(oc.MarginTop - topMargin) < 8)
-                    {
-                        if (IsMatch(bitmap, oc, 1))
-                        {
-                            return oc;
-                        }
-                    }
-                }
-            }
-
-            if (maxWrongPixels >= 2)
-            {
-                var errorsAllowed = Math.Min(3, maxWrongPixels);
-                foreach (var oc in OcrCharacters)
-                {
-                    if (Math.Abs(widthPercent - oc.WidthPercent) < 20 && Math.Abs(oc.MarginTop - topMargin) < 15)
-                    {
-                        if (IsMatch(bitmap, oc, errorsAllowed))
-                        {
-                            return oc;
-                        }
-                    }
-                }
-            }
-
-            if (maxWrongPixels >= 10)
-            {
-                var errorsAllowed = Math.Min(20, maxWrongPixels);
-                foreach (var oc in OcrCharacters)
-                {
-                    if (!oc.IsSensitive && Math.Abs(widthPercent - oc.WidthPercent) < 20 && Math.Abs(oc.MarginTop - topMargin) < 15 && oc.LinesForeground.Count + oc.LinesBackground.Count > 40)
-                    {
-                        if (IsMatch(bitmap, oc, errorsAllowed))
-                        {
-                            return oc;
-                        }
-                    }
-                }
-            }
-
-            if (maxWrongPixels >= 10)
-            {
-                foreach (var oc in OcrCharacters)
-                {
-                    if (oc.IsSensitive && Math.Abs(widthPercent - oc.WidthPercent) < 30 && Math.Abs(oc.MarginTop - topMargin) < 15 && oc.LinesForeground.Count + oc.LinesBackground.Count > 40)
-                    {
-                        if (IsMatch(bitmap, oc, 10))
-                        {
-                            return oc;
-                        }
-                    }
-                }
-            }
-
-            if (deepSeek)
-            {
-                foreach (var oc in OcrCharacters)
-                {
-                    if (Math.Abs(widthPercent - oc.WidthPercent) < 60 && Math.Abs(oc.MarginTop - topMargin) < 17 && oc.LinesForeground.Count + oc.LinesBackground.Count > 50)
-                    {
-                        if (IsMatch(bitmap, oc, maxWrongPixels))
-                        {
-                            return oc;
-                        }
-                    }
-                }
-            }
-
             return null;
         }
 
-        public static NOcrChar MakeItalicNOcrChar(NOcrChar oldChar, int movePixelsLeft, double unItalicFactor)
+        var key = new MatchCacheKey(item.NikseBitmap, topMargin, deepSeek, maxWrongPixels, lastDitch, italicFactor);
+        MatchCacheEntry? cached;
+        lock (_lock)
         {
-            var c = new NOcrChar();
-            foreach (var op in oldChar.LinesForeground)
-            {
-                c.LinesForeground.Add(new NOcrPoint(MakePointItalic(op.Start, oldChar.Height, movePixelsLeft, unItalicFactor), MakePointItalic(op.End, oldChar.Height, movePixelsLeft, unItalicFactor)));
-            }
-
-            foreach (var op in oldChar.LinesBackground)
-            {
-                c.LinesBackground.Add(new NOcrPoint(MakePointItalic(op.Start, oldChar.Height, movePixelsLeft, unItalicFactor), MakePointItalic(op.End, oldChar.Height, movePixelsLeft, unItalicFactor)));
-            }
-
-            c.Text = oldChar.Text;
-            c.Width = oldChar.Width;
-            c.Height = oldChar.Height;
-            c.MarginTop = oldChar.MarginTop;
-            c.Italic = true;
-            return c;
+            _matchCache.TryGetValue(key, out cached);
         }
 
-        private static Point MakePointItalic(Point p, int height, int moveLeftPixels, double italicAngle)
+        if (cached != null)
         {
-            return new Point((int)Math.Round(p.X + (height - p.Y) * italicAngle - moveLeftPixels), p.Y);
+            if (cached.ExactMatch != null)
+            {
+                return ComposeYery(cached.ExactMatch, list, item, deepSeek, maxWrongPixels, lastDitch);
+            }
+
+            // The expanded scan depends on the neighboring splitter items and the parent
+            // bitmap, so it can't be cached per glyph bitmap - always evaluate it live.
+            return GetMatchExpanded(parentBitmap, item, list.IndexOf(item), list) ?? ComposeYery(cached.SingleMatch, list, item, deepSeek, maxWrongPixels, lastDitch);
         }
 
-        public static bool IsMatch(NikseBitmap bitmap, NOcrChar oc, int errorsAllowed)
+        // A perfect single match (exact size, 0 errors) means the user has explicitly added an
+        // entry for this bitmap, so prefer it over a possibly-greedy expanded match.
+        var exactSingle = GetExactMatchSingle(item.NikseBitmap, topMargin);
+        if (exactSingle != null)
         {
-            var index = 0;
-            var errors = 0;
-            while (index < oc.LinesForeground.Count)
+            CacheMatch(key, new MatchCacheEntry { ExactMatch = exactSingle });
+            return ComposeYery(exactSingle, list, item, deepSeek, maxWrongPixels, lastDitch);
+        }
+
+        var expandedResult = GetMatchExpanded(parentBitmap, item, list.IndexOf(item), list);
+        if (expandedResult != null)
+        {
+            // Nothing cached: the single-match result was never computed, and the expanded
+            // result must not be cached (see above).
+            return expandedResult;
+        }
+
+        // skipExactCheck: the exact scan already ran (and missed) above - without the flag,
+        // GetMatchSingle re-scanned the whole single-character list a second time for every
+        // glyph that wasn't an exact match.
+        var single = GetMatchSingle(item.NikseBitmap, topMargin, deepSeek, maxWrongPixels, lastDitch, skipExactCheck: true);
+
+        if (single == null && italicFactor > 0)
+        {
+            // Nothing matched upright. Straighten the glyph and try once more - this is how an
+            // italic 'l' stops being read as an 'i'. A hit is italic by construction, so flag a
+            // copy; the database entry itself must stay upright.
+            var unItalic = item.NikseBitmap.UnItalic(italicFactor);
+            if (unItalic.Width > 0 && unItalic.Height > 0)
             {
-                var op = oc.LinesForeground[index];
-                foreach (var point in op.ScaledGetPoints(oc, bitmap.Width, bitmap.Height))
+                var italicMatch = GetMatchSingle(unItalic, topMargin, deepSeek, maxWrongPixels, lastDitch);
+                if (italicMatch != null)
                 {
-                    if (point.X >= 0 && point.Y >= 0 && point.X < bitmap.Width && point.Y < bitmap.Height)
-                    {
-                        var a = bitmap.GetAlpha(point.X, point.Y);
-                        if (a <= 150)
-                        {
-                            errors++;
-                            if (errors > errorsAllowed)
-                            {
-                                return false;
-                            }
-                        }
-                    }
+                    single = new NOcrChar(italicMatch) { Italic = true };
                 }
-
-                index++;
             }
-
-            index = 0;
-            while (index < oc.LinesBackground.Count)
-            {
-                var op = oc.LinesBackground[index];
-                foreach (var point in op.ScaledGetPoints(oc, bitmap.Width, bitmap.Height))
-                {
-                    if (point.X >= 0 && point.Y >= 0 && point.X < bitmap.Width && point.Y < bitmap.Height)
-                    {
-                        var a = bitmap.GetAlpha(point.X, point.Y);
-                        if (a > 150)
-                        {
-                            errors++;
-                            if (errors > errorsAllowed)
-                            {
-                                return false;
-                            }
-                        }
-                    }
-                }
-                index++;
-            }
-
-            return true;
         }
 
-        public static List<string> GetDatabases()
+        CacheMatch(key, new MatchCacheEntry { SingleMatch = single });
+        return ComposeYery(single, list, item, deepSeek, maxWrongPixels, lastDitch);
+    }
+
+    /// <summary>
+    /// "ы"/"Ы" is a soft sign plus a separate bar. The trained two-part entries only fit fonts
+    /// with a similar gap and weight - in a heavy outlined font the pair is far wider than any
+    /// trained one and came out as "ьІ". A soft sign directly followed (no space) by a dotless bar
+    /// of the same height and top is that letter in any font: a capital "І" after a lowercase
+    /// "ь" is taller, and the dotted "і" isn't a bar.
+    /// </summary>
+    private NOcrChar ComposeYery(NOcrChar softSign, List<ImageSplitterItem> list, ImageSplitterItem item, bool deepSeek, int maxWrongPixels, bool lastDitch)
+    {
+        if (softSign?.Text is not ("ь" or "Ь") || item.NikseBitmap == null)
         {
-            return Directory
-                .GetFiles(Configuration.OcrDirectory.TrimEnd(Path.DirectorySeparatorChar), "*.nocr")
-                .Select(Path.GetFileNameWithoutExtension)
-                .OrderBy(p => p)
-                .ToList();
+            return softSign;
+        }
+
+        var index = list.IndexOf(item);
+        var next = index >= 0 && index + 1 < list.Count ? list[index + 1] : null;
+        if (next?.NikseBitmap == null)
+        {
+            return softSign;
+        }
+
+        var height = item.NikseBitmap.Height;
+        var tolerance = Math.Max(2, height / 8);
+        if (Math.Abs(next.NikseBitmap.Height - height) > tolerance ||
+            Math.Abs(next.Top - item.Top) > tolerance ||
+            next.NikseBitmap.Width >= item.NikseBitmap.Width)
+        {
+            return softSign;
+        }
+
+        var bar = GetMatchSingle(next.NikseBitmap, next.Top, deepSeek, maxWrongPixels, lastDitch);
+        if (bar?.Text is not ("І" or "l" or "I" or "|" or "/" or "1"))
+        {
+            return softSign;
+        }
+
+        return new NOcrChar(softSign)
+        {
+            Text = softSign.Text == "ь" ? "ы" : "Ы",
+            ExpandCount = 2,
+        };
+    }
+
+    private void CacheMatch(MatchCacheKey key, MatchCacheEntry entry)
+    {
+        lock (_lock)
+        {
+            if (_matchCache.Count >= MatchCacheMaxEntries)
+            {
+                _matchCache.Clear();
+            }
+
+            _matchCache[key] = entry;
         }
     }
+
+    private NOcrChar GetExactMatchSingle(NikseBitmap bitmap, int topMargin)
+    {
+        var index = _exactSizeIndex;
+        if (index == null)
+        {
+            lock (_lock)
+            {
+                index = _exactSizeIndex;
+                if (index == null)
+                {
+                    index = new Dictionary<long, List<NOcrChar>>();
+                    foreach (var oc in OcrCharacters)
+                    {
+                        var k = ((long)oc.Width << 32) | (uint)oc.Height;
+                        if (!index.TryGetValue(k, out var bucket))
+                        {
+                            bucket = new List<NOcrChar>();
+                            index[k] = bucket;
+                        }
+
+                        bucket.Add(oc);
+                    }
+
+                    _exactSizeIndex = index;
+                }
+            }
+        }
+
+        if (!index.TryGetValue(((long)bitmap.Width << 32) | (uint)bitmap.Height, out var candidates))
+        {
+            return null;
+        }
+
+        foreach (var oc in candidates)
+        {
+            if (Math.Abs(oc.MarginTop - topMargin) < 5 && IsMatch(bitmap, oc, 0))
+            {
+                return oc;
+            }
+        }
+
+        return null;
+    }
+
+    public NOcrChar GetMatchSingle(NikseBitmap bitmap, int topMargin, bool deepSeek, int maxWrongPixels, bool lastDitch = false, bool skipExactCheck = false)
+    {
+        if (!skipExactCheck)
+        {
+            var exact = GetExactMatchSingle(bitmap, topMargin);
+            if (exact != null)
+            {
+                return exact;
+            }
+        }
+
+        var heightToWidthPercent = bitmap.Height * 100.0 / bitmap.Width;
+
+        // Scale the loose passes' error budgets with the glyph's pixel area: 20 wrong pixels is
+        // nothing on a 25x35 letter but lets a ~50-pixel apostrophe, dash or dot match almost
+        // anything (e.g. "-" was claimed by "." in the last-ditch pass). One error per 8 pixels
+        // of area leaves normal letters unaffected and only tightens tiny glyphs; the floor of 8
+        // keeps cross-size matching of small glyphs possible.
+        var areaErrorCap = Math.Max(8, bitmap.Width * bitmap.Height / 8);
+
+        foreach (var pass in MatchPasses)
+        {
+            if (pass.RequireDeepSeek && !deepSeek)
+            {
+                continue;
+            }
+
+            if (pass.RequireLastDitch && !lastDitch)
+            {
+                continue;
+            }
+
+            if (maxWrongPixels < pass.MinAllowance)
+            {
+                continue;
+            }
+
+            var errorsAllowed = pass.ErrorsAllowed(maxWrongPixels);
+
+            // Best-match within the pass: the first candidate that fits the error budget used to
+            // win outright, so with generous budgets a mediocre early entry beat a near-perfect
+            // later one. Now the candidate with the lowest share of wrong points wins; ties keep
+            // list order (newest first), so a user's just-added character still takes precedence
+            // over an equally-good older one. Ranking by share instead of by count matters once
+            // entries differ in line count: a 100-line entry (from Train nOCR) used to beat a
+            // 300-line one on a count that was low only because fewer points were checked, which
+            // read "o" as a sparsely trained "ø" and "i" as "ì".
+            NOcrChar best = null;
+            var bestRate = double.MaxValue;
+            NOcrChar bestUpper = null;
+            var bestUpperRate = double.MaxValue;
+            NOcrChar bestLower = null;
+            var bestLowerRate = double.MaxValue;
+            foreach (var oc in OcrCharacters)
+            {
+                if (!PassFilter(bitmap, heightToWidthPercent, oc, topMargin, pass))
+                {
+                    continue;
+                }
+
+                // Sensitive characters (O/o/0, quotes, dashes, ...) get a tighter budget within
+                // the same pass instead of being deferred to a later pass: excluding them
+                // entirely let non-sensitive lookalikes (Q, C, .) claim their glyphs at up to
+                // 20 errors before the sensitive candidate was ever considered.
+                var candidateAllowed = oc.IsSensitive && pass.ErrorsAllowedSensitive != null
+                    ? pass.ErrorsAllowedSensitive(maxWrongPixels)
+                    : errorsAllowed;
+
+                // The number of points walked grows with the glyph's size, so a character trained
+                // at 20 px and matched at 40 px collects twice the errors for the same fit.
+                var scale = bitmap.Height / (double)oc.Height;
+                if (scale > 1)
+                {
+                    candidateAllowed = (int)Math.Round(candidateAllowed * scale);
+                }
+
+                var budget = Math.Min(candidateAllowed, areaErrorCap);
+                if (best != null)
+                {
+                    // A candidate can only win with a lower share than the best so far, and its
+                    // share is at least errors / (all its points), so stop counting once that
+                    // bound reaches the best share.
+                    var maxPoints = CountPointsUpperBound(oc, bitmap.Width, bitmap.Height);
+                    budget = Math.Min(budget, (int)Math.Ceiling((bestRate + CaseTwinRateMargin) * maxPoints) - 1);
+                }
+
+                if (TryCountErrors(bitmap, oc, budget, out var errors, out var points) && points > 0)
+                {
+                    var rate = errors / (double)points;
+                    if (IsCaseTwinLetter(oc.Text))
+                    {
+                        if (char.IsUpper(oc.Text[0]) && rate < bestUpperRate)
+                        {
+                            bestUpper = oc;
+                            bestUpperRate = rate;
+                        }
+                        else if (char.IsLower(oc.Text[0]) && rate < bestLowerRate)
+                        {
+                            bestLower = oc;
+                            bestLowerRate = rate;
+                        }
+                    }
+
+                    if (rate < bestRate)
+                    {
+                        best = oc;
+                        bestRate = rate;
+                        if (errors == 0 && !IsCaseTwinLetter(oc.Text))
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (best != null && IsCaseTwinLetter(best.Text) && (bestUpper == null || bestLower == null))
+            {
+                // The strict passes gate on size, so the other case (smaller or bigger by
+                // definition) is often not even a candidate in the pass that found this one.
+                var twinText = char.IsUpper(best.Text[0]) ? best.Text.ToLowerInvariant() : best.Text.ToUpperInvariant();
+                var (twin, twinRate) = FindBestByText(bitmap, twinText, bestRate + CaseTwinRateMargin);
+                if (char.IsUpper(twinText[0]))
+                {
+                    (bestUpper, bestUpperRate) = (twin, twinRate);
+                }
+                else
+                {
+                    (bestLower, bestLowerRate) = (twin, twinRate);
+                }
+            }
+
+            best = ResolveCaseTwin(best, bestRate, bestUpper, bestUpperRate, bestLower, bestLowerRate, bitmap.Height, topMargin);
+
+            if (best != null)
+            {
+                return best;
+            }
+        }
+
+        return null;
+    }
+
+    // Below this pixel area a glyph is a "small glyph" (dot, comma, dash, apostrophe, ...):
+    // pixel evidence barely discriminates solid blobs, so shape gating must come from the
+    // aspect ratio instead.
+    private const int SmallGlyphAreaLimit = 150;
+    private const double SmallGlyphMaxAspectRatio = 2.0;
+    private const int SmallGlyphMaxAreaRatio = 5;
+
+    private static bool PassFilter(NikseBitmap bitmap, double heightToWidthPercent, NOcrChar oc, int topMargin, in MatchPass pass)
+    {
+        // A small entry (dot, comma, apostrophe) carries only a few lines of evidence, and since
+        // every gate below scales with the glyph, it fits a much bigger glyph once stretched
+        // onto it: an apostrophe trained at 3x9 read the stem of a 8x22 "t" with zero errors.
+        // Allow about twice the size per axis, as between a DVD and a Blu-ray rendering.
+        var area = bitmap.Width * bitmap.Height;
+        var ocArea = oc.Width * oc.Height;
+        var smallArea = Math.Min(area, ocArea);
+        if (smallArea < SmallGlyphAreaLimit && Math.Max(area, ocArea) > smallArea * SmallGlyphMaxAreaRatio)
+        {
+            return false;
+        }
+
+        if (bitmap.Width * bitmap.Height < SmallGlyphAreaLimit)
+        {
+            // Small glyphs: absolute h/w% deltas are useless here - a dot (aspect ~100) vs a
+            // dash (~40) differ by 60 points while two apostrophes can differ by 100+ points,
+            // and the wide passes have no aspect gate at all (which let "." claim "-" through
+            // the 8px size-tolerance pass on 0 pixel errors, since a solid blob's lines all hit
+            // a solid dash). Compare aspect as a ratio instead, in every pass.
+            var big = Math.Max(heightToWidthPercent, oc.HeightToWidthPercent);
+            var small = Math.Min(heightToWidthPercent, oc.HeightToWidthPercent);
+            if (small <= 0 || big / small > SmallGlyphMaxAspectRatio)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            // Sensitive characters may use their own (typically looser) aspect gate - O/o/0
+            // vary more in aspect between fonts than their pixel shapes suggest.
+            var aspectMaxDelta = oc.IsSensitive && pass.AspectMaxDeltaSensitive != 0
+                ? pass.AspectMaxDeltaSensitive
+                : pass.AspectMaxDelta;
+            // Relative difference, in percent of the narrower aspect: an absolute h/w-% delta
+            // treated tall glyphs unfairly - "i" at 4x21 vs 6x43 is 525 vs 717, so a delta of 190
+            // shut it out of every pass although the shapes are the same.
+            var aspectDelta = Math.Abs(heightToWidthPercent - oc.HeightToWidthPercent) * 100.0 /
+                              Math.Min(heightToWidthPercent, oc.HeightToWidthPercent);
+            if (aspectMaxDelta != int.MaxValue && aspectDelta >= aspectMaxDelta)
+            {
+                return false;
+            }
+        }
+
+        if (pass.SizeMaxDelta != int.MaxValue &&
+            (Math.Abs(bitmap.Width - oc.Width) >= pass.SizeMaxDelta ||
+             Math.Abs(bitmap.Height - oc.Height) >= pass.SizeMaxDelta))
+        {
+            return false;
+        }
+
+        // Top margin and its tolerance are pixels at the size the character was trained at; scale
+        // both to the glyph being matched, or a "." trained at 30 px can never match one at 60 px
+        // (expected top 18, actual 36), while an "8" passes for an "e" at a smaller size.
+        var scale = bitmap.Height / (double)oc.Height;
+        var expectedTop = oc.MarginTop * scale;
+        var topTolerance = pass.MarginTopMaxDelta * Math.Max(1.0, scale);
+        if (Math.Abs(expectedTop - topMargin) >= topTolerance)
+        {
+            return false;
+        }
+
+        if (pass.MinLineCount > 0 &&
+            oc.LinesForeground.Count + oc.LinesBackground.Count < pass.MinLineCount)
+        {
+            return false;
+        }
+
+        return pass.Sensitivity switch
+        {
+            SensitivityFilter.OnlySensitive => oc.IsSensitive,
+            SensitivityFilter.NotSensitive => !oc.IsSensitive,
+            _ => true,
+        };
+    }
+
+    private enum SensitivityFilter { Either, NotSensitive, OnlySensitive }
+
+    /// <summary>
+    /// One row in the match cascade run by <see cref="GetMatchSingle"/>. Earlier rows are stricter
+    /// and run first; the function returns the first <see cref="NOcrChar"/> any row accepts.
+    /// </summary>
+    /// <remarks>
+    /// Conditions are "fail if &gt;= delta" (equivalent to the original "&lt; delta" pass condition).
+    /// Use <see cref="int.MaxValue"/> to disable a delta check entirely.
+    /// </remarks>
+    private readonly struct MatchPass
+    {
+        public int MinAllowance { get; init; }       // run only if maxWrongPixels >= this (0 = always)
+        public bool RequireDeepSeek { get; init; }
+        public bool RequireLastDitch { get; init; }  // run only when the caller opted in (batch convert)
+        public int AspectMaxDelta { get; init; }     // int.MaxValue = no aspect-ratio check
+        public int SizeMaxDelta { get; init; }       // int.MaxValue = no width/height check; otherwise applied to both
+        public int MarginTopMaxDelta { get; init; }
+        public int MinLineCount { get; init; }       // 0 = no line-count check
+        public SensitivityFilter Sensitivity { get; init; }
+        public Func<int, int> ErrorsAllowed { get; init; }
+        public Func<int, int>? ErrorsAllowedSensitive { get; init; } // budget for IsSensitive candidates (null = same as ErrorsAllowed)
+        public int AspectMaxDeltaSensitive { get; init; }            // aspect gate for IsSensitive candidates (0 = same as AspectMaxDelta)
+    }
+
+    private static readonly Func<int, int> ErrorsZero = _ => 0;
+    private static readonly Func<int, int> ErrorsOne = _ => 1;
+    private static readonly Func<int, int> ErrorsTen = _ => 10;
+    private static readonly Func<int, int> ErrorsCappedAtThree = max => Math.Min(3, max);
+    private static readonly Func<int, int> ErrorsCappedAtTwenty = max => Math.Min(20, max);
+    private static readonly Func<int, int> ErrorsAsRequested = max => max;
+    private static readonly Func<int, int> ErrorsAsRequestedDoubled = max => max * 2;
+
+    private static readonly MatchPass[] MatchPasses =
+    {
+        // very accurate (size + aspect, 0 errors)
+        new MatchPass
+        {
+            AspectMaxDelta = 15, SizeMaxDelta = 5, MarginTopMaxDelta = 5,
+            ErrorsAllowed = ErrorsZero,
+        },
+        // 4-px size tolerance, 1 error
+        new MatchPass
+        {
+            MinAllowance = 1,
+            AspectMaxDelta = int.MaxValue, SizeMaxDelta = 4, MarginTopMaxDelta = 8,
+            ErrorsAllowed = ErrorsOne,
+        },
+        // 8-px size tolerance, 1 error
+        new MatchPass
+        {
+            MinAllowance = 1,
+            AspectMaxDelta = int.MaxValue, SizeMaxDelta = 8, MarginTopMaxDelta = 8,
+            ErrorsAllowed = ErrorsOne,
+        },
+        // aspect-only screen, errors capped at 3
+        new MatchPass
+        {
+            MinAllowance = 2,
+            AspectMaxDelta = 20, SizeMaxDelta = int.MaxValue, MarginTopMaxDelta = 15,
+            ErrorsAllowed = ErrorsCappedAtThree,
+        },
+        // wide tolerance, requires many lines, errors capped at 20 - sensitive chars (O, o, 0,
+        // quotes, dashes, ...) compete in the SAME ranking with a tighter budget (10) and a
+        // looser aspect gate (30). They used to run in a separate later pass, which let
+        // non-sensitive lookalikes (Q, C, .) claim their glyphs unopposed at up to 20 errors.
+        new MatchPass
+        {
+            MinAllowance = 10,
+            AspectMaxDelta = 20, SizeMaxDelta = int.MaxValue, MarginTopMaxDelta = 15,
+            MinLineCount = 41,
+            ErrorsAllowed = ErrorsCappedAtTwenty,
+            ErrorsAllowedSensitive = ErrorsTen,
+            AspectMaxDeltaSensitive = 30,
+        },
+        // deepSeek: very wide aspect, requires lots of lines, errors as requested
+        new MatchPass
+        {
+            RequireDeepSeek = true,
+            AspectMaxDelta = 60, SizeMaxDelta = int.MaxValue, MarginTopMaxDelta = 17,
+            MinLineCount = 51,
+            ErrorsAllowed = ErrorsAsRequested,
+        },
+        // last-ditch: opt-in from batch contexts where the user can't fix asterisks inline.
+        // Drop the MinLineCount gate that blocks sparsely-trained DB characters and double the
+        // error budget so we return a best-guess character instead of "*". Wrong guesses can
+        // still be cleaned up by the "fix common OCR errors" and replace-list passes; an
+        // asterisk blocks them entirely. (#10766)
+        new MatchPass
+        {
+            RequireLastDitch = true,
+            AspectMaxDelta = 80, SizeMaxDelta = int.MaxValue, MarginTopMaxDelta = 25,
+            MinLineCount = 15,
+            ErrorsAllowed = ErrorsAsRequestedDoubled,
+        },
+    };
+
+    // Letters whose upper and lower case differ only in size ("o"/"O", "s"/"S", ...): scaled to
+    // the glyph they fit equally well, so pixels alone can't pick the case. Cyrillic has many
+    // more of them than Latin ("о"/"О", "т"/"Т", "и"/"И", ...).
+    private const string CaseTwinLetters = "cCoOsSuUvVwWxXzZøØ" + NOcrCaseFixer.CyrillicCaseTwins;
+    private const double CaseTwinRateMargin = 0.01;
+
+    private static bool IsCaseTwinLetter(string text) => text.Length == 1 && CaseTwinLetters.Contains(text[0]);
+
+    /// <summary>
+    /// When the winner is a case-twin letter and its other case scored within
+    /// <see cref="CaseTwinRateMargin"/>, pick the case whose trained top margin, scaled to the
+    /// glyph, is closer to where the glyph sits in its line. The case fixer does this from the
+    /// heights seen so far, but has nothing to go on for the first lines of a file.
+    /// </summary>
+    private static NOcrChar ResolveCaseTwin(NOcrChar best, double bestRate, NOcrChar upper, double upperRate, NOcrChar lower, double lowerRate, int height, int topMargin)
+    {
+        if (best == null || !IsCaseTwinLetter(best.Text) || upper == null || lower == null ||
+            !string.Equals(upper.Text, lower.Text, StringComparison.OrdinalIgnoreCase) ||
+            Math.Max(upperRate, lowerRate) > bestRate + CaseTwinRateMargin)
+        {
+            return best;
+        }
+
+        double TopDistance(NOcrChar oc) => Math.Abs(oc.MarginTop * height / (double)oc.Height - topMargin);
+        return TopDistance(upper) <= TopDistance(lower) ? upper : lower;
+    }
+
+    /// <summary>
+    /// The entry with text <paramref name="text"/> and a similar aspect that fits
+    /// <paramref name="bitmap"/> best, if its share of wrong points is below <paramref name="maxRate"/>.
+    /// </summary>
+    private (NOcrChar Match, double Rate) FindBestByText(NikseBitmap bitmap, string text, double maxRate)
+    {
+        NOcrChar best = null;
+        var bestRate = maxRate;
+        var heightToWidthPercent = bitmap.Height * 100.0 / bitmap.Width;
+        foreach (var oc in OcrCharacters)
+        {
+            if (oc.Text != text ||
+                Math.Abs(heightToWidthPercent - oc.HeightToWidthPercent) * 100.0 / Math.Min(heightToWidthPercent, oc.HeightToWidthPercent) >= 30)
+            {
+                continue;
+            }
+
+            var maxPoints = CountPointsUpperBound(oc, bitmap.Width, bitmap.Height);
+            if (TryCountErrors(bitmap, oc, (int)Math.Ceiling(bestRate * maxPoints), out var errors, out var points) &&
+                points > 0 && errors / (double)points <= bestRate)
+            {
+                best = oc;
+                bestRate = errors / (double)points;
+            }
+        }
+
+        return (best, bestRate);
+    }
+
+    /// <summary>
+    /// Number of points <see cref="TryCountErrors"/> walks for <paramref name="oc"/> at the given
+    /// size if none of them falls outside the bitmap.
+    /// </summary>
+    private static int CountPointsUpperBound(NOcrChar oc, int width, int height)
+    {
+        var points = 0;
+        foreach (var op in oc.LinesForeground)
+        {
+            var start = op.GetScaledStart(oc, width, height);
+            var end = op.GetScaledEnd(oc, width, height);
+            points += Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y)) + 1;
+        }
+
+        foreach (var op in oc.LinesBackground)
+        {
+            var start = op.GetScaledStart(oc, width, height);
+            var end = op.GetScaledEnd(oc, width, height);
+            points += Math.Max(Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y)) + 1;
+        }
+
+        return points;
+    }
+
+    /// <summary>
+    /// Like <see cref="IsMatch"/> but reports how many pixels disagreed, so callers can rank
+    /// candidates that all fit the budget, and how many points were checked. Returns false (and
+    /// unspecified counts) as soon as the budget is exceeded.
+    /// </summary>
+    private static bool TryCountErrors(NikseBitmap bitmap, NOcrChar oc, int errorsAllowed, out int errors, out int points)
+    {
+        errors = 0;
+        points = 0;
+        if (errorsAllowed < 0)
+        {
+            return false;
+        }
+
+        // Same zero-line guard as IsMatch: an entry with no lines would "match" anything.
+        if (oc.LinesForeground.Count + oc.LinesBackground.Count < MinLinesForSingleMatch)
+        {
+            return false;
+        }
+
+        var width = bitmap.Width;
+        var height = bitmap.Height;
+
+        var widthX4 = width * 4;
+
+        foreach (var op in oc.LinesForeground)
+        {
+            foreach (var point in op.ScaledWalkPoints(oc, width, height))
+            {
+                if ((uint)point.X < (uint)width && (uint)point.Y < (uint)height)
+                {
+                    points++;
+                    var a = bitmap.GetAlpha(point.X, point.Y);
+                    if (a <= 150)
+                    {
+                        if (++errors > errorsAllowed)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (var op in oc.LinesBackground)
+        {
+            foreach (var point in op.ScaledWalkPoints(oc, width, height))
+            {
+                if ((uint)point.X < (uint)width && (uint)point.Y < (uint)height)
+                {
+                    points++;
+                    var a = bitmap.GetAlpha(point.X, point.Y);
+                    if (a > 150)
+                    {
+                        if (++errors > errorsAllowed)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static bool IsMatch(NikseBitmap bitmap, NOcrChar oc, int errorsAllowed)
+    {
+        // A zero-line entry would skip both foreach loops below and return true, matching any
+        // bitmap with the right dimensions. Reject that here.
+        if (oc.LinesForeground.Count + oc.LinesBackground.Count < MinLinesForSingleMatch)
+        {
+            return false;
+        }
+
+        var errors = 0;
+        var width = bitmap.Width;
+        var height = bitmap.Height;
+
+        var widthX4 = width * 4;
+
+        foreach (var op in oc.LinesForeground)
+        {
+            foreach (var point in op.ScaledWalkPoints(oc, width, height))
+            {
+                if ((uint)point.X < (uint)width && (uint)point.Y < (uint)height)
+                {
+                    var a = bitmap.GetAlpha(point.X, point.Y);
+                    if (a <= 150)
+                    {
+                        if (++errors > errorsAllowed)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (var op in oc.LinesBackground)
+        {
+            foreach (var point in op.ScaledWalkPoints(oc, width, height))
+            {
+                if ((uint)point.X < (uint)width && (uint)point.Y < (uint)height)
+                {
+                    var a = bitmap.GetAlpha(point.X, point.Y);
+                    if (a > 150)
+                    {
+                        if (++errors > errorsAllowed)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static List<string> GetDatabases(string ocrFolder = null)
+    {
+        ocrFolder=ocrFolder ?? Configuration.OcrDirectory;
+        if (string.IsNullOrEmpty(ocrFolder) || !Directory.Exists(ocrFolder))
+        {
+            return [];
+        }
+
+        return Directory
+            .GetFiles(ocrFolder.TrimEnd(Path.DirectorySeparatorChar), "*.nocr")
+            .Select(Path.GetFileNameWithoutExtension)
+            .OrderBy(p => p)
+            .ToList()!;
+    }
+}
 }

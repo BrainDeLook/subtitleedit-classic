@@ -6,6 +6,10 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 
 English · [Русский](README.ru.md)
 
+## Local 4.0.25 preview
+
+Six additional stable v5.3 TTS engines run through audio.cpp: Fish Audio S2 Pro, IndexTTS 2.5, Higgs Audio v3, FireRedTTS3, KugelAudio and Breeze TTS 2. Play with speech starts at the selected main-window line. nOCR gains the stable matcher and font trainer with three line-generation algorithms while retaining the classic windows and existing databases. The published stable installer remains 4.0.24. See [the changelog](CLASSIC_CHANGELOG.md) for language, model-license and validation limits.
+
 ## Classic 4.0.24
 
 ASR adds selectable VAD, speech isolation, speaker detection and new stable v5.3 models, including Parakeet Ultra, Phonon-2, Voxtral and Index-Echo. Speaker metadata survives postprocessing; batch subtitles use ASS when actors are present. Time-code review adds editable original/proposed waveforms and twelve language-specific wav2vec2 aligners. Download the normal Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). Native checks focus on Russian and English; see [the changelog](CLASSIC_CHANGELOG.md) for coverage and limits.

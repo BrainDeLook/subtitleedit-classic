@@ -1,4 +1,4 @@
-﻿param(
+param(
     [Parameter(Mandatory=$true)][string]$ApplicationDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [string]$FFmpegLocation,
@@ -32,6 +32,8 @@ $tests=@{
     TestClassicCastFeatures='tts-tests/TestClassicCastFeatures.cs'
     TestClassicLocalTts='tts-tests/TestClassicLocalTts.cs'
     TestClassicSpeechExtensions='speech-tests/TestClassicSpeechExtensions.cs'
+    TestClassicNext='tts-tests/TestClassicNext.cs'
+    TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
     $arguments=@('/nologo','/target:exe','/platform:x64','/langversion:latest',('/out:"'+(Join-Path $OutputDirectory "$name.exe")+'"'))+$refs+('"'+(Join-Path $PSScriptRoot $tests[$name])+'"')
@@ -73,4 +75,15 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw 'ASR extensions/settings regression failed.' }
     & "$OutputDirectory/TestClassicSpeechExtensions.exe" wave (Join-Path $OutputDirectory 'timing-waveform') $FFmpegLocation (Join-Path $PSScriptRoot 'speech-tests/english-sample.wav')
     if ($LASTEXITCODE -ne 0) { throw 'Timing waveform interaction regression failed.' }
+}
+
+& "$OutputDirectory/TestStableNOcr.exe"
+if($LASTEXITCODE -ne 0){throw 'Stable nOCR matcher/trainer regression failed.'}
+if($FFmpegLocation) {
+    & "$OutputDirectory/TestClassicNext.exe" unit (Join-Path $OutputDirectory 'next-tts-ui') $FFmpegLocation
+    if($LASTEXITCODE -ne 0){throw 'audio.cpp catalog/protocol/layout regression failed.'}
+    & "$OutputDirectory/TestClassicNext.exe" playback (Join-Path $OutputDirectory 'next-playback') $FFmpegLocation
+    if($LASTEXITCODE -ne 0){throw 'Speech playback regression failed.'}
+    & "$OutputDirectory/TestClassicNext.exe" nocr (Join-Path $OutputDirectory 'next-nocr') $FFmpegLocation (Join-Path $PSScriptRoot '../Ocr/Cyrillic.nocr')
+    if($LASTEXITCODE -ne 0){throw 'Classic nOCR Russian/English font training regression failed.'}
 }
