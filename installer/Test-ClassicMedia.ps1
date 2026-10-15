@@ -37,6 +37,7 @@ $tests=@{
     TestSpeechPlayer='tts-tests/TestSpeechPlayer.cs'
     TestExtendedTts='tts-tests/TestExtendedTts.cs'
     TestFinalTts='tts-tests/TestFinalTts.cs'
+    TestSpeechSession='tts-tests/TestSpeechSession.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -108,4 +109,9 @@ if ($FFmpegLocation) {
 if ($FFmpegLocation) {
     & "$OutputDirectory/TestFinalTts.exe" unit (Join-Path $OutputDirectory "final-tts") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Complete stable TTS catalog, cloud authentication and classic UI regression failed." }
+}
+
+if ($FFmpegLocation) {
+    & "$OutputDirectory/TestSpeechSession.exe" (Join-Path $OutputDirectory "speech-session") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "Portable speech sessions, history and restored generation regression failed." }
 }

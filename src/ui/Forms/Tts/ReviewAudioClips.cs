@@ -80,6 +80,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             }
 
             labelParagraphInfo.Text = string.Empty;
+            InitializeSessionReview();
         }
 
         private void buttonOK_Click(object sender, EventArgs e)
@@ -289,6 +290,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             TaskDelayHelper.RunDelayed(TimeSpan.FromMilliseconds(10), () =>
             {
                 var idx = listViewAudioClips.SelectedItems[0].Index;
+                var before = SnapshotTake(idx);
+                RememberTake(idx, before);
+                var hadBinding = _textToSpeech.SessionRowEnabled(_subtitle.Paragraphs[idx]).HasValue;
                 using (var form = new RegenerateAudioClip(_textToSpeech, _subtitle, idx, _engine))
                 {
                     buttonStop_Click(null, null);
@@ -296,6 +300,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     var dr = form.ShowDialog(this);
                     if (dr != DialogResult.OK)
                     {
+                        _textToSpeech.RestoreSessionRow(_subtitle.Paragraphs[idx], before);
+                        if (!hadBinding) _textToSpeech.ForgetSessionRow(_subtitle.Paragraphs[idx]);
                         return;
                     }
 
@@ -303,9 +309,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
                     if (form.FileNameAndSpeedFactor != null)
                     {
+                        RememberTake(idx, before);
                         _fileNames[idx].Filename = form.FileNameAndSpeedFactor.Filename;
                         _fileNames[idx].Factor = form.FileNameAndSpeedFactor.Factor;
-                        listViewAudioClips.Items[idx].SubItems[4].Text = $"{(form.FileNameAndSpeedFactor.Factor * 100.0m):0.#}%";
+                        RefreshSessionReviewRow(idx);
                     }
                 }
             });

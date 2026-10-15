@@ -27,8 +27,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         public Subtitle EditedSubtitle { get; set; }
 
         private readonly Subtitle _subtitle;
-        private readonly string _videoFileName;
-        private readonly VideoInfo _videoInfo;
+        private string _videoFileName;
+        private VideoInfo _videoInfo;
         private string _waveFolder;
         private readonly List<ActorAndVoice> _actorAndVoices;
         private SubtitleFormat _subtitleFormat;
@@ -42,6 +42,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private readonly List<TtsLanguage> _murfLanguages;
         private bool _actorsOn;
         private bool _converting;
+        private int _classicTestVoiceWidth;
 
         public class ActorAndVoice
         {
@@ -286,7 +287,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     Text = string.IsNullOrEmpty(actor.Actor) ? (QwenRussian ? "(без актёра)" : "(no actor)") : actor.Actor,
                     Checked = _checkedSpeechActors.Contains(actor.Actor ?? string.Empty),
                 };
-                lvi.SubItems.Add(actor.Voice);
+                lvi.SubItems.Add(ClassicQwenReference.List(false).FirstOrDefault(v => v.Id == actor.Voice)?.Name ?? actor.Voice);
                 listViewActors.Items.Add(lvi);
             }
 
@@ -317,7 +318,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             PersistClassicCast();
             if(!CaptureSpeechActors())return;
             if(!ChooseSpeechExport())return;
-            if(!PrepareSpeechLines())return;
+            if(_restoredSpeechSession==null && !PrepareSpeechLines())return;
             try
             {
                 buttonGenerateTTS.Text = LanguageSettings.Current.General.Cancel;
@@ -326,21 +327,16 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 _waveFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
                 Directory.CreateDirectory(_waveFolder);
 
-                var generateOk = await GenerateParagraphAudioAsync(_subtitle, true, null);
-                if (_abort || !generateOk)
-                {
-                    HandleAbort();
-                    return;
+                List<FileNameAndSpeedFactor> fileNameAndSpeedFactors;
+                if (_restoredSpeechSession != null) fileNameAndSpeedFactors = await Task.Run(() => StageSpeechSession());
+                else {
+                    var generateOk = await GenerateParagraphAudioAsync(_subtitle, true, null);
+                    if (_abort || !generateOk) { HandleAbort(); return; }
+                    fileNameAndSpeedFactors = FixParagraphAudioSpeed(_subtitle, null);
                 }
 
-                var fileNameAndSpeedFactors = FixParagraphAudioSpeed(_subtitle, null);
-                if (_abort)
-                {
-                    HandleAbort();
-                    return;
-                }
-
-                if (checkBoxShowPreview.Checked)
+                if (_abort) { HandleAbort(); return; }
+                if (checkBoxShowPreview.Checked || _restoredSpeechSession != null)
                 {
                     var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
                     var reviewIndices = Enumerable.Range(0, _subtitle.Paragraphs.Count)
@@ -428,7 +424,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 MessageBox.Show("Oops: " + exception.Message + Environment.NewLine + exception.Message);
                 SeLogger.Error(exception, $"{Text}: Error running engine {nikseComboBoxEngine.Text} with video {_videoFileName}");
             }
-            finally { CleanupSpeechJob(); }
+            finally { CleanupSpeechJob(); _restoredSpeechSession=null; }
         }
 
         private void HandleAbort()
@@ -1665,6 +1661,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private void nikseComboBoxEngine_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (_classicTestVoiceWidth == 0) _classicTestVoiceWidth = buttonTestVoice.Width;
+            buttonTestVoice.Width = _classicTestVoiceWidth;
             labelLanguage.Text=LanguageSettings.Current.ChooseLanguage.Language;
             nikseComboBoxVoice.DropDownStyle=ComboBoxStyle.DropDownList;
             nikseTextBoxApiKey.UseSystemPasswordChar=false;
@@ -2758,7 +2756,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             var fileNameAndSpeedFactors = FixParagraphAudioSpeed(sub, waveFileNameOnly);
 
-            return fileNameAndSpeedFactors.First();
+            var result = fileNameAndSpeedFactors.First();
+            RememberRegeneratedSessionRow(p, voice, result);
+            SpeechTakeGenerated?.Invoke(p, result);
+            return result;
         }
 
         private string GetEngineAudioExtension()
@@ -2919,7 +2920,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         public string GetParagraphAudio(Paragraph paragraph)
         {
-            var cast=_castSettings.Get(paragraph.Actor);
+            var cast=SpeechCastRow(paragraph);
             if(cast!=null && !string.IsNullOrEmpty(cast.Voice))return ClassicQwenReference.List().FirstOrDefault(v=>v.Id==cast.Voice)?.Name ?? cast.Voice;
             if (_actorsOn && _actorAndVoices.Count > 0 && !string.IsNullOrEmpty(paragraph.Actor))
             {

@@ -43,7 +43,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private Subtitle SpeakingSubtitle(Subtitle subtitle, bool filterActors)
         {
             if (_castSpeakerNames.Count == 0 && _silentSpeechRows.Count == 0 && (!filterActors || _speechActorFilter == null)) return subtitle;
-            var speaking = new Subtitle(subtitle);
+            var speaking = new Subtitle(subtitle, false);
             foreach (var p in speaking.Paragraphs)
             {
                 if (_silentSpeechRows.Contains(ClassicTtsPreparation.Key(p)) || (filterActors && !SpeechActorIncluded(p))) {p.Text = string.Empty;continue;}

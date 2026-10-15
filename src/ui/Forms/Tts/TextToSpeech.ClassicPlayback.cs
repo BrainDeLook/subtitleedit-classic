@@ -22,14 +22,15 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         {
             var oldSize=ClientSize;var existing=Controls.Cast<Control>().ToArray();var bounds=existing.Select(c=>c.Bounds).ToArray();var anchors=existing.Select(c=>c.Anchor).ToArray();
             SuspendLayout();foreach(var c in existing)c.Anchor=AnchorStyles.Top|AnchorStyles.Left;Controls.Clear();
-            ClientSize=new Size(oldSize.Width,oldSize.Height+38);MinimumSize=new Size(MinimumSize.Width,MinimumSize.Height+38);
+            ClientSize=new Size(oldSize.Width,oldSize.Height+72);MinimumSize=new Size(MinimumSize.Width,MinimumSize.Height+72);
             var content=new Panel{Name="classicTtsContent",Bounds=new Rectangle(Point.Empty,oldSize),Anchor=AnchorStyles.Top|AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right};Controls.Add(content);content.SuspendLayout();content.Controls.AddRange(existing);
             for(int i=0;i<existing.Length;i++){existing[i].Bounds=bounds[i];existing[i].Anchor=anchors[i];}content.ResumeLayout(false);
-            var bar=new FlowLayoutPanel{Name="classicPlayback",Location=new Point(0,oldSize.Height),Size=new Size(oldSize.Width,38),Anchor=AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right,Padding=new Padding(8,3,8,3),WrapContents=false};
+            var bar=new FlowLayoutPanel{Name="classicPlayback",Location=new Point(0,oldSize.Height),Size=new Size(oldSize.Width,72),Anchor=AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right,Padding=new Padding(8,3,8,3),WrapContents=true};
             _playSpeech=new Button{AutoSize=true,Text=CL("Озвучка с текущей строки…","Play with speech from current line…")};
             _playSpeech.Click+=async(s,e)=>await PlayClassicSpeechAsync();
             var pause=new Button{AutoSize=true,Text=CL("Пауза / продолжить","Pause / resume")};pause.Click+=(s,e)=>{if(_playbackCancellation==null || PlaybackVideo==null)return;if(PlaybackVideo.IsPlaying)PlaybackVideo.Pause();else PlaybackVideo.Play();};
-            bar.Controls.AddRange(new Control[]{_playSpeech,pause});Controls.Add(bar);ResumeLayout(false);Shown+=(s,e)=>_playSpeech.Text=CL("Озвучить со строки ","Speak from line ")+(PlaybackFromIndex+1)+"…";
+            _importSpeechSession=new Button{AutoSize=true,Text=CL("Импорт сессии…","Import session…"),Name="buttonImportSpeechSession"};_importSpeechSession.Click+=async(s,e)=>await ChooseSpeechSessionAsync();
+            bar.Controls.AddRange(new Control[]{_playSpeech,pause,_importSpeechSession});Controls.Add(bar);FormClosed+=(s,e)=>CleanupSessionReferences();ResumeLayout(false);Shown+=(s,e)=>_playSpeech.Text=CL("Озвучить со строки ","Speak from line ")+(PlaybackFromIndex+1)+"…";
         }
         private async Task PlayClassicSpeechAsync()
         {
@@ -50,7 +51,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             _playbackCancellation=new CancellationTokenSource();var cancel=_playbackCancellation.Token;_converting=true;SetLocalBusy(true);buttonGenerateTTS.Enabled=false;_playSpeech.Text=CL("Остановить озвучку","Stop speech");
             try {
                 async Task<string> Generate(ClassicSpeechLine line,string outputFolder,CancellationToken token) {
-                    token.ThrowIfCancellationRequested();var row=_castSettings.Get(line.Paragraph.Actor) ?? new ClassicCastRow();var choice=string.IsNullOrWhiteSpace(row.Engine)?global:row.Engine;var output=Path.Combine(outputFolder,Guid.NewGuid().ToString("N")+".wav");var text=Utilities.UnbreakLine(HtmlUtil.RemoveHtmlTags(line.Text));
+                    token.ThrowIfCancellationRequested();var row=SpeechCastRow(line.Paragraph) ?? new ClassicCastRow();var choice=string.IsNullOrWhiteSpace(row.Engine)?global:row.Engine;var output=Path.Combine(outputFolder,Guid.NewGuid().ToString("N")+".wav");var text=Utilities.UnbreakLine(HtmlUtil.RemoveHtmlTags(line.Text));
                     var d=ClassicLocalTts.Catalog.FirstOrDefault(x=>x.Name==choice);
                     if(d!=null) {
                         var config=ClassicLocalTtsSettings.Load(d.Id);if(!string.IsNullOrEmpty(row.Model))config.Model=row.Model;if(!string.IsNullOrEmpty(row.Language))config.Language=row.Language;if(!string.IsNullOrEmpty(row.Instructions))config.Instructions=row.Instructions;

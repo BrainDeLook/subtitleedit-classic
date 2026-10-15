@@ -68,6 +68,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             if(_localSettings!=null)_localSettings.Enabled=!busy;
             if(_finalOnlineSettings!=null)_finalOnlineSettings.Enabled=!busy;
             if(_finalOnlineInstall!=null)_finalOnlineInstall.Enabled=!busy;
+            if(_importSpeechSession!=null)_importSpeechSession.Enabled=!busy;
             buttonTestVoice.Enabled=!busy;
         }
         private async Task DownloadQwen()

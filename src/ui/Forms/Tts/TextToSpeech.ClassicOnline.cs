@@ -42,6 +42,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     nikseComboBoxVoice.SelectedIndexChanged += (s, e) => CaptureFinalOnline();
                     groupBoxSettings.Controls.AddRange(new Control[] { _finalOnlineSettings, _finalOnlineInstall });
                 }
+                buttonTestVoice.Width = Math.Min(120, Math.Max(85, (nikseComboBoxVoice.Width - 12) / 3));
+                var start = buttonTestVoice.Right + 6; var available = nikseComboBoxVoice.Right - start;
+                _finalOnlineSettings.SetBounds(start, buttonTestVoice.Top, (available - 5) / 2, buttonTestVoice.Height);
+                _finalOnlineInstall.SetBounds(_finalOnlineSettings.Right + 5, buttonTestVoice.Top, available - _finalOnlineSettings.Width - 5, buttonTestVoice.Height);
                 _finalOnlineSettings.Visible = _finalOnlineInstall.Visible = true;
                 _finalOnlineInstall.Text = id == "edge" && !File.Exists(ClassicOnlineTts.EdgeExecutable(settings)) ? CL("Установить", "Install") : CL("Обновить голоса", "Refresh voices");
                 labelProgress.Text = id == "edge" ? CL("Онлайн; ключ не требуется", "Online; no API key required") : id == "google" ? CL("Файл ключа Google — в настройках", "Google key file — in Settings") : CL("API-ключ Mistral — в настройках", "Mistral API key — in Settings");
