@@ -81,6 +81,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             labelParagraphInfo.Text = string.Empty;
             InitializeSessionReview();
+            InitializeSpeechWaveform();
         }
 
         private void buttonOK_Click(object sender, EventArgs e)
@@ -137,6 +138,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             var idx = listViewAudioClips.SelectedItems[0].Index;
             var waveFileName = _fileNames[idx].Filename;
+            var seekSeconds = _reviewSeekSeconds;
+            _reviewSeekSeconds = 0;
 
             if (_libMpv != null)
             {
@@ -146,6 +149,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     (sender, args) =>
                     {
                         _libMpv.PlayRate = 1;
+                        _libMpv.CurrentPosition = seekSeconds;
                         _libMpv.Play();
                     },
                     null);

@@ -18,6 +18,8 @@ The local preview also includes Edge TTS, Mistral Speech, Google Cloud Speech an
 
 The local preview adds **Save session** and **Take history** to audio review, and **Import session** to the classic speech window. `SubtitleEditTts.json` travels with its audio/reference subfolders, preserving the full timeline, inclusion flags, actors and per-line settings without exporting API credentials. Imported clips can be assembled without synthesis. Every successful regeneration remains available in the current review's take history; only the active take is exported. Imported voice-reference working copies are cleaned on closing the window. If the session's video is unavailable, audio export remains possible; open the matching video in the editor before using synchronized playback.
 
+Speech review now shows the selected generated clip on a waveform, with draggable cue edges, zoom/scroll and click-to-play using MPV. **Fit end to audio** adjusts the subtitle end to the actual clip length; **Reset timing** restores the times from opening review. Audio is neither trimmed nor stretched by these edits. Changed times are saved in sessions and used during final assembly.
+
 ## Classic 4.0.24
 
 ASR adds selectable VAD, speech isolation, speaker detection and new stable v5.3 models, including Parakeet Ultra, Phonon-2, Voxtral and Index-Echo. Speaker metadata survives postprocessing; batch subtitles use ASS when actors are present. Time-code review adds editable original/proposed waveforms and twelve language-specific wav2vec2 aligners. Download the normal Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). Native checks focus on Russian and English; see [the changelog](CLASSIC_CHANGELOG.md) for coverage and limits.

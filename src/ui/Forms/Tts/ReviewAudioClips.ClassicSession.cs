@@ -50,11 +50,12 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             _fileNames[index].Filename = take.AudioFileName; _fileNames[index].Factor = take.SpeedFactor;
             RefreshSessionReviewRow(index);
         }
-        private void RefreshSessionReviewRow(int index)
+        private void RefreshSessionReviewRow(int index, bool reloadWaveform = true)
         {
             var row = listViewAudioClips.Items[index]; var paragraph = _subtitle.Paragraphs[index];
             row.SubItems[2].Text = _textToSpeech.GetParagraphAudio(paragraph); row.SubItems[3].Text = paragraph.GetCharactersPerSecond().ToString("0.#");
             row.SubItems[4].Text = _fileNames[index].Factor == 1 ? "-" : (_fileNames[index].Factor * 100).ToString("0.#") + "%"; row.SubItems[5].Text = paragraph.Text;
+            if (reloadWaveform) RefreshSpeechWaveform();
         }
         public Task ExportSessionAsync(string fileName, CancellationToken cancel)
         {

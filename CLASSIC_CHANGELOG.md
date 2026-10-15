@@ -2,6 +2,9 @@
 
 ## 4.0.25 — local preview
 
+- Added a selected-clip waveform to classic speech review, with subtitle timeline labels, overrun coloring, draggable start/end boundaries, zoom/scroll and MPV playback from the clicked audio position. Moving the start shifts the cue and generated clip together; changing the end never trims or stretches the audio.
+- Added Fit end to audio and Reset timing, matching stable v5.3 behavior. Fit uses the actual generated clip duration after speed adjustment; reset restores both times captured when review opened. Timing changes are retained in session exports and used by final audio assembly. Waveform loading runs in the background and cancels safely when switching rows or closing review.
+
 - Added portable speech sessions using the stable v5.3 `SubtitleEditTts.json` schema plus Classic cue metadata. Export stores audio and clone references alongside the JSON in the chosen folder; engine/model/voice/instruction, timing, inclusion flags, actors and ASS metadata survive import. Unselected and original-only cues remain on the timeline. Credentials and provider secrets are never exported.
 - Imported sessions can be reviewed and assembled from their saved audio without synthesizing every line again. Individual regeneration uses the saved per-line engine and voice, including distinct settings for lines sharing an actor. Session-specific casts do not overwrite the default cast. Imported reference copies are removed when the speech window closes; their portable originals remain in the session folder.
 - Added current-review take history, including intermediate successful regenerations. Previous audio, text, voice, model/instructions and speed can be previewed and restored. History is intentionally not included in session exports, matching stable v5.3.
