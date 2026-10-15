@@ -36,8 +36,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             if(_playbackCancellation!=null){_playbackCancellation.Cancel();_castCancellation?.Cancel();_localCancellation?.Cancel();_qwenCancellation?.Cancel();_compatibleCancellation?.Cancel();return;}
             if(_converting || _qwenCancellation!=null || _localCancellation!=null || _castCancellation!=null)return;
             if(PlaybackVideo==null || !PlaybackVideo.HasVideo){MessageBox.Show(this,CL("Сначала открой видео в главном окне.","Open a video in the main window first."));return;}
+            if (!EnsureCurrentSpeechVideo()) return;
+            SynchronizeMainSubtitle();var playbackIndex=ResolvePlaybackIndex();
             if(!CaptureSpeechActors())return;SaveConfiguration();PersistClassicCast();
-            var lines=SpeakingSubtitle(_subtitle,true).Paragraphs.Select((p,i)=>new ClassicSpeechLine{Paragraph=p,Index=i}).Where(l=>l.Index>=PlaybackFromIndex && !string.IsNullOrWhiteSpace(l.Text)).OrderBy(l=>l.Start).ToList();
+            var lines=SpeakingSubtitle(_subtitle,true).Paragraphs.Select((p,i)=>new ClassicSpeechLine{Paragraph=p,Index=i}).Where(l=>l.Index>=playbackIndex && !string.IsNullOrWhiteSpace(l.Text)).OrderBy(l=>l.Start).ToList();
             if(lines.Count==0)return;
             var local=new Dictionary<string,ClassicLocalTts>();var qwen=new Dictionary<string,ClassicQwenTts>();
             var definition=_engines.First(x=>x.Index==nikseComboBoxEngine.SelectedIndex);

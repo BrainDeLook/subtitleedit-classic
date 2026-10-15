@@ -42,6 +42,7 @@ class TestClassicNext
  }
  static void Pump(Task task){while(!task.IsCompleted){Application.DoEvents();Thread.Sleep(10);}task.GetAwaiter().GetResult();}
  static async Task PlaybackNative(string folder,string reference){
+  SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
   var dll=Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"libmpv-2.dll");File.Copy(dll,Path.Combine(folder,"libmpv-2.dll"),true);
   var video=new FakeVideo();var started=new List<int>();var lines=new[]{new ClassicSpeechLine{Paragraph=new Paragraph("First",0,3500)},new ClassicSpeechLine{Paragraph=new Paragraph("Second",4000,7500)}};
   var type=typeof(ClassicSpeechReader).Assembly.GetType("Nikse.SubtitleEdit.Logic.ClassicSpeechPlayer");

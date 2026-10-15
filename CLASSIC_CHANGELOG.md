@@ -2,8 +2,11 @@
 
 ## 4.0.25 — local preview
 
+- Fixed live TTS playback stopping immediately after MPV loaded a speech clip. Playback now waits for the file-loaded pause to finish before starting speech; native checks verify actual position advancement, repeated clips and pause/resume.
+
 - Added Fish Audio S2 Pro, IndexTTS 2.5, Higgs Audio v3, FireRedTTS3, KugelAudio and Breeze TTS 2 from stable v5.3.0. Their shared audio.cpp runtime offers CPU, Vulkan and CUDA builds with pinned archive checksums; twelve model choices download on demand with size/SHA-256 checks. Existing classic voice references, actor casts, review and export are reused. Fish/Higgs/Index/Breeze retain their separate first-download license acceptance.
 - IndexTTS exposes its supported language choices, emotion and duration control. FireRed uses the mandatory language tag, exact reference transcript and clone task. Higgs/FireRed reference copies receive the stable fade/silence-tail preparation. Kugel is preset-only; Breeze offers English/Chinese presets/design instructions and reference cloning.
+- Speech settings remain open while selecting or editing subtitles in the main editor. Playback starts at the live selection, unchanged preparation refreshes from main-window edits, and conflicting preparation changes cannot overwrite newer edits. Closing cancels active speech work and waits for cleanup.
 - Play with speech from the selected main-window line, using the current engine or actor cast. Three-line lookahead follows the video, with pause/resume, seek handling, volume ducking, capped speed-up and waiting for delayed speech. Temporary clips and owned engines are cleaned up on stop.
 - Ported the stable nOCR matcher: best candidate selection, exact-size indexing, content/parameter-aware match caches with mutation invalidation, expanded-glyph neighbour checks, small-glyph safeguards, italic retry and Cyrillic case/composition handling. The classic bitmap adapter retains V2 database compatibility and adapts relative word-spacing/baseline detection.
 - nOCR training uses the stable font trainer and discriminative glyph lines, with Random, SkeletonDistance and EdgeHough choices in the classic training/character windows. Train from subtitle text or a custom character set, with merged combinations, bold/italic and cancellation. Saving a database keeps a previous-file backup.

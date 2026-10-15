@@ -13914,6 +13914,12 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if(_classicSpeechWindow!=null && !_classicSpeechWindow.IsDisposed)
+            {
+                var speech=_classicSpeechWindow;speech.Close();
+                if(!speech.IsDisposed){_closeAfterClassicSpeech=true;e.Cancel=true;return;}
+            }
+
             if (_forceClose)
             {
                 return;
@@ -37349,29 +37355,42 @@ namespace Nikse.SubtitleEdit.Forms
             AudioToTextWhisperSelectedLines();
         }
 
+        private TextToSpeech _classicSpeechWindow;
+        private string _classicSpeechVideo;
+        private bool _closeAfterClassicSpeech;
         private void textToSpeechAndAddToVideoToolStripMenuItem_Click(object sender, EventArgs e)
         {
             TaskDelayHelper.RunDelayed(TimeSpan.FromMilliseconds(25), () =>
             {
-                if (RequireFfmpegOk())
+                if(_classicSpeechWindow!=null && !_classicSpeechWindow.IsDisposed)
                 {
-                    using (var form = new TextToSpeech(_subtitle, GetCurrentSubtitleFormat(), _videoFileName, _videoInfo,ClassicSelectedAudioIndex()))
-                    {
-                        form.PlaybackFromIndex=Math.Max(0,FirstSelectedIndex);
-                        form.SeekPlaybackVideo=position=>mediaPlayer.CurrentPosition=position;
-                        form.PlaybackVideo=new ClassicSpeechVideoAdapter{Open=()=>!string.IsNullOrEmpty(_videoFileName),Playing=()=>mediaPlayer.VideoPlayer!=null && mediaPlayer.VideoPlayer.IsPlaying,GetPosition=()=>mediaPlayer.CurrentPosition,GetSpeed=()=>mediaPlayer.VideoPlayer?.PlayRate ?? 1,GetVolume=()=>mediaPlayer.Volume,SetVolume=value=>mediaPlayer.Volume=(int)Math.Round(value),Start=()=>mediaPlayer.Play(),Hold=()=>mediaPlayer.Pause()};
-
-                        if (form.ShowDialog(this) == DialogResult.OK)
-                        {
-                            var idx = FirstSelectedIndex;
-                            MakeHistoryForUndo("Before text-to-speech preparation");
-                            _subtitle = form.EditedSubtitle;
-                            SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                            _subtitleListViewIndex = -1;
-                            SubtitleListview1.SelectIndexAndEnsureVisibleFaster(idx);
-                        }
-                    }
+                    if(string.Equals(_classicSpeechVideo,_videoFileName,StringComparison.OrdinalIgnoreCase))
+                    {_classicSpeechWindow.Show();_classicSpeechWindow.Activate();return;}
+                    var previousSpeechWindow = _classicSpeechWindow;
+                    previousSpeechWindow.Close();
+                    if (!previousSpeechWindow.IsDisposed) return;
                 }
+                if(!RequireFfmpegOk())return;
+                var form=new TextToSpeech(_subtitle,GetCurrentSubtitleFormat(),_videoFileName,_videoInfo,ClassicSelectedAudioIndex());
+                _classicSpeechWindow=form;_classicSpeechVideo=_videoFileName;
+                var video=_videoFileName;
+                form.PlaybackFromIndex=Math.Max(0,FirstSelectedIndex);
+                form.MainSelectedIndex=()=>FirstSelectedIndex;
+                form.MainSubtitleSource=()=>_subtitle;
+                form.MainSubtitleFormat=()=>GetCurrentSubtitleFormat();
+                form.SourceVideoIsCurrent=()=>string.Equals(video,_videoFileName,StringComparison.OrdinalIgnoreCase);
+                form.SeekPlaybackVideo=position=>mediaPlayer.CurrentPosition=position;
+                form.PlaybackVideo=new ClassicSpeechVideoAdapter{Open=()=>!string.IsNullOrEmpty(_videoFileName),Playing=()=>mediaPlayer.VideoPlayer!=null && mediaPlayer.VideoPlayer.IsPlaying,GetPosition=()=>mediaPlayer.CurrentPosition,GetSpeed=()=>mediaPlayer.VideoPlayer?.PlayRate ?? 1,GetVolume=()=>mediaPlayer.Volume,SetVolume=value=>mediaPlayer.Volume=(int)Math.Round(value),Start=()=>mediaPlayer.Play(),Hold=()=>mediaPlayer.Pause()};
+                form.ApplyModelessSubtitle=(baseline,edited)=>{
+                    var originalSignature=TextToSpeech.SpeechDocumentSignature(baseline);
+                    if(TextToSpeech.SpeechDocumentSignature(edited)==originalSignature)return true;
+                    if(TextToSpeech.SpeechDocumentSignature(_subtitle)!=originalSignature)
+                    {MessageBox.Show(form,(Configuration.Settings.General.Language ?? "").StartsWith("ru",StringComparison.OrdinalIgnoreCase) ? "Субтитры изменились в главном окне. Изменения подготовки озвучки не применены, чтобы не затереть правки." : "Subtitles changed in the main window. Speech preparation changes were not applied to protect your edits.");return false;}
+                    var idx=FirstSelectedIndex;MakeHistoryForUndo("Before text-to-speech preparation");
+                    _subtitle=new Subtitle(edited,false);SubtitleListview1.Fill(_subtitle,_subtitleOriginal);_subtitleListViewIndex=-1;SubtitleListview1.SelectIndexAndEnsureVisibleFaster(idx);return true;
+                };
+                form.FormClosed+=(s2,e2)=>{if(ReferenceEquals(_classicSpeechWindow,form))_classicSpeechWindow=null;if(_closeAfterClassicSpeech && !IsDisposed){_closeAfterClassicSpeech=false;BeginInvoke(new Action(Close));}};
+                form.InitializeModelessSession();form.Show(this);
             });
         }
 

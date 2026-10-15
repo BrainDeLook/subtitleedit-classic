@@ -42,7 +42,26 @@ namespace Nikse.SubtitleEdit.Logic
         public double Position=>_player?.CurrentPosition ?? 0;
         public bool IsPaused=>_ended || (_player?.IsPaused ?? true);
         public double Speed{set{if(_player!=null)_player.PlayRate=value;}}
-        public async Task LoadAudio(string path){Dispose();_ended=false;_player=new LibMpvDynamic();_player.Initialize(null,path,null,(s,e)=>_ended=true);_player.Volume=_volume;for(int i=0;i<100 && _player.Duration<=0;i++)await Task.Delay(20);}
+        public async Task LoadAudio(string path)
+        {
+            Dispose();
+            _ended = false;
+            _player = new LibMpvDynamic();
+            var loaded = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            // LibMpvDynamic pauses from its file-loaded timer. Wait for that callback before
+            // allowing Play, otherwise the delayed pause immediately stops the speech.
+            _player.Initialize(null, path, (s, e) => loaded.TrySetResult(true), (s, e) => _ended = true);
+            if (await Task.WhenAny(loaded.Task, Task.Delay(5000)) != loaded.Task)
+            {
+                throw new TimeoutException("Speech audio did not finish loading: " + path);
+            }
+            await loaded.Task;
+            if (_player.Duration <= 0)
+            {
+                throw new InvalidDataException("Speech audio has no playable duration: " + path);
+            }
+            _player.Volume = _volume;
+        }
         public void Play()=>_player?.Play();
         public void Pause()=>_player?.Pause();
         public void Dispose(){_player?.DisposeVideoPlayer();_player=null;}

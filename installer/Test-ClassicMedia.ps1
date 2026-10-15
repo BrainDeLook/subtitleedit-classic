@@ -33,6 +33,8 @@ $tests=@{
     TestClassicLocalTts='tts-tests/TestClassicLocalTts.cs'
     TestClassicSpeechExtensions='speech-tests/TestClassicSpeechExtensions.cs'
     TestClassicNext='tts-tests/TestClassicNext.cs'
+    TestModelessSpeech='tts-tests/TestModelessSpeech.cs'
+    TestSpeechPlayer='tts-tests/TestSpeechPlayer.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -86,4 +88,12 @@ if($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw 'Speech playback regression failed.'}
     & "$OutputDirectory/TestClassicNext.exe" nocr (Join-Path $OutputDirectory 'next-nocr') $FFmpegLocation (Join-Path $PSScriptRoot '../Ocr/Cyrillic.nocr')
     if($LASTEXITCODE -ne 0){throw 'Classic nOCR Russian/English font training regression failed.'}
+}
+
+& "$OutputDirectory/TestModelessSpeech.exe" (Join-Path $OutputDirectory "modeless-speech")
+if ($LASTEXITCODE -ne 0) { throw "Modeless speech window regression failed." }
+
+if ($FFmpegLocation) {
+    & "$OutputDirectory/TestSpeechPlayer.exe" (Join-Path $OutputDirectory "native-speech-player") (Join-Path $PSScriptRoot "speech-tests/english-sample.wav")
+    if ($LASTEXITCODE -ne 0) { throw "Native MPV speech playback regression failed." }
 }

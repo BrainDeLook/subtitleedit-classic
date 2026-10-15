@@ -31,7 +31,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private readonly VideoInfo _videoInfo;
         private string _waveFolder;
         private readonly List<ActorAndVoice> _actorAndVoices;
-        private readonly SubtitleFormat _subtitleFormat;
+        private SubtitleFormat _subtitleFormat;
         private bool _abort;
         private readonly List<string> _actors;
         private readonly List<TextToSpeechEngine> _engines;
@@ -281,6 +281,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private async void ButtonGenerateTtsClick(object sender, EventArgs e)
         {
+            SynchronizeMainSubtitle();
             SaveConfiguration();
 
             if (buttonGenerateTTS.Text == LanguageSettings.Current.General.Cancel)
@@ -295,6 +296,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 Application.DoEvents();
                 return;
             }
+
+            if (!EnsureCurrentSpeechVideo()) return;
 
             PersistClassicCast();
             if(!CaptureSpeechActors())return;
@@ -1635,8 +1638,12 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private void buttonOK_Click(object sender, EventArgs e)
         {
+            if(SpeechWorkIsActive)return;
+            SynchronizeMainSubtitle();
+            if(!Modal && !CanApplyModelessChanges())return;
             EditedSubtitle = _subtitle;
             DialogResult = DialogResult.OK;
+            if(!Modal)Close();
         }
 
         private void nikseComboBoxEngine_SelectedIndexChanged(object sender, EventArgs e)
@@ -2838,9 +2845,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private void TextToSpeech_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (_qwenCancellation != null || _localCancellation != null || _castCancellation != null || _compatibleCancellation != null || _converting)
+            if (SpeechWorkIsActive)
             {
-                _abort=true; _playbackCancellation?.Cancel(); _castCancellation?.Cancel(); _qwenCancellation?.Cancel(); _localCancellation?.Cancel(); _dubbingCancellation?.Cancel(); _compatibleCancellation?.Cancel(); e.Cancel=true; return;
+                CancelSpeechAndCloseWhenIdle(); e.Cancel=true; return;
             }
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
 
@@ -2933,17 +2940,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
         private void buttonCancel_Click(object sender, EventArgs e)
         {
-            if (_qwenCancellation != null) { _abort=true; _qwenCancellation.Cancel(); return; }
-            if (_localCancellation != null) { _abort=true; _localCancellation.Cancel(); return; }
-            if (_dubbingCancellation != null) { _abort=true; _dubbingCancellation.Cancel(); return; }
-            if (_compatibleCancellation != null) { _abort=true; _compatibleCancellation.Cancel(); return; }
-            if (_converting)
-            {
-                _abort = true;
-                return;
-            }
-
-            DialogResult = DialogResult.Cancel;
+            if(SpeechWorkIsActive){CancelSpeechAndCloseWhenIdle();return;}
+            DialogResult=DialogResult.Cancel;
+            if(!Modal)Close();
         }
 
         private void TextToSpeech_Shown(object sender, EventArgs e)
