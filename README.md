@@ -10,9 +10,11 @@ English · [Русский](README.ru.md)
 
 Six additional stable v5.3 TTS engines run through audio.cpp: Fish Audio S2 Pro, IndexTTS 2.5, Higgs Audio v3, FireRedTTS3, KugelAudio and Breeze TTS 2. Play with speech starts at the selected main-window line. nOCR gains the stable matcher and font trainer with three line-generation algorithms while retaining the classic windows and existing databases. The published stable installer remains 4.0.24. See [the changelog](CLASSIC_CHANGELOG.md) for language, model-license and validation limits.
 
-The preview also ports Kokoro, F5-TTS, Pocket TTS, VibeVoice, IndexTTS 1.5, Dots-TTS, Confucius4, MOSS-TTS and both OmniVoice runtimes from stable v5.3. The shared local catalog contains 19 engines and 50 model bundles; Qwen3/Supertonic retain their existing controls. Models and verified Windows runtimes download from the classic interface. Actor casts, regeneration, live playback and the shared voice library are reused.
+The preview also ports Kokoro, F5-TTS, Pocket TTS, VibeVoice, IndexTTS 1.5, Dots-TTS, Confucius4, MOSS-TTS and both OmniVoice runtimes from stable v5.3. The shared local catalog contains 20 engines and 51 model bundles; Qwen3/Supertonic retain their existing controls. Models and verified Windows runtimes download from the classic interface. Actor casts, regeneration, live playback and the shared voice library are reused.
 
 Pocket chooses its language through the model (six languages, no Russian checkpoint). Kokoro provides English/Chinese presets and cannot clone. Confucius offers 14 explicit target languages; Dots and Confucius expose ODE steps. Standalone OmniVoice offers voice instructions for its Default voice; the CrispASR variant keeps the model loaded between lines. F5 remains experimental and slow, as noted by stable upstream. Reference transcripts are optional for compatible engines; Qwen, F5 and standalone OmniVoice still require them. Voice packs retain empty transcript sidecars without making those references available to engines that require text.
+
+The local preview also includes Edge TTS, Mistral Speech, Google Cloud Speech and Zonos (CrispASR), completing the enabled stable v5.3.0 Windows TTS catalog. Edge installs its pinned client in an isolated environment (Python 3.10+ required) and needs internet access. Mistral uses an encrypted API key; Google uses a service-account JSON key file. Voice refresh retains the previous list on errors. Zonos downloads verified model files and eSpeak NG locally, without installing an MSI into Windows; it offers one fixed voice, not cloning. English/Japanese Zonos and English/Russian Edge synthesis were checked; paid Google/Mistral synthesis was checked with simulated HTTP responses, not live credentials.
 
 ## Classic 4.0.24
 
@@ -28,7 +30,7 @@ The classic interface includes actor-specific cast settings, cloning from video/
 
 This release ports stable v5.3 features into the classic interface: 3D burn-in and NVENC preset migration, Supertonic-3 and OpenAI-compatible TTS, speech-line preparation, original-speech removal with HTDemucs/RoFormer, reviewed forced-alignment timing corrections and OCR Find/Replace/nOCR database optimization. A Cyrillic database is bundled without replacing an existing user database. Engine/model downloads remain available from the interface.
 
-The complete v5 engine catalog has not yet been ported. See [the changelog](CLASSIC_CHANGELOG.md) for validation and limits.
+All 30 enabled Windows TTS implementations from stable v5.3.0 are now represented in the local preview. This catalog count does not imply that every upstream setting or model variant has been tested. See [the changelog](CLASSIC_CHANGELOG.md) for validation and limits.
 
 Select actors with the checkboxes in the speech window; right-click assigns their voices. Removal settings can target either all original speech or only generated cue intervals; selective mode retains audio outside those intervals. In selective mode, overlaps with unchecked actors keep the original mix.
 

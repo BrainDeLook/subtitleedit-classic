@@ -44,6 +44,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             var local=new Dictionary<string,ClassicLocalTts>();var qwen=new Dictionary<string,ClassicQwenTts>();
             var definition=_engines.First(x=>x.Index==nikseComboBoxEngine.SelectedIndex);
             var global=IsLocalCrispTts(definition.Id) ? (definition.Id==TextToSpeechEngineId.SupertonicCrisp ? "Supertonic" : "Qwen3") : CompatibleSelected ? "API" : definition.Name;
+            CaptureFinalOnline();
             if(SelectedLocalId!=null)CaptureLocal(false);else if(IsLocalCrispTts(definition.Id))CaptureQwen(false);
             var previousFolder=_waveFolder;var folder=Path.Combine(Path.GetTempPath(),"ClassicSpeechPlayback",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);_waveFolder=folder;
             _playbackCancellation=new CancellationTokenSource();var cancel=_playbackCancellation.Token;_converting=true;SetLocalBusy(true);buttonGenerateTTS.Enabled=false;_playSpeech.Text=CL("Остановить озвучку","Stop speech");
@@ -66,6 +67,11 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                         if(!qwen.TryGetValue(key,out var engine)){engine=new ClassicQwenTts(config);qwen.Add(key,engine);await engine.StartAsync(token,null);}
                         var voice=string.IsNullOrWhiteSpace(row.Voice)?config.Voice:row.Voice;if(config.Clone && _perLineOriginal!=null)voice=await PerLineReferenceAsync(line.Paragraph,token) ?? voice;if(config.Clone)voice=ClassicLocalTts.ResolveVoice(voice);
                         await engine.SpeakAsync(text,voice,output,token,config.Instructions);return output;
+                    }
+                    var onlineId=_engines.Where(e=>e.Name==choice).Select(e=>FinalOnlineId(e.Id)).FirstOrDefault();
+                    if(onlineId!=null) {
+                        var config=ClassicOnlineTtsSettings.Load(onlineId);if(!string.IsNullOrWhiteSpace(row.Model))config.Model=row.Model;
+                        using(var engine=new ClassicOnlineTts(onlineId,config))await engine.SpeakAsync(text,ClassicOnlineTts.ResolveVoice(onlineId,row.Voice,config.Voice),output,token);return output;
                     }
                     if(choice=="API") {
                         var config=ClassicCompatibleTtsSettings.Load().Selected();using(var engine=new ClassicCompatibleTts(config))await engine.SpeakAsync(text,string.IsNullOrWhiteSpace(row.Voice)?config.Voice:row.Voice,output,token,row.Instructions);return output;

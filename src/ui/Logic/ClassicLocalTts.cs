@@ -37,8 +37,8 @@ namespace Nikse.SubtitleEdit.Logic
         public string Backend { get; set; }
         public string Runtime { get; set; }
         public bool IsAudioCpp => Runtime == "audiocpp";
-        public bool SupportsCloning => Id != "kugel" && Id != "kokoro";
-        public bool SupportsSpeed => !new[] { "chatter", "dots", "confucius", "kokoro", "omnicpp" }.Contains(Id) && (!IsAudioCpp || Id == "index25");
+        public bool SupportsCloning => Id != "kugel" && Id != "kokoro" && Id != "zonos";
+        public bool SupportsSpeed => !new[] { "chatter", "dots", "confucius", "kokoro", "omnicpp", "zonos" }.Contains(Id) && (!IsAudioCpp || Id == "index25");
         public bool SupportsInstructions => Id == "breeze" || Id == "omnicpp";
         public string Notes { get; set; }
         public string NotesRu { get; set; }
@@ -106,7 +106,7 @@ namespace Nikse.SubtitleEdit.Logic
         private readonly StringBuilder _log = new StringBuilder();
         private readonly string _job = Path.Combine(Path.GetTempPath(), "SubtitleEditTts", Guid.NewGuid().ToString("N"));
         private Process _server;
-        private string _baseUrl, _activeVoice;
+        private string _baseUrl, _activeVoice, _activeLanguage;
         private bool _ready;
         public ClassicLocalTts(string id, ClassicLocalTtsSettings settings) { _definition = Catalog.First(e => e.Id == id); _settings = settings; }
         public static object[] Voices(string id)
@@ -123,6 +123,7 @@ namespace Nikse.SubtitleEdit.Logic
             if (e.RuntimeArchives != null) await ClassicExtendedTts.EnsureRuntimeAsync(e, settings.Variant, cancel, progress).ConfigureAwait(false);
             else if (e.IsAudioCpp) await ClassicAudioCpp.EnsureAsync(settings.Variant, cancel, progress).ConfigureAwait(false);
             else await ClassicSpeechDownload.EnsureRuntimeAsync(new SpeechEngine {Family = "crisp"}, settings.Variant, cancel, progress).ConfigureAwait(false);
+            if (id == "zonos") await ClassicZonosPhonemizer.EnsureAsync(cancel, progress).ConfigureAwait(false);
             foreach (var file in model.Files)
             {
                 cancel.ThrowIfCancellationRequested();
@@ -173,6 +174,7 @@ namespace Nikse.SubtitleEdit.Logic
         {
             voice = ResolveVoice(voice);
             var imported = !_definition.Presets.Contains(voice);
+            if (imported && !_definition.SupportsCloning) throw new ArgumentException("Select a preset voice for " + _definition.Name);
             if (imported) ClassicQwenReference.Validate(voice, _definition.RequiresReferenceTranscript);
             var transcript = imported ? File.ReadAllText(Path.Combine(ClassicQwenReference.Folder, voice + ".txt")).Trim() : "";
             var payload = BuildPayload(text, voice, transcript);
@@ -194,9 +196,9 @@ namespace Nikse.SubtitleEdit.Logic
                 if (!File.Exists(output) || ClassicVoiceAssets.WaveSeconds(output) <= 0) throw new InvalidDataException("OmniVoice returned no playable audio.");
                 return;
             }
-            if (_server == null || (!_definition.IsAudioCpp && _definition.Id != "chatter" && _activeVoice != voice))
+            if (_server == null || (_definition.Id == "zonos" && _activeLanguage != _settings.Language) || (!_definition.IsAudioCpp && _definition.Id != "chatter" && _activeVoice != voice))
             {
-                StopServer(); await StartAsync(voice, transcript, cancel, progress).ConfigureAwait(false); _activeVoice = voice;
+                StopServer(); await StartAsync(voice, transcript, cancel, progress).ConfigureAwait(false); _activeVoice = voice; _activeLanguage = _settings.Language;
             }
             using (var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"))
             using (var response = await _client.PostAsync(_baseUrl + (_definition.Id == "kokoro" ? "/v1/synthesize" : "/v1/audio/speech"), content, cancel).ConfigureAwait(false))
@@ -234,6 +236,7 @@ namespace Nikse.SubtitleEdit.Logic
                 args = "--config " + ClassicSpeechRunner.Quote(configPath);
             }
             _server = new Process {StartInfo = new ProcessStartInfo(exe, args) {WorkingDirectory = _definition.Id == "kokoro" ? ClassicExtendedTts.RuntimeRoot(_definition, _settings.Variant) : _job, UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true, StandardErrorEncoding = Encoding.UTF8, StandardOutputEncoding = Encoding.UTF8}};
+            if (_definition.Id == "zonos") ClassicZonosPhonemizer.Configure(_server.StartInfo);
             if (_definition.Id == "dots") _server.StartInfo.EnvironmentVariables["CRISPASR_DOTS_ODE_STEPS"] = ClassicExtendedTts.OdeSteps(_definition.Id, _settings).ToString();
             DataReceivedEventHandler capture = (s, e) => { if (e.Data != null) lock (_log) { _log.AppendLine(e.Data); if (_log.Length > 16000) _log.Remove(0, _log.Length - 16000); } };
             _server.OutputDataReceived += capture; _server.ErrorDataReceived += capture;

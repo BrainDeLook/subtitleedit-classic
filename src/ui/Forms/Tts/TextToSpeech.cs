@@ -88,6 +88,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         public enum TextToSpeechEngineId
         {
             Piper,
+            EdgeTts, MistralSpeech, GoogleSpeech, ZonosCrisp,
             AllTalk,
             ElevenLabs,
             AzureTextToSpeech,
@@ -176,6 +177,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             _engines = new List<TextToSpeechEngine>();
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Piper, "Piper (fast/good)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.EdgeTts, "Edge TTS (online)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.MistralSpeech, "Mistral Speech (API)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.GoogleSpeech, "Google Cloud Speech (API)", _engines.Count));
+            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.ZonosCrisp, "Zonos TTS (CrispASR / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Qwen3Crisp, "Qwen3 TTS (CrispASR / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.SupertonicCrisp, "Supertonic-3 (CrispASR / local)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.CosyVoice3, "CosyVoice 3 (CrispASR / local)", _engines.Count));
@@ -202,7 +207,6 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.ElevenLabs, "ElevenLabs TTS (online/pay/good)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.AzureTextToSpeech, "Microsoft Azure TTS (online/pay/good)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Murf, "Murf (online/pay/good)", _engines.Count));
-            _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Tortoise, "Tortoise TTS (slow/good)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Tortoise, "Tortoise TTS (slow/good)", _engines.Count));
             _engines.Add(new TextToSpeechEngine(TextToSpeechEngineId.Coqui, "Coqui AI TTS (only one voice)", _engines.Count));
             if (Configuration.IsRunningOnWindows)
@@ -245,7 +249,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
             nikseComboBoxEngine_SelectedIndexChanged(null, null);
             nikseComboBoxEngine.SelectedIndexChanged += nikseComboBoxEngine_SelectedIndexChanged;
-            if (!IsLocalCrispTts(_engines.First(p=>p.Index==nikseComboBoxEngine.SelectedIndex).Id) && SelectedLocalId == null && !CompatibleSelected)
+            if (!IsLocalCrispTts(_engines.First(p=>p.Index==nikseComboBoxEngine.SelectedIndex).Id) && SelectedLocalId == null && !CompatibleSelected && FinalOnlineId(_engines.First(p=>p.Index==nikseComboBoxEngine.SelectedIndex).Id) == null)
                 nikseComboBoxVoice.Text = Configuration.Settings.Tools.TextToSpeechLastVoice;
             checkBoxAddToVideoFile.Checked = Configuration.Settings.Tools.TextToSpeechAddToVideoFile;
             checkBoxShowPreview.Checked = Configuration.Settings.Tools.TextToSpeechPreview;
@@ -458,6 +462,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 return await GenerateQwenAudioAsync(subtitle, showProgressBar, overrideFileName);
             if (LocalId(engine.Id) != null)
                 return await GenerateLocalAsync(subtitle, showProgressBar, overrideFileName);
+            if (FinalOnlineId(engine.Id) != null)
+                return await GenerateFinalOnlineAsync(subtitle, showProgressBar, overrideFileName);
             if (engine.Id == TextToSpeechEngineId.OpenAiCompatible)
                 return await GenerateCompatibleAudioAsync(subtitle, showProgressBar, overrideFileName);
             if (engine.Id == TextToSpeechEngineId.MsSpeechSynthesizer)
@@ -1728,6 +1734,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 nikseTextBoxApiKey.ReadOnly=false;
             }
             if(engine.Id==TextToSpeechEngineId.OpenAiCompatible)FillCompatibleControls();
+            if (_finalOnlineSettings != null) _finalOnlineSettings.Visible = FinalOnlineId(engine.Id) != null;
+            if (_finalOnlineInstall != null) _finalOnlineInstall.Visible = FinalOnlineId(engine.Id) != null;
+            if (FinalOnlineId(engine.Id) != null) FillFinalOnlineControls(FinalOnlineId(engine.Id));
             if (LocalId(engine.Id) != null) FillLocalControls();
             if (_localDownload != null) _localDownload.Visible = LocalId(engine.Id) != null;
             if (_localSettings != null) _localSettings.Visible = LocalId(engine.Id) != null;
@@ -2823,6 +2832,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         private void SaveConfiguration()
         {
             if(CompatibleSelected)CaptureCompatible();
+            CaptureFinalOnline();
             if(_removeOriginalSpeech!=null){var dubbing=ClassicDubbingSettings.Load();dubbing.RemoveSpeech=_removeOriginalSpeech.Checked;dubbing.Save();}
             var engine = _engines.First(p => p.Index == nikseComboBoxEngine.SelectedIndex);
             if (IsLocalCrispTts(engine.Id) && _qwenCancellation==null)

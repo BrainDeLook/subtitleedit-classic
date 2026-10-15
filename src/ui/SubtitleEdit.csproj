@@ -24,6 +24,8 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Logic\ClassicOpenRouterTtsModels.json" LogicalName="ClassicOpenRouterTtsModels.json" />
+    <EmbeddedResource Include="Logic\ClassicEspeakLicense.txt" LogicalName="ClassicEspeakLicense.txt" />
+    <EmbeddedResource Include="Logic\ClassicFinalTtsVoices.json" LogicalName="ClassicFinalTtsVoices.json" />
     <EmbeddedResource Include="Logic\ClassicLocalTtsCatalog.json" LogicalName="ClassicLocalTtsCatalog.json" />
     <EmbeddedResource Include="Logic\SpeechToText\speech-extras.json" LogicalName="ClassicSpeechExtras.json" />
     <Reference Include="System.Security" />

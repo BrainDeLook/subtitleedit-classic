@@ -23,7 +23,7 @@ namespace Nikse.SubtitleEdit.Logic
     // Protocol and runtime differences from the stable Subtitle Edit v5.3.0 engines.
     public static class ClassicExtendedTts
     {
-        public static bool Handles(string id) => new[] { "f5", "pocket", "vibe", "index", "dots", "confucius", "moss", "omni", "kokoro", "omnicpp" }.Contains(id);
+        public static bool Handles(string id) => new[] { "f5", "pocket", "vibe", "index", "dots", "confucius", "moss", "omni", "kokoro", "omnicpp", "zonos" }.Contains(id);
         private static readonly SemaphoreSlim RuntimeGate = new SemaphoreSlim(1, 1);
         private static string Quote(string text) => ClassicSpeechRunner.Quote(text);
         public static string RuntimeRoot(ClassicLocalTtsDefinition definition, string variant) => Path.Combine(ClassicLocalTtsSettings.Root(definition.Id), "runtime", definition.RuntimeVersion, variant);
@@ -78,7 +78,7 @@ namespace Nikse.SubtitleEdit.Logic
             var payload = new Dictionary<string, object> { { "input", text }, { "response_format", "wav" } };
             if (definition.SupportsSpeed) payload["speed"] = Math.Max(0.25, Math.Min(4, settings.Speed));
             if (definition.Id == "pocket" || definition.Id == "vibe") payload["voice"] = voice;
-            if (definition.Id == "confucius" || definition.Id == "omni")
+            if (definition.Id == "confucius" || definition.Id == "omni" || definition.Id == "zonos")
             {
                 if (!definition.Languages.Any(l => l.Split('|')[0] == settings.Language)) throw new ArgumentException("Select a supported target language for " + definition.Name);
                 if (settings.Language != "auto") payload["language"] = settings.Language;
@@ -120,6 +120,7 @@ namespace Nikse.SubtitleEdit.Logic
                 if (definition.RequiresReferenceTranscript && string.IsNullOrWhiteSpace(transcript)) throw new ArgumentException("Provide the exact reference transcript for " + definition.Name);
                 if (!string.IsNullOrWhiteSpace(transcript)) args += " --ref-text " + Quote(transcript);
             }
+            if (definition.Id == "zonos") args += " -l " + Quote(settings.Language);
             if (definition.Id == "confucius") args += " --tts-steps " + OdeSteps(definition.Id, settings);
             if (definition.Id == "moss" && settings.Language != "auto")
             {

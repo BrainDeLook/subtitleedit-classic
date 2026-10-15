@@ -36,6 +36,7 @@ $tests=@{
     TestModelessSpeech='tts-tests/TestModelessSpeech.cs'
     TestSpeechPlayer='tts-tests/TestSpeechPlayer.cs'
     TestExtendedTts='tts-tests/TestExtendedTts.cs'
+    TestFinalTts='tts-tests/TestFinalTts.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -102,4 +103,9 @@ if ($FFmpegLocation) {
 if ($FFmpegLocation) {
     & "$OutputDirectory/TestExtendedTts.exe" unit (Join-Path $OutputDirectory "extended-tts") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Extended TTS protocol/settings regression failed." }
+}
+
+if ($FFmpegLocation) {
+    & "$OutputDirectory/TestFinalTts.exe" unit (Join-Path $OutputDirectory "final-tts") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "Complete stable TTS catalog, cloud authentication and classic UI regression failed." }
 }

@@ -41,7 +41,7 @@ class TestExtendedTts
         var start = new System.Diagnostics.ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32/WindowsPowerShell/v1.0/powershell.exe"), "-NoProfile -ExecutionPolicy Bypass -File " + Nikse.SubtitleEdit.Logic.SpeechToText.ClassicSpeechRunner.Quote(inputScript) + " " + Nikse.SubtitleEdit.Logic.SpeechToText.ClassicSpeechRunner.Quote(inputOutput));
         Nikse.SubtitleEdit.Logic.SpeechToText.ClassicSpeechRunner.RunProcessAsync(start, CancellationToken.None, null, unicodeInput).GetAwaiter().GetResult();
         Check(File.ReadAllText(inputOutput) == unicodeInput, "standalone runner sends exact UTF-8 text and closes stdin");
-        var additions = ClassicLocalTts.Catalog.Where(e => ClassicExtendedTts.Handles(e.Id)).ToArray();
+        var additions = ClassicLocalTts.Catalog.Where(e => ClassicExtendedTts.Handles(e.Id) && e.Id != "zonos").ToArray();
         Check(additions.Length == 10, "ten stable catalog additions including both OmniVoice runtimes");
         const string voice = "voice_12345678901234567890123456789012";
         Directory.CreateDirectory(ClassicQwenReference.Folder);
