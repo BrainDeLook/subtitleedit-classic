@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory=$true)][string]$ApplicationDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [string]$FFmpegLocation,
+    [string]$AudioSelectionSample,
     [switch]$Unused
 )
 $ErrorActionPreference='Stop'
@@ -41,6 +42,7 @@ $tests=@{
     TestSpeechWaveform='tts-tests/TestSpeechWaveform.cs'
     TestSelectedSpeech='speech-tests/TestSelectedSpeech.cs'
     TestAudioTrackLabels='TestAudioTrackLabels.cs'
+    TestClassicAudioSelection='TestClassicAudioSelection.cs'
     TestTtsModelExtras='tts-tests/TestTtsModelExtras.cs'
     TestVoiceReferenceTools='tts-tests/TestVoiceReferenceTools.cs'
     TestWaveformReference='tts-tests/TestWaveformReference.cs'
@@ -132,4 +134,11 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Voice reference waveform, playback and ASR range regression failed." }
     & "$OutputDirectory/TestWaveformReference.exe" (Join-Path $OutputDirectory "waveform-reference") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Waveform voice reference selection, track mapping and import regression failed." }
+    if ($AudioSelectionSample) {
+        $env:CLASSIC_AUDIO_TEST_DATA=Join-Path $OutputDirectory 'editor-audio-selection'
+        $env:CLASSIC_AUDIO_TEST_SOURCE=(Resolve-Path -LiteralPath $AudioSelectionSample).Path
+        $env:CLASSIC_AUDIO_TEST_FFMPEG=$FFmpegLocation
+        & "$OutputDirectory/TestClassicAudioSelection.exe"
+        if ($LASTEXITCODE -ne 0) { throw "Native editor audio selection regression failed." }
+    }
 }

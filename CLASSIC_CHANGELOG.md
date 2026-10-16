@@ -2,6 +2,8 @@
 
 ## 4.0.25 — local preview
 
+- Fixed multi-audio video opening in the classic editor: opening a new local video now offers its named audio tracks before replacing the current video. MPV applies the chosen audio ordinal after file loading, without caching an early empty track list or assuming native IDs are ordinal plus one. Automatic waveforms extract the selected track into a track-specific cache; switching to an uncached track rebuilds it. Obsolete background waveform results cannot replace the current selection. Native MPV and main-window tests cover the reported Turkish/English MKV, existing subtitles, menu switching, independent caches, rapid changes and cancellation.
+
 - Added Create voice reference to the main waveform context menu, adapting stable v5.3's clone-from-line shortcut. A subtitle or free selection opens classic voice import with its exact range and current audio track. Subtitle text is stripped of formatting and the actor suggests the voice name; free selections leave the transcript blank for editing or ASR. References enter the shared voice library after explicit import and permission. Unsupported ranges are disabled rather than silently shortened. Real two-track extraction/import tests verify the selected stream, interval and unchanged source cue.
 
 - Added a voice-reference waveform to the classic voice manager, with zoom, scroll and MPV playback from the clicked position. Reference timing is read-only; switching voices cancels obsolete waveform loads. Toolbar rows grow with their contents, and waveform time labels avoid overlapping.

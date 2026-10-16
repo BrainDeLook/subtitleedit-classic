@@ -23810,7 +23810,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void OpenVideo(string fileName)
         {
-            OpenVideo(fileName, VideoAudioTrackNumber);
+            OpenVideo(fileName, string.Equals(fileName,_videoFileName,StringComparison.OrdinalIgnoreCase) ? VideoAudioTrackNumber : -1);
         }
 
         private void OpenVideo(string fileName, int audioTrack)
@@ -23844,6 +23844,11 @@ namespace Nikse.SubtitleEdit.Forms
                 return;
             }
 
+            if ((audioTrack < 0 || !string.Equals(fileName,_videoFileName,StringComparison.OrdinalIgnoreCase)) && !ChooseClassicOpeningAudio(fileName,ref audioTrack)) return;
+            audioTrack=Math.Max(0,audioTrack);
+            _classicWaveformCancellation?.Cancel();
+            _videoAudioTrackNumber=audioTrack;
+            _classicPendingAudioIndex=audioTrack;
             CheckSecondSubtitleReset();
             ShowSubtitleTimer.Stop();
             mediaPlayer.UsingFrontCenterAudioChannelOnly = false;
@@ -23901,23 +23906,6 @@ namespace Nikse.SubtitleEdit.Forms
                 labelVideoInfo.Text += string.Format("{0:0.0##}", _videoInfo.FramesPerSecond);
             }
 
-            if (audioTrack > 0 && mediaPlayer.VideoPlayer is LibMpvDynamic libMpv)
-            {
-                try
-                {
-                    var audioTracks = libMpv.AudioTracks;
-                    if (audioTracks.Count <= 1)
-                    {
-                        _videoAudioTrackNumber = -1;
-                        audioTrack = 0;
-                    }
-                }
-                catch
-                {
-                    // ignore
-                }
-            }
-
             var peakWaveFileName = WavePeakGenerator.GetPeakWaveFileName(fileName, audioTrack);
             var spectrogramFolder = WavePeakGenerator.SpectrogramDrawer.GetSpectrogramFolder(fileName, audioTrack);
             if (File.Exists(peakWaveFileName))
@@ -23943,133 +23931,7 @@ namespace Nikse.SubtitleEdit.Forms
                 audioVisualizer.ShotChanges = new List<double>();
                 audioVisualizer.Chapters = Array.Empty<MatroskaChapter>();
 
-                if (Configuration.Settings.General.WaveformAutoGenWhenOpeningVideo)
-                {
-                    string targetFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".wav");
-                    Process process;
-                    try
-                    {
-                        process = AddWaveform.GetCommandLineProcess(fileName, -1, targetFile, Configuration.Settings.General.VlcWaveTranscodeSettings, out var encoderName);
-                        TaskDelayHelper.RunDelayed(TimeSpan.FromMilliseconds(25), () => ShowStatus(_language.GeneratingWaveformInBackground, true, 10_000));
-                        var bw = new BackgroundWorker();
-                        bw.DoWork += (sender, args) =>
-                        {
-                            var p = (Process)args.Argument;
-                            process.Start();
-                            while (!process.HasExited)
-                            {
-                                Application.DoEvents();
-                            }
-
-                            // check for delay in matroska files
-                            var delayInMilliseconds = 0;
-                            var audioTrackNames = new List<string>();
-                            var mkvAudioTrackNumbers = new Dictionary<int, int>();
-                            if (fileName.ToLowerInvariant().EndsWith(".mkv", StringComparison.OrdinalIgnoreCase))
-                            {
-                                try
-                                {
-                                    using (var matroska = new MatroskaFile(fileName))
-                                    {
-                                        if (matroska.IsValid)
-                                        {
-                                            foreach (var track in matroska.GetTracks())
-                                            {
-                                                if (track.IsAudio)
-                                                {
-                                                    if (track.CodecId != null && track.Language != null)
-                                                    {
-                                                        audioTrackNames.Add("#" + track.TrackNumber + ": " + track.CodecId.Replace("\0", string.Empty) + " - " + track.Language.Replace("\0", string.Empty));
-                                                    }
-                                                    else
-                                                    {
-                                                        audioTrackNames.Add("#" + track.TrackNumber);
-                                                    }
-
-                                                    mkvAudioTrackNumbers.Add(mkvAudioTrackNumbers.Count, track.TrackNumber);
-                                                }
-                                            }
-                                            if (mkvAudioTrackNumbers.Count > 0)
-                                            {
-                                                delayInMilliseconds = (int)matroska.GetAudioTrackDelayMilliseconds(mkvAudioTrackNumbers[0]);
-                                            }
-                                        }
-                                    }
-                                }
-                                catch (Exception exception)
-                                {
-                                    SeLogger.Error(exception, $"Error getting delay from mkv: {fileName}");
-                                }
-                            }
-
-                            if (File.Exists(targetFile))
-                            {
-                                using (var waveFile = new WavePeakGenerator(targetFile))
-                                {
-                                    if (!string.IsNullOrEmpty(fileName) && File.Exists(fileName))
-                                    {
-                                        waveFile.GeneratePeaks(delayInMilliseconds, WavePeakGenerator.GetPeakWaveFileName(fileName));
-                                        if (Configuration.Settings.VideoControls.GenerateSpectrogram)
-                                        {
-                                            waveFile.GenerateSpectrogram(delayInMilliseconds, WavePeakGenerator.SpectrogramDrawer.GetSpectrogramFolder(fileName));
-                                        }
-                                    }
-                                }
-                            }
-                        };
-                        bw.RunWorkerCompleted += (sender, args) =>
-                        {
-                            ShowStatus(string.Empty, false);
-                            if (string.IsNullOrEmpty(_videoFileName) || !File.Exists(_videoFileName))
-                            {
-                                Cursor = Cursors.Default;
-                                return;
-                            }
-
-                            var newPeakWaveFileName = WavePeakGenerator.GetPeakWaveFileName(_videoFileName);
-                            if (File.Exists(peakWaveFileName))
-                            {
-                                if (peakWaveFileName == newPeakWaveFileName)
-                                {
-                                    audioVisualizer.ZoomFactor = 1.0;
-                                    audioVisualizer.VerticalZoomFactor = 1.0;
-                                    SelectZoomTextInComboBox();
-                                    audioVisualizer.WavePeaks = WavePeakData.FromDisk(peakWaveFileName);
-                                    audioVisualizer.SetSpectrogram(SpectrogramData.FromDisk(spectrogramFolder));
-                                    audioVisualizer.ShotChanges = ShotChangeHelper.FromDisk(_videoFileName);
-                                    SetWaveformPosition(0, 0, 0);
-                                    timerWaveform.Start();
-
-                                    if (smpteTimeModedropFrameToolStripMenuItem.Checked)
-                                    {
-                                        audioVisualizer.UseSmpteDropFrameTime();
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                var hasAudioTracks = HasAudioTracks(_videoFileName);
-                                if (!hasAudioTracks)
-                                {
-                                    AddEmptyWaveform();
-                                    return;
-                                }
-
-                                ShowStatus("Waveform load failed - install ffmpeg in Options - Settings - Waveform");
-                            }
-                        };
-                        bw.RunWorkerAsync(process);
-
-                        audioVisualizer.WaveformNotLoadedText = _language.GeneratingWaveformInBackground;
-                        audioVisualizer.Invalidate();
-                    }
-                    catch (DllNotFoundException)
-                    {
-                        //TODO: display message
-                        ShowStatus(string.Empty);
-                        SetWaveFormNotLoadedText(LanguageSettings.Current.Waveform);
-                    }
-                }
+                if (Configuration.Settings.General.WaveformAutoGenWhenOpeningVideo) BeginClassicWaveform(fileName,audioTrack);
             }
 
             Cursor = Cursors.Default;
@@ -24281,7 +24143,8 @@ namespace Nikse.SubtitleEdit.Forms
                 TaskDelayHelper.RunDelayed(TimeSpan.FromMilliseconds(10000), () => LoadVideoInfoAfterVideoFromUrlLoad());
             }
 
-            if (VideoAudioTrackNumber > 0)
+            ApplyClassicOpeningAudio();
+            if (VideoAudioTrackNumber >= 0)
             {
                 if (mediaPlayer.VideoPlayer is LibVlcDynamic libVlc)
                 {
@@ -28167,6 +28030,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ReloadWaveform(string fileName, int audioTrackNumber)
         {
+            var hadWaveform=audioVisualizer.WavePeaks!=null;
+            _classicWaveformCancellation?.Cancel();
             if (audioVisualizer.WavePeaks != null)
             {
                 audioVisualizer.WavePeaks = null;
@@ -28221,6 +28086,7 @@ namespace Nikse.SubtitleEdit.Forms
                 timerWaveform.Start();
             }
 
+            if (!File.Exists(peakWaveFileName) && (hadWaveform || Configuration.Settings.General.WaveformAutoGenWhenOpeningVideo)) BeginClassicWaveform(fileName,audioTrackNumber);
             if (smpteTimeModedropFrameToolStripMenuItem.Checked)
             {
                 audioVisualizer.UseSmpteDropFrameTime();
@@ -30195,6 +30061,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void CloseVideoToolStripMenuItemClick(object sender, EventArgs e)
         {
+            _classicWaveformCancellation?.Cancel();
             if (mediaPlayer.VideoPlayer != null)
             {
                 mediaPlayer.PauseAndDisposePlayer();
@@ -30299,7 +30166,7 @@ namespace Nikse.SubtitleEdit.Forms
                         {
                             var at = audioTracks[i];
                             toolStripMenuItemSetAudioTrack.DropDownItems.Add(at.ToString(), null, ChooseAudioTrack);
-                            toolStripMenuItemSetAudioTrack.DropDownItems[toolStripMenuItemSetAudioTrack.DropDownItems.Count - 1].Tag = at.TrackNumber.ToString(CultureInfo.InvariantCulture);
+                            toolStripMenuItemSetAudioTrack.DropDownItems[toolStripMenuItemSetAudioTrack.DropDownItems.Count - 1].Tag = at.Index.ToString(CultureInfo.InvariantCulture);
                             if (i == VideoAudioTrackNumber)
                             {
                                 ((ToolStripMenuItem)toolStripMenuItemSetAudioTrack.DropDownItems[toolStripMenuItemSetAudioTrack.DropDownItems.Count - 1]).Checked = true;
@@ -30353,7 +30220,6 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 var item = sender as ToolStripItem;
                 var number = int.Parse(item.Tag.ToString());
-                number--;
                 libMpv.AudioTrackNumber = number;
                 VideoAudioTrackNumber = number;
             }

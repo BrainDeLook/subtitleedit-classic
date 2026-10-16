@@ -471,7 +471,9 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
                     }
                 }
                 _mpvFree(lpBuffer);
-                return _audioTrackIds;
+                var tracks = _audioTrackIds;
+                if (tracks.Count == 0) _audioTrackIds = null;
+                return tracks;
             }
         }
 
@@ -487,6 +489,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
                 var lpBuffer = IntPtr.Zero;
                 _mpvGetPropertyString(_mpvHandle, GetUtf8Bytes("aid"), MpvFormatString, ref lpBuffer);
                 var numberString = Marshal.PtrToStringAnsi(lpBuffer);
+                _mpvFree(lpBuffer);
                 if (string.IsNullOrEmpty(numberString))
                 {
                     return 0;
@@ -497,10 +500,9 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
                     return 0;
                 }
 
-                var audioTrack = _audioTrackIds.FirstOrDefault(x => x.TrackNumber == id);
-                var idx = audioTrack == null ? -1 : _audioTrackIds.IndexOf(audioTrack);
-                var number = AudioTracks.Count > 1 && idx != -1 ? idx : 0;
-                _mpvFree(lpBuffer);
+                var tracks = AudioTracks;
+                var idx = tracks.FindIndex(x => x.TrackNumber == id);
+                var number = idx >= 0 ? idx : 0;
                 return number;
             }
             set
@@ -680,6 +682,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
 
         public override void Initialize(Control ownerControl, string videoFileName, EventHandler onVideoLoaded, EventHandler onVideoEnded)
         {
+            _audioTrackIds = null;
             _secondSubtitleFileName = null;
             if (LoadLib())
             {
@@ -859,6 +862,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
             Application.DoEvents();
             Pause();
             Application.DoEvents();
+            _audioTrackIds = null;
             OnVideoLoaded?.Invoke(this, null);
         }
 
