@@ -348,7 +348,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void ButtonGenerate_Click(object sender, EventArgs e)
         {
-            if (IsModernSpeech) { _ = GenerateModernSpeech(); return; }
+            if (IsModernSpeech) { _ = _selectedSpeech == null ? GenerateModernSpeech() : GenerateSelectedSpeech(); return; }
             _cancel = false;
 
             // Check if chosen whisper implementation is installed
@@ -467,6 +467,8 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             {
                 // ignore
             }
+
+            if (_selectedSpeech != null) { _ = GenerateSelectedSpeech(); return; }
 
             _useCenterChannelOnly = Configuration.Settings.General.FFmpegUseCenterChannelOnly &&
                                     FfmpegMediaInfo.Parse(_videoFileName).HasFrontCenterAudio(_audioTrackNumber);
@@ -976,7 +978,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
                     progressBar1.Visible = false;
                     buttonCancel.Visible = false;
-                    DialogResult = DialogResult.Cancel;
+                    if (_selectedSpeech == null) DialogResult = DialogResult.Cancel;
 
                     var partialSub = new Subtitle();
                     partialSub.Paragraphs.AddRange(_resultList.OrderBy(p => p.Start).Select(p => new Paragraph(p.Text, (double)p.Start * 1000.0, (double)p.End * 1000.0)).ToList());
@@ -1718,12 +1720,24 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void buttonBatchMode_Click(object sender, EventArgs e)
         {
+            if (_selectedSpeech != null)
+            {
+                if (_modernCancellation == null && _selectedSpeech.Apply() > 0) DialogResult = DialogResult.OK;
+                return;
+            }
             _batchMode = !_batchMode;
             ShowHideBatchMode();
         }
 
         private void ShowHideBatchMode()
         {
+            if (_selectedSpeech != null)
+            {
+                MinimumSize = new Size(Math.Max(800, MinimumSize.Width), 620);
+                Size = new Size(Math.Max(900, Width), Math.Max(680, Height));
+                FormBorderStyle = FormBorderStyle.Sizable; MaximizeBox = true;
+                LayoutSelectedSpeech(); SetSelectedSpeechState(); return;
+            }
             if (_batchMode)
             {
                 EnableGroupBoxInputFiles(true);
@@ -1971,6 +1985,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void AudioToText_ResizeEnd(object sender, EventArgs e)
         {
+            if (_selectedSpeech != null) { LayoutSelectedSpeech(); return; }
             listViewInputFiles.AutoSizeLastColumn();
             labelElapsed.Left = progressBar1.Width - labelElapsed.Width + 10;
             LayoutModernFooter();
@@ -2369,8 +2384,8 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private void contextMenuStripWhisperAdvanced_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            runOnlyPostProcessingToolStripMenuItem.Visible = buttonGenerate.Enabled;
-            toolStripSeparatorRunOnlyPostprocessing.Visible = buttonGenerate.Enabled;
+            runOnlyPostProcessingToolStripMenuItem.Visible = buttonGenerate.Enabled && _selectedSpeech == null;
+            toolStripSeparatorRunOnlyPostprocessing.Visible = buttonGenerate.Enabled && _selectedSpeech == null;
 
             if (Configuration.Settings.Tools.WhisperChoice == WhisperChoice.Cpp ||
                 Configuration.Settings.Tools.WhisperChoice == WhisperChoice.ConstMe)

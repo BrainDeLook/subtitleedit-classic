@@ -97,6 +97,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private void LayoutModernFooter()
         {
             if (!_modernReady) return;
+            if (_selectedSpeech != null) return;
             labelElapsed.AutoSize = false; labelElapsed.Width = 110;
             labelElapsed.Left = ClientSize.Width - labelElapsed.Width - 12;
             labelElapsed.Top = labelProgress.Top;

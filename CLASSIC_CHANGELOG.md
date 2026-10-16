@@ -2,6 +2,10 @@
 
 ## 4.0.25 — local preview
 
+- Ported the stable v5.3 selected-lines ASR workflow to the classic speech window. Modern Crisp ASR, Qwen3 ASR CPP, Whisper CPP Vulkan and standalone WhisperX are available alongside legacy Whisper choices. Selected lines keep their existing timing, actor/style metadata and identity; only explicitly applied successful text is changed. Unselected and failed lines remain untouched, including the original-text column.
+- Added per-line result/error status, Apply transcribed lines and Retry failed lines. Successful results survive other clips failing, empty transcripts and cancellation; retry excludes completed clips. Each attempt uses an isolated job directory, preventing stale transcripts from being read on retries. A single long clip can still use the explicit context-menu command for segmentation with new timings. Already-demuxed clips use their own first audio stream instead of the video's stream index.
+- Validated partial failures, retries, empty results, cancellation, metadata retention, classic layout and real Russian/English Parakeet CUDA 13 transcription. Paid API validation continues to use local protocol tests without paid requests.
+
 - Added a selected-clip waveform to classic speech review, with subtitle timeline labels, overrun coloring, draggable start/end boundaries, zoom/scroll and MPV playback from the clicked audio position. Moving the start shifts the cue and generated clip together; changing the end never trims or stretches the audio.
 - Added Fit end to audio and Reset timing, matching stable v5.3 behavior. Fit uses the actual generated clip duration after speed adjustment; reset restores both times captured when review opened. Timing changes are retained in session exports and used by final audio assembly. Waveform loading runs in the background and cancels safely when switching rows or closing review.
 

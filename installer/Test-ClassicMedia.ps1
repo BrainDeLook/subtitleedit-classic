@@ -39,6 +39,7 @@ $tests=@{
     TestFinalTts='tts-tests/TestFinalTts.cs'
     TestSpeechSession='tts-tests/TestSpeechSession.cs'
     TestSpeechWaveform='tts-tests/TestSpeechWaveform.cs'
+    TestSelectedSpeech='speech-tests/TestSelectedSpeech.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -117,4 +118,6 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Portable speech sessions, history and restored generation regression failed." }
     & "$OutputDirectory/TestSpeechWaveform.exe" (Join-Path $OutputDirectory "speech-review-waveform") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Speech review waveform, timing, seek and session regression failed." }
+    & "$OutputDirectory/TestSelectedSpeech.exe" unit (Join-Path $OutputDirectory "selected-speech") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "Selected ASR, partial results, retry and classic layout regression failed." }
 }

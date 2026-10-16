@@ -10048,12 +10048,14 @@ namespace Nikse.SubtitleEdit.Forms
                               _subtitleOriginal != null &&
                               SubtitleListview1.IsOriginalTextColumnVisible;
             var audioClips = GetAudioClips();
+            if (audioClips == null || audioClips.Count == 0) return;
+            if (!ReviewSelectedSpeechClips(audioClips, useOriginal)) return;
             if (audioClips.Count == 1 && audioClips[0].Paragraph.DurationTotalMilliseconds > 8_000)
             {
                 var s = new Subtitle();
                 s.Paragraphs.Add(audioClips[0].Paragraph);
 
-                using (var form = new WhisperAudioToText(audioClips[0].AudioFileName, s, _videoAudioTrackNumber, this, null))
+                using (var form = new WhisperAudioToText(audioClips[0].AudioFileName, s, 0, this, null))
                 {
                     var result = form.ShowDialog(this);
                     if (result != DialogResult.OK)
@@ -10117,14 +10119,23 @@ namespace Nikse.SubtitleEdit.Forms
                 return;
             }
 
-            using (var form = new WhisperAudioToTextSelectedLines(audioClips, this))
+        }
+
+        private bool ReviewSelectedSpeechClips(List<AudioClipsGet.AudioClip> audioClips, bool useOriginal)
+        {
+            if (IntPtr.Size != 8 && audioClips.Count == 1 && audioClips[0].Paragraph.DurationTotalMilliseconds > 8000) return true;
+            var modernForm = IntPtr.Size == 8 ? new WhisperAudioToText(audioClips[0].AudioFileName, new Subtitle(), 0, this, null) : null;
+            using (var form = (Form)modernForm ?? new WhisperAudioToTextSelectedLines(audioClips, this))
             {
-                CheckWhisperCpp();
-                if (form.ShowDialog(this) == DialogResult.OK)
+                modernForm?.ConfigureSelectedSpeech(audioClips);
+                var result = form.ShowDialog(this);
+                if (result == DialogResult.Retry) return true;
+                if (result == DialogResult.OK)
                 {
                     MakeHistoryForUndo(string.Format(_language.BeforeX, string.Format(LanguageSettings.Current.Main.Menu.Video.VideoAudioToTextX, "Whisper")));
                     SubtitleListview1.BeginUpdate();
-                    foreach (var ac in audioClips)
+                    var completedIds = new HashSet<string>(modernForm == null ? audioClips.Select(c => c.Paragraph.Id) : modernForm.SelectedSpeech.Rows.Where(r => r.State == Nikse.SubtitleEdit.Logic.SpeechToText.SelectedSpeechState.Complete).Select(r => r.Source.Id));
+                    foreach (var ac in audioClips.Where(c => completedIds.Contains(c.Paragraph.Id)))
                     {
                         var p = _subtitle.Paragraphs.FirstOrDefault(pa => pa.Id == ac.Paragraph.Id);
                         if (p != null)
@@ -10152,6 +10163,7 @@ namespace Nikse.SubtitleEdit.Forms
                     RefreshSelectedParagraph();
                 }
             }
+            return false;
         }
 
         private List<AudioClipsGet.AudioClip> GetAudioClips()
