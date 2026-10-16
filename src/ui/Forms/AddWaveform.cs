@@ -16,6 +16,7 @@ namespace Nikse.SubtitleEdit.Forms
     public sealed partial class AddWaveform : Form
     {
         public int AudioTrackNumber { get; set; } = -1;
+        public bool PromptForAudioTrack { get; set; } = true;
         public string SourceVideoFileName { get; private set; }
         private bool _cancel;
         private string _peakWaveFileName;
@@ -437,7 +438,7 @@ namespace Nikse.SubtitleEdit.Forms
                 }
 
                 // Choose audio track
-                if (_numberOfAudioTracks > 1)
+                if (_numberOfAudioTracks > 1 && PromptForAudioTrack)
                 {
                     using (var form = new ChooseAudioTrack(audioTrackNames, AudioTrackNumber))
                     {

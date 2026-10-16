@@ -23844,7 +23844,7 @@ namespace Nikse.SubtitleEdit.Forms
                 return;
             }
 
-            if ((audioTrack < 0 || !string.Equals(fileName,_videoFileName,StringComparison.OrdinalIgnoreCase)) && !ChooseClassicOpeningAudio(fileName,ref audioTrack)) return;
+            if (audioTrack < 0 && !ChooseClassicOpeningAudio(fileName,ref audioTrack)) return;
             audioTrack=Math.Max(0,audioTrack);
             _classicWaveformCancellation?.Cancel();
             _videoAudioTrackNumber=audioTrack;
@@ -27814,7 +27814,7 @@ namespace Nikse.SubtitleEdit.Forms
         private void DropVideoTick(object sender, EventArgs e)
         {
             _dragAndDropVideoTimer.Stop();
-            OpenVideo(_videoFileName);
+            OpenVideo(_videoFileName,-1);
         }
 
         private void MediaPlayerDragDrop(object sender, DragEventArgs e)
@@ -27964,6 +27964,7 @@ namespace Nikse.SubtitleEdit.Forms
                     else
                     {
                         addWaveform.Initialize(oldVideoFileName, peakWaveFileName, spectrogramFolder, videoAudioTrackNumber);
+                        addWaveform.PromptForAudioTrack = false;
                     }
 
                     var dialogResult = addWaveform.ShowDialog();
@@ -28481,9 +28482,11 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 if (audioVisualizer.WavePeaks == null && (Utilities.VideoFileExtensions.Contains(ext) || Utilities.AudioFileExtensions.Contains(ext)))
                 {
-                    _videoFileName = fileName;
-                    AudioWaveform_Click(null, null);
-                    OpenVideo(_videoFileName);
+                    var audioTrack=-1;
+                    if(!ChooseClassicOpeningAudio(fileName,ref audioTrack))return;
+                    OpenVideo(fileName,audioTrack);
+                    if(string.Equals(_videoFileName,fileName,StringComparison.OrdinalIgnoreCase) && audioVisualizer.WavePeaks==null && _classicWaveformCancellation==null)
+                        BeginClassicWaveform(fileName,Math.Max(0,audioTrack));
                     return;
                 }
 
