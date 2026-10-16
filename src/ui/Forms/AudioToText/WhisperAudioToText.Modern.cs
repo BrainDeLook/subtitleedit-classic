@@ -33,8 +33,8 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private bool _modernCloseRequested;
         private System.Windows.Forms.Timer _modernClock;
         private Stopwatch _modernWatch;
-        private static readonly HashSet<string> ModernNames = new HashSet<string>
-        { ClassicSpeechCatalog.Crisp, ClassicSpeechCatalog.Qwen, ClassicSpeechCatalog.WhisperX, ClassicSpeechCatalog.CppVulkan, ClassicSpeechCatalog.CompatibleApi };
+        private static readonly HashSet<string> ModernNames = new HashSet<string>(new[]
+        { ClassicSpeechCatalog.Crisp, ClassicSpeechCatalog.Qwen, ClassicSpeechCatalog.WhisperX, ClassicSpeechCatalog.CppVulkan, ClassicSpeechCatalog.CompatibleApi }.Concat(ClassicSpeechCatalog.CloudNames));
 
         private bool IsModernSpeech => _modernReady && ModernNames.Contains(comboBoxWhisperEngine.Text);
         private SpeechEngine ModernEngine => IsModernSpeech ? ClassicSpeechCatalog.Get(comboBoxWhisperEngine.Text,
@@ -83,7 +83,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             labelAdvanced.Width = Math.Max(100, _qualityButton.Left - labelAdvanced.Left - 10);
             labelProgress.AutoSize = false; labelProgress.Width = ClientSize.Width - 24; labelProgress.Height = 18;
             MinimumSize = new Size(Math.Max(800, MinimumSize.Width), Math.Max(380, MinimumSize.Height));
-            foreach (var name in new[] { ClassicSpeechCatalog.Crisp, ClassicSpeechCatalog.Qwen, ClassicSpeechCatalog.CppVulkan, ClassicSpeechCatalog.CompatibleApi }) comboBoxWhisperEngine.Items.Add(name);
+            foreach (var name in new[] { ClassicSpeechCatalog.Crisp, ClassicSpeechCatalog.Qwen, ClassicSpeechCatalog.CppVulkan, ClassicSpeechCatalog.CompatibleApi }.Concat(ClassicSpeechCatalog.CloudNames)) comboBoxWhisperEngine.Items.Add(name);
             _modernReady = true;
             comboBoxModels.SelectedIndexChanged += (s, e) => SaveModernSelection();
             if (File.Exists(Path.Combine(ClassicSpeechCatalog.Root, "settings.json")) && comboBoxWhisperEngine.Items.Contains(_modernOptions.Engine))
@@ -197,7 +197,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private async Task EnsureModernDependencies(SpeechEngine engine, SpeechModel model, CancellationToken cancel, IProgress<SpeechProgress> progress)
         {
-            if(engine.Family=="compatible-api"){ClassicCompatibleAsrSettings.Load().Validate();return;}
+            if(engine.Family=="compatible-api"){(engine.Backend=="api"?ClassicCompatibleAsrSettings.Load():ClassicCloudAsrSettings.Load(engine.Backend).Api).Validate();return;}
             await ClassicSpeechDownload.EnsureRuntimeAsync(engine, _modernOptions.Variant, cancel, progress);
             await ClassicSpeechDownload.EnsureModelAsync(engine, model, cancel, progress);
             var aligner = ModernAligner(engine);

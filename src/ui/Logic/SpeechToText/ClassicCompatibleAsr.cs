@@ -25,6 +25,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
   public int ChunkSeconds {get;set;}=300;
   public int TimeoutSeconds {get;set;}=180;
   public string ProtectedApiKey {get;set;}="";
+  public bool Stream {get;set;}
   [JsonIgnore] public string ApiKey {
    get{try{return string.IsNullOrEmpty(ProtectedApiKey)?"":Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(ProtectedApiKey),null,DataProtectionScope.CurrentUser));}catch(CryptographicException){return "";}catch(FormatException){return "";}}
    set{ProtectedApiKey=string.IsNullOrEmpty(value)?"":Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value),null,DataProtectionScope.CurrentUser));}
@@ -39,7 +40,8 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
  {
   private readonly HttpClient _client;
   private readonly ClassicCompatibleAsrSettings _settings;
-  public ClassicCompatibleAsr(ClassicCompatibleAsrSettings settings,HttpMessageHandler handler=null){_settings=settings;_client=new HttpClient(handler??new HttpClientHandler{AllowAutoRedirect=false});_client.Timeout=Timeout.InfiniteTimeSpan;}
+  private readonly Func<string,string,CancellationToken,Task<string>> _transcribe;
+  public ClassicCompatibleAsr(ClassicCompatibleAsrSettings settings,HttpMessageHandler handler=null,Func<string,string,CancellationToken,Task<string>> transcribe=null){_settings=settings;_transcribe=transcribe;_client=new HttpClient(handler??new HttpClientHandler{AllowAutoRedirect=false});_client.Timeout=Timeout.InfiniteTimeSpan;}
   public async Task<Subtitle> TranscribeAsync(string wave,string job,string language,CancellationToken cancel,IProgress<SpeechProgress> progress=null)
   {
    _settings.Validate();double duration;using(var file=File.OpenRead(wave))duration=new WaveHeader(file).LengthInSeconds;
@@ -51,7 +53,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
      await ClassicSpeechRunner.RunProcessAsync(new ProcessStartInfo(Configuration.Settings.General.FFmpegLocation,args),cancel,null).ConfigureAwait(false);
      if(new FileInfo(file).Length>24*1024*1024)throw new InvalidDataException("Audio chunk exceeds upload limit. Reduce chunk duration.");
      progress?.Report(new SpeechProgress{Message="API: "+((int)(offset/duration*100))+"%",Percent=(int)(offset/duration*100)});
-     var json=await SendAsync(file,language,"verbose_json",cancel).ConfigureAwait(false);
+     var json=await SendAsync(file,language,_settings.Stream?"json":"verbose_json",cancel).ConfigureAwait(false);
      var parsed=Parse(json,length,offset,out var estimated);if(estimated)progress?.Report(new SpeechProgress{Message="Server returned text without timestamps; cue times are estimated."});
      result.Paragraphs.AddRange(parsed.Paragraphs);
     }finally{if(File.Exists(file))File.Delete(file);}
@@ -60,22 +62,51 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
   }
   private async Task<string> SendAsync(string file,string language,string format,CancellationToken cancel)
   {
+   if(_transcribe!=null)return await _transcribe(file,language,cancel).ConfigureAwait(false);
    using(var deadline=CancellationTokenSource.CreateLinkedTokenSource(cancel)){
     deadline.CancelAfter(TimeSpan.FromSeconds(_settings.TimeoutSeconds));
     try{
      using(var body=new MultipartFormDataContent())using(var request=new HttpRequestMessage(HttpMethod.Post,_settings.Endpoint())){
       var audio=new StreamContent(File.OpenRead(file));audio.Headers.ContentType=new MediaTypeHeaderValue("audio/wav");body.Add(audio,"file","audio.wav");body.Add(new StringContent(_settings.Model),"model");body.Add(new StringContent(format),"response_format");
+      if(_settings.Stream)body.Add(new StringContent("true"),"stream");
       if(!string.IsNullOrWhiteSpace(language) && language!="auto")body.Add(new StringContent(language),"language");if(!string.IsNullOrWhiteSpace(_settings.Prompt))body.Add(new StringContent(_settings.Prompt),"prompt");
       request.Content=body;var key=_settings.ApiKey;if(!string.IsNullOrEmpty(key))request.Headers.Authorization=new AuthenticationHeaderValue("Bearer",key);
-      using(var response=await _client.SendAsync(request,HttpCompletionOption.ResponseContentRead,deadline.Token).ConfigureAwait(false)){
+      using(var response=await _client.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,deadline.Token).ConfigureAwait(false))
+      using(var stopRead=deadline.Token.Register(()=>response.Dispose())){
+       if(response.IsSuccessStatusCode && response.Content.Headers.ContentType?.MediaType=="text/event-stream")
+        return await ReadEventsAsync(await response.Content.ReadAsStreamAsync().ConfigureAwait(false),deadline.Token).ConfigureAwait(false);
        var text=await response.Content.ReadAsStringAsync().ConfigureAwait(false);deadline.Token.ThrowIfCancellationRequested();
        if(response.IsSuccessStatusCode)return text;
        if((int)response.StatusCode==400 && format=="verbose_json" && text.IndexOf("verbose_json",StringComparison.OrdinalIgnoreCase)>=0)return await SendAsync(file,language,"json",cancel).ConfigureAwait(false);
        throw new InvalidOperationException("Transcription API returned HTTP "+(int)response.StatusCode+". Check server URL, model and authentication.");
       }
      }
-    }catch(OperationCanceledException) when(!cancel.IsCancellationRequested){throw new TimeoutException("Transcription request timed out.");}
+    }catch(Exception) when(deadline.IsCancellationRequested){if(cancel.IsCancellationRequested)throw new OperationCanceledException(cancel);throw new TimeoutException("Transcription request timed out.");}
    }
+  }
+  public static async Task<string> ReadEventsAsync(Stream stream,CancellationToken cancel)
+  {
+   var text=new StringBuilder();var segments=new JArray();bool complete=false;string final=null;
+   using(stream)using(var stop=cancel.Register(()=>stream.Dispose()))using(var reader=new StreamReader(stream,Encoding.UTF8)){
+    try{
+     var data=new StringBuilder();string line;
+     while((line=await reader.ReadLineAsync().ConfigureAwait(false))!=null){
+      cancel.ThrowIfCancellationRequested();
+      if(line.Length>0){if(line.StartsWith("data:",StringComparison.Ordinal)){if(data.Length>0)data.Append('\n');data.Append(line.Substring(5).TrimStart());}continue;}
+      if(data.Length==0)continue;var raw=data.ToString();data.Clear();
+      if(raw=="[DONE]"){complete=true;break;}
+      var row=JObject.Parse(raw);var type=(string)row["type"]??"";
+      if(type.Contains("error") || row["error"]!=null)throw new InvalidDataException("Transcription stream returned an error.");
+      if(type=="transcript.text.done"){final=(string)row["text"];complete=true;break;}
+      else if(type=="transcript.text.delta")text.Append((string)row["delta"]);
+      else if(type=="transcript.text.segment")segments.Add(new JObject{["start"]=row["start"],["end"]=row["end"],["text"]=row["text"]});
+      else if(row["choices"]?.First?["delta"]?["content"]!=null)text.Append((string)row["choices"].First["delta"]["content"]);
+      if(text.Length>2000000)throw new InvalidDataException("Transcription stream is too large.");
+     }
+    }catch(Exception) when(cancel.IsCancellationRequested){throw new OperationCanceledException(cancel);}
+   }
+   if(!complete)throw new InvalidDataException("Transcription stream ended before completion.");
+   return new JObject{["text"]=final??text.ToString(),["segments"]=segments}.ToString();
   }
   private static string Stamp(JToken value)=>value is JValue scalar ? Convert.ToString(scalar.Value,CultureInfo.InvariantCulture) : "";
   public static Subtitle Parse(string json,double duration,double offset,out bool estimated)

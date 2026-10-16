@@ -159,7 +159,14 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         {
             jobFolder = Path.GetFullPath(jobFolder);
             Directory.CreateDirectory(jobFolder);
-            if(engine.Family=="compatible-api")using(var api=new ClassicCompatibleAsr(ClassicCompatibleAsrSettings.Load()))return await api.TranscribeAsync(waveFile,jobFolder,options.Language,cancel,progress).ConfigureAwait(false);
+            if(engine.Family=="compatible-api")
+            {
+                if(engine.Backend=="api")using(var api=new ClassicCompatibleAsr(ClassicCompatibleAsrSettings.Load()))return await api.TranscribeAsync(waveFile,jobFolder,options.Language,cancel,progress).ConfigureAwait(false);
+                var settings=ClassicCloudAsrSettings.Load(engine.Backend);
+                using(var cloud=new ClassicCloudAsr(engine.Backend,settings))
+                using(var api=new ClassicCompatibleAsr(settings.Api,transcribe:cloud.TranscribeChunkAsync))
+                    return await api.TranscribeAsync(waveFile,jobFolder,options.Language,cancel,progress).ConfigureAwait(false);
+            }
             if (executableOverride == null && engine.Family == "crisp")
             {
                 await ClassicSpeechExtras.EnsureAsync(engine, options, cancel, progress).ConfigureAwait(false);

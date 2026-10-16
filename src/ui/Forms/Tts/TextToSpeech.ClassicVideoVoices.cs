@@ -46,7 +46,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
     {
      if(operation!=null)return;if(!consent.Checked){MessageBox.Show(f,CL("Подтверди разрешение на использование голосов.","Confirm permission to use the voices."));return;}
      if(source==null && !string.IsNullOrEmpty(path.Text)){source=new Subtitle();if(source.LoadSubtitle(path.Text,out _,null)==null){source=null;return;}}
-     if(perLine.Checked && source==null && !ClassicLocalTts.Catalog.Any(d=>d.Id==SelectedLocalId && d.SupportsAudioOnlyPerLineClone)){MessageBox.Show(f,CL("Без оригинальных субтитров сначала выбери Fish, Higgs, IndexTTS 2.5 или Breeze в основном окне озвучки.","For audio-only per-line cloning, select Fish, Higgs, IndexTTS 2.5 or Breeze in the speech window first."));return;}
+     if(perLine.Checked && source==null && !ClassicLocalTts.Catalog.Any(d=>d.Id==SelectedLocalId && d.SupportsAudioOnlyPerLineClone)){MessageBox.Show(f,CL("Выбери движок с клонированием без расшифровки: Fish, Higgs, IndexTTS, Breeze, Pocket, VibeVoice, Dots, Confucius, MOSS, Chatterbox, VoxCPM, CosyVoice или OmniVoice (CrispASR).","Select an audio-only cloning engine: Fish, Higgs, IndexTTS, Breeze, Pocket, VibeVoice, Dots, Confucius, MOSS, Chatterbox, VoxCPM, CosyVoice or OmniVoice (CrispASR)."));return;}
      grid.EndEdit();operation=new CancellationTokenSource();find.Enabled=apply.Enabled=top.Enabled=grid.Enabled=false;cancel.Visible=true;var added=new List<ClassicQwenReference>();job=Path.Combine(Path.GetTempPath(),"se-clone-speakers-"+Guid.NewGuid().ToString("N"));
      try
      {
@@ -83,6 +83,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
     var recording=await ClassicPerLineReference.ExtractAsync(_videoFileName,source,audioOnly ? _subtitle.Paragraphs : _perLineOriginal.Paragraphs,_dubbingAudioTrack,job,cancel);
     var seconds=ClassicVoiceAssets.WaveSeconds(recording);
     var voice=await ClassicQwenReference.ImportAsync(recording,"temporary line",transcript,0,Math.Min(30,seconds),true,cancel,!audioOnly);
+    voice.PerLine=true;
+    File.WriteAllText(Path.Combine(ClassicQwenReference.Folder,voice.Id+".json"),Newtonsoft.Json.JsonConvert.SerializeObject(voice));
     _temporaryVideoVoices.Add(voice);PreserveSessionReference(target,voice);return voice.Id;
    }finally{if(Directory.Exists(job))Directory.Delete(job,true);}
   }

@@ -141,6 +141,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 new NoLanguageLeftBehindApi(),
             };
 
+            _autoTranslatorEngines.AddRange(ClassicNewTranslator.Ids.Select(id => new ClassicNewTranslator(id)));
             nikseComboBoxEngine.Items.Clear();
             nikseComboBoxEngine.Items.AddItems(_autoTranslatorEngines);
 
@@ -180,6 +181,18 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             comboBoxFormality.ContextMenuStrip = null;
             comboBoxFormality.Visible = false;
             var engineType = _autoTranslator.GetType();
+            if (_autoTranslator is ClassicNewTranslator classic)
+            {
+                var saved=ClassicTranslationSettings.Load(classic.Id);
+                FillUrls(new List<string>{saved.Api.Url});
+                nikseTextBoxApiKey.Text=saved.Api.ApiKey; nikseTextBoxApiKey.Visible=labelApiKey.Visible=classic.Id!="madlad";
+                labelFormality.Text=LanguageSettings.Current.AudioToText.Model;labelFormality.Visible=comboBoxFormality.Visible=classic.Id!="lara";
+                comboBoxFormality.DropDownStyle=ComboBoxStyle.DropDown;comboBoxFormality.Items.Clear();comboBoxFormality.Text=saved.Api.Model;comboBoxFormality.Left=labelFormality.Right+3;
+                labelApiKey.Left=nikseComboBoxUrl.Right+12;nikseTextBoxApiKey.Left=labelApiKey.Right+3;
+                if(classic.Id=="madlad"){labelUrl.Visible=nikseComboBoxUrl.Visible=false;comboBoxFormality.Items.Add(saved.Api.Model);comboBoxFormality.DropDownStyle=ComboBoxStyle.DropDownList;comboBoxFormality.SelectedIndex=0;}
+                return;
+            }
+
 
             if (engineType == typeof(GoogleTranslateV1))
             {
@@ -944,7 +957,8 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 return;
             }
 
-            SaveSettings(engineType);
+            try { SaveSettings(engineType); }
+            catch(Exception error){_translationInProgress=false;_singleLineMode=false;MessageBox.Show(this,error.Message,Text);return;}
 
             buttonStrategy.Enabled = false;
             buttonOK.Enabled = false;
@@ -1243,6 +1257,11 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private void SaveSettings(Type engineType)
         {
+            if (GetCurrentEngine() is ClassicNewTranslator classic)
+            {
+                var saved=ClassicTranslationSettings.Load(classic.Id);if(classic.Id!="madlad")saved.Api.Url=nikseComboBoxUrl.Text.Trim();saved.Api.Model=comboBoxFormality.Text.Trim();saved.Api.ApiKey=nikseTextBoxApiKey.Text.Trim();saved.Save(classic.Id);return;
+            }
+
             if (engineType == typeof(GoogleTranslateV2) && !string.IsNullOrWhiteSpace(nikseTextBoxApiKey.Text))
             {
                 Configuration.Settings.Tools.GoogleApiV2Key = nikseTextBoxApiKey.Text.Trim();
@@ -1412,7 +1431,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private void buttonOK_Click(object sender, EventArgs e)
         {
-            SaveSettings(GetCurrentEngine().GetType());
+            try { SaveSettings(GetCurrentEngine().GetType()); } catch(Exception error){MessageBox.Show(this,error.Message,Text);return;}
             var isEmpty = TranslatedSubtitle == null || TranslatedSubtitle.Paragraphs.All(p => string.IsNullOrEmpty(p.Text));
             DialogResult = isEmpty ? DialogResult.Cancel : DialogResult.OK;
         }
@@ -1690,6 +1709,8 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private void buttonStrategy_Click(object sender, EventArgs e)
         {
+            if(GetCurrentEngine() is ClassicNewTranslator classic){try{SaveSettings(classic.GetType());using(var form=new ClassicTranslationForm(classic.Id))form.ShowDialog(this);SetAutoTranslatorEngine();}catch(Exception error){MessageBox.Show(this,error.Message,Text);}return;}
+
             using (var form = new AutoTranslateSettings(_autoTranslator.GetType(), _autoTranslator.Name))
             {
                 form.ShowDialog(this);

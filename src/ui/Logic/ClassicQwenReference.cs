@@ -17,6 +17,7 @@ namespace Nikse.SubtitleEdit.Logic
         public string Id { get; set; }
         public string Name { get; set; }
         public bool Consent { get; set; }
+        public bool PerLine { get; set; }
         public string Attribution { get; set; }="";
         public override string ToString() => Name;
         public static string Folder => Path.Combine(ClassicQwenTtsSettings.Root,"voices");

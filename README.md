@@ -7,6 +7,11 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 English · [Русский](README.ru.md)
 
 ## Local 4.0.25 preview
+The latest local increment, **4.0.25.19**, expands audio-only per-line cloning to fourteen backends and adds OpenRouter/DashScope/Google Cloud v2 ASR plus optional compatible-API SSE responses. **Tools → AI subtitle review / Current-line AI assistant** uses an existing compatible server and applies only checked text changes, preserving timing and metadata. It does not install a chat-model server.
+
+Translation adds OpenAI-compatible, llama.cpp, NVIDIA, API Route, Perplexity Responses, Lara and downloadable local MADLAD (419 language tokens). Bitmap OCR adds Google Lens Sharp, Mistral OCR, CrispEmbed GGUF models and llama.cpp / compatible Vision, reusing the classic correction workflow. Settings provide local OCR runtime/model downloads. Lens sends the selected subtitle image to Google; the other API engines send data to their configured providers.
+
+Native checks cover Pocket/VoxCPM/CosyVoice with two different reference voices, MADLAD Russian/Japanese, PP-OCRv6 and live Google Lens on synthetic text. CosyVoice had one pronunciation error in the test outputs. Paid APIs and AI review were protocol-tested with simulated responses; other model variants still need native checks. See [the changelog](CLASSIC_CHANGELOG.md) for the precise coverage. The public installer remains 4.0.24 until a release is requested.
 
 Six additional stable v5.3 TTS engines run through audio.cpp: Fish Audio S2 Pro, IndexTTS 2.5, Higgs Audio v3, FireRedTTS3, KugelAudio and Breeze TTS 2. Play with speech starts at the selected main-window line. nOCR gains the stable matcher and font trainer with three line-generation algorithms while retaining the classic windows and existing databases. The published stable installer remains 4.0.24. See [the changelog](CLASSIC_CHANGELOG.md) for language, model-license and validation limits.
 

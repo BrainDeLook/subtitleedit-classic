@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Controls;
+﻿using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.BluRaySup;
 using Nikse.SubtitleEdit.Core.Common;
@@ -554,6 +554,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             _ocrMethodPaddle = comboBoxOcrMethod.Items.Add("Paddle OCR");
             _ocrMethodOllama = comboBoxOcrMethod.Items.Add("Ollama Vision");
             _ocrMethodGoogleLens = comboBoxOcrMethod.Items.Add("Google Lens");
+            InitializeClassicBitmap();
 
             _paddleOcr = new PaddleOcr();
             checkBoxPaddleOcrUseGpu.Checked = Configuration.Settings.VobSubOcr.PaddleOcrUseGpu;
@@ -1725,7 +1726,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             Color emphasis1;
             Color emphasis2;
 
-            bool makeTransparent = !(_ocrMethodIndex == _ocrMethodCloudVision || _ocrMethodIndex == _ocrMethodPaddle || _ocrMethodIndex == _ocrMethodOllama || _ocrMethodIndex == _ocrMethodGoogleLens);
+            bool makeTransparent = !(_ocrMethodIndex == _ocrMethodCloudVision || _ocrMethodIndex == _ocrMethodPaddle || IsClassicBitmapMethod || _ocrMethodIndex == _ocrMethodGoogleLens);
 
             if (_mp4List != null)
             {
@@ -2150,7 +2151,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 return nb.GetBitmap();
             }
 
-            if (_ocrMethodIndex == _ocrMethodPaddle || _ocrMethodIndex == _ocrMethodOllama || _ocrMethodIndex == _ocrMethodGoogleLens)
+            if (_ocrMethodIndex == _ocrMethodPaddle || IsClassicBitmapMethod || _ocrMethodIndex == _ocrMethodGoogleLens)
             {
                 return returnBmp;
             }
@@ -4871,7 +4872,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             {
                 buttonDownloadPaddleOCRModels_Click(sender, e);
             }
-            else if (_ocrMethodIndex == _ocrMethodOllama)
+            else if (IsClassicBitmapMethod)
             {
                 _ollamaLanguage = nikseComboBoxOllamaLanguages.Text;
                 _ollamaModel = nikseComboBoxOllamaModel.Text;
@@ -5277,7 +5278,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             {
                 text = OcrViaCloudVision(bmp, i);
             }
-            else if (_ocrMethodIndex == _ocrMethodOllama)
+            else if (IsClassicBitmapMethod)
             {
                 text = await OcrViaOllama(bmp, i);
             }
@@ -6797,7 +6798,11 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 comboBoxDictionaries_SelectedIndexChanged(null, null);
             }
 
-            var line = await _ollamaOcr.Ocr(bitmap, _ollamaModel, _ollamaLanguage, _cancellationToken);
+            string line;
+            try{line = await _ollamaOcr.Ocr(bitmap, _ollamaModel, _ollamaLanguage, _cancellationToken);}
+            catch(OperationCanceledException){throw;}
+            catch(Exception error){ButtonPauseClick(null,null);MessageBox.Show(this,error.Message,Text);return _subtitle.GetParagraphOrDefault(listViewIndex)?.Text??"";}
+
 
             if (checkBoxAutoFixCommonErrors.Checked && _ocrFixEngine != null)
             {
@@ -7846,10 +7851,11 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                     }
                 }
             }
-            else if (_ocrMethodIndex == _ocrMethodOllama)
+            else if (IsClassicBitmapMethod)
             {
                 _ollamaOcr?.Dispose();
-                _ollamaOcr = new OllamaOcr();
+                _ollamaOcr = new OllamaOcr(ClassicBitmapProvider);
+                groupBoxOllama.Text=ClassicBitmapProvider==null?"Ollama Vision":comboBoxOcrMethod.Text;
 
                 var models = await _ollamaOcr.GetModels();
                 nikseComboBoxOllamaModel.Items.Clear();
@@ -7873,10 +7879,10 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 
                 }
 
-                nikseComboBoxOllamaModel.Text = Configuration.Settings.VobSubOcr.OllamaModel;
+                nikseComboBoxOllamaModel.Text = ClassicBitmapProvider==null?Configuration.Settings.VobSubOcr.OllamaModel:ClassicBitmapSettings.Load(ClassicBitmapProvider).Api.Model;
 
                 ShowOcrMethodGroupBox(groupBoxOllama);
-                Configuration.Settings.VobSubOcr.LastOcrMethod = "Ollama";
+                Configuration.Settings.VobSubOcr.LastOcrMethod = ClassicBitmapProvider==null?"Ollama":"Classic:"+ClassicBitmapProvider;
             }
             else if (_ocrMethodIndex == _ocrMethodGoogleLens)
             {
@@ -8434,6 +8440,8 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 
         private void SetOcrMethod()
         {
+            var classicSaved=_classicBitmapProviders.FirstOrDefault(p=>"Classic:"+p.Value==Configuration.Settings.VobSubOcr.LastOcrMethod);
+            if(classicSaved.Value!=null){comboBoxOcrMethod.SelectedIndex=classicSaved.Key;return;}
             if (Configuration.Settings.VobSubOcr.LastOcrMethod == "BinaryImageCompare" && comboBoxOcrMethod.Items.Count > _ocrMethodBinaryImageCompare)
             {
                 comboBoxOcrMethod.SelectedIndex = _ocrMethodBinaryImageCompare;
@@ -8988,7 +8996,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 }
             }
 
-            if (_ocrMethodIndex == _ocrMethodOllama)
+            if (IsClassicBitmapMethod)
             {
                 Configuration.Settings.VobSubOcr.OllamaLanguage = nikseComboBoxOllamaLanguages.Text;
                 Configuration.Settings.VobSubOcr.OllamaModel = nikseComboBoxOllamaModel.Text;
@@ -9006,6 +9014,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             if (!e.Cancel)
             {
                 e.Cancel = true; // Hack as FormClosing will crash if any Forms are created here (e.g. a msgbox). 
+                _ollamaOcr?.Dispose();
                 _forceClose = true;
                 _dialogResult = DialogResult;
                 TaskDelayHelper.RunDelayed(TimeSpan.FromMilliseconds(10), () =>

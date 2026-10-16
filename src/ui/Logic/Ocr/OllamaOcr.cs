@@ -17,12 +17,15 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
     {
         private readonly HttpClient _httpClient;
         private readonly SeJsonParser _parser;
+        private readonly ClassicBitmapOcr _classic;
+        private readonly string _provider;
 
         public string Error { get; set; }
 
-        public OllamaOcr()
+        public OllamaOcr(string provider = null)
         {
             Error = string.Empty;
+            _provider=provider; if(provider!=null)_classic=new ClassicBitmapOcr(provider);
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("accept", "application/json");
@@ -32,6 +35,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
         public async Task<IEnumerable<string>> GetModels()
         {
+            if(_provider!=null)return _provider=="crispembed"?ClassicBitmapOcr.Models.Select(m=>m.Name):new[]{ClassicBitmapSettings.Load(_provider).Api.Model};
             try
             {
                 using (var response = await _httpClient.GetAsync("http://localhost:11434/api/tags").ConfigureAwait(false))
@@ -54,6 +58,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
         public async Task<string> Ocr(Bitmap bitmap, string model, string language, CancellationToken cancellationToken)
         {
+            if(_classic!=null)return await _classic.Ocr(bitmap,model,language,cancellationToken).ConfigureAwait(false);
             try
             {
                 var modelJson = "\"model\": \"" + model + "\",";
@@ -101,6 +106,6 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
             }
         }
 
-        public void Dispose() => _httpClient?.Dispose();
+        public void Dispose() { _classic?.Dispose(); _httpClient?.Dispose(); }
     }
 }

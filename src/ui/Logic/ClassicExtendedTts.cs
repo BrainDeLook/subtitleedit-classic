@@ -24,6 +24,18 @@ namespace Nikse.SubtitleEdit.Logic
     public static class ClassicExtendedTts
     {
         public static bool Handles(string id) => new[] { "f5", "pocket", "vibe", "index", "dots", "confucius", "moss", "omni", "kokoro", "omnicpp", "zonos" }.Contains(id);
+        public static bool UsesRequestVoice(string id, string voice)
+        {
+            if (id == "pocket" || id == "vibe") return true;
+            if (id != "moss" && id != "vox" && id != "cosy") return false;
+            return IsPerLineVoice(voice);
+        }
+        public static bool IsPerLineVoice(string voice)
+        {
+            if (string.IsNullOrEmpty(voice)) return false;
+            var file = Path.Combine(ClassicQwenReference.Folder, voice + ".json");
+            return File.Exists(file) && Newtonsoft.Json.JsonConvert.DeserializeObject<ClassicQwenReference>(File.ReadAllText(file))?.PerLine == true;
+        }
         private static readonly SemaphoreSlim RuntimeGate = new SemaphoreSlim(1, 1);
         private static string Quote(string text) => ClassicSpeechRunner.Quote(text);
         public static string RuntimeRoot(ClassicLocalTtsDefinition definition, string variant) => Path.Combine(ClassicLocalTtsSettings.Root(definition.Id), "runtime", definition.RuntimeVersion, variant);
@@ -77,7 +89,7 @@ namespace Nikse.SubtitleEdit.Logic
             }
             var payload = new Dictionary<string, object> { { "input", text }, { "response_format", "wav" } };
             if (definition.SupportsSpeed) payload["speed"] = Math.Max(0.25, Math.Min(4, settings.Speed));
-            if (definition.Id == "pocket" || definition.Id == "vibe") payload["voice"] = voice;
+            if (UsesRequestVoice(definition.Id, voice)) payload["voice"] = voice;
             if (definition.Id == "confucius" || definition.Id == "omni" || definition.Id == "zonos")
             {
                 if (!definition.Languages.Any(l => l.Split('|')[0] == settings.Language)) throw new ArgumentException("Select a supported target language for " + definition.Name);

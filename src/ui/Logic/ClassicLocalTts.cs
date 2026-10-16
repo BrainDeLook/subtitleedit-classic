@@ -45,8 +45,9 @@ namespace Nikse.SubtitleEdit.Logic
         public int SampleRate { get; set; }
         public double DefaultSpeed { get; set; }
         public bool ReferenceText { get; set; }
-        public bool RequiresReferenceTranscript => IsAudioCpp ? Id == "firered" : !ClassicExtendedTts.Handles(Id) || Id == "f5" || Id == "omnicpp";
-        public bool SupportsAudioOnlyPerLineClone => IsAudioCpp && SupportsCloning && !RequiresReferenceTranscript;
+        public bool RequiresReferenceTranscript => IsAudioCpp ? Id == "firered" : Id != "chatter" && Id != "vox" && (!ClassicExtendedTts.Handles(Id) || Id == "f5" || Id == "omnicpp");
+        public bool SupportsAudioOnlyPerLineClone => SupportsCloning && (!RequiresReferenceTranscript || Id == "cosy");
+        public bool NeedsTranscript(string voice) => RequiresReferenceTranscript && !(Id == "cosy" && ClassicExtendedTts.IsPerLineVoice(voice));
         public string RuntimeVersion { get; set; }
         public string RuntimeExecutable { get; set; }
         public ClassicTtsRuntimeArchive[] RuntimeArchives { get; set; }
@@ -108,6 +109,7 @@ namespace Nikse.SubtitleEdit.Logic
         private readonly string _job = Path.Combine(Path.GetTempPath(), "SubtitleEditTts", Guid.NewGuid().ToString("N"));
         private Process _server;
         private string _baseUrl, _activeVoice, _activeLanguage;
+        private bool _activeRequestVoice;
         private bool _ready;
         public ClassicLocalTts(string id, ClassicLocalTtsSettings settings) { _definition = Catalog.First(e => e.Id == id); _settings = settings; }
         public static object[] Voices(string id)
@@ -157,12 +159,17 @@ namespace Nikse.SubtitleEdit.Logic
             }
             if (imported)
             {
-                ClassicQwenReference.Validate(voice);
+                ClassicQwenReference.Validate(voice, _definition.NeedsTranscript(voice));
                 payload["consent_attestation"] = "I have the speaker's consent, or it is my own voice.";
                 payload["marking_attestation"] = "I will disclose that this audio is AI-generated.";
                 payload["spoken_disclaimer"] = false;
                 // Chatterbox consumes the basename relative to its working directory.
                 if (_definition.Id == "chatter") payload["voice"] = voice + ".wav";
+                if ((_definition.Id == "cosy" || _definition.Id == "vox") && ClassicExtendedTts.UsesRequestVoice(_definition.Id, voice))
+                {
+                    payload["voice"] = voice + ".wav";
+                    if (_definition.Id == "cosy" && !string.IsNullOrEmpty(transcript)) payload["ref_text"] = transcript;
+                }
                 if (_definition.Id != "vox")
                 {
                     var source = ReferenceLanguage(transcript, _settings.SourceLanguage);
@@ -176,7 +183,7 @@ namespace Nikse.SubtitleEdit.Logic
             voice = ResolveVoice(voice);
             var imported = !_definition.Presets.Contains(voice);
             if (imported && !_definition.SupportsCloning) throw new ArgumentException("Select a preset voice for " + _definition.Name);
-            if (imported) ClassicQwenReference.Validate(voice, _definition.RequiresReferenceTranscript);
+            if (imported) ClassicQwenReference.Validate(voice, _definition.NeedsTranscript(voice));
             var transcript = imported ? File.ReadAllText(Path.Combine(ClassicQwenReference.Folder, voice + ".txt")).Trim() : "";
             var payload = BuildPayload(text, voice, transcript);
             if (!_ready) { await EnsureInstalledAsync(_definition.Id, _settings, cancel, progress).ConfigureAwait(false); _ready = true; }
@@ -197,9 +204,10 @@ namespace Nikse.SubtitleEdit.Logic
                 if (!File.Exists(output) || ClassicVoiceAssets.WaveSeconds(output) <= 0) throw new InvalidDataException("OmniVoice returned no playable audio.");
                 return;
             }
-            if (_server == null || (_definition.Id == "zonos" && _activeLanguage != _settings.Language) || (!_definition.IsAudioCpp && _definition.Id != "chatter" && _activeVoice != voice))
+            var requestVoice = _definition.IsAudioCpp || _definition.Id == "chatter" || ClassicExtendedTts.UsesRequestVoice(_definition.Id, voice);
+            if (_server == null || ((_definition.Id == "zonos" || _definition.Id == "moss") && _activeLanguage != _settings.Language) || _activeRequestVoice != requestVoice || (!requestVoice && _activeVoice != voice))
             {
-                StopServer(); await StartAsync(voice, transcript, cancel, progress).ConfigureAwait(false); _activeVoice = voice; _activeLanguage = _settings.Language;
+                StopServer(); await StartAsync(voice, transcript, cancel, progress).ConfigureAwait(false); _activeVoice = voice; _activeLanguage = _settings.Language; _activeRequestVoice = requestVoice;
             }
             using (var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"))
             using (var response = await _client.PostAsync(_baseUrl + (_definition.Id == "kokoro" ? "/v1/synthesize" : "/v1/audio/speech"), content, cancel).ConfigureAwait(false))
@@ -222,7 +230,7 @@ namespace Nikse.SubtitleEdit.Logic
             var args = "--server --backend " + backend + " -m " + ClassicSpeechRunner.Quote(Path.Combine(ClassicLocalTtsSettings.Root(_definition.Id), "models", model.Files[0].File));
             if (_definition.Codec) args += " --codec-model " + ClassicSpeechRunner.Quote(Path.Combine(ClassicLocalTtsSettings.Root(_definition.Id), "models", model.Files[1].File));
             args += " --host 127.0.0.1 --port " + port + " --voice-dir " + ClassicSpeechRunner.Quote(_job);
-            if (_definition.Id != "chatter")
+            if (_definition.Id != "chatter" && !ClassicExtendedTts.UsesRequestVoice(_definition.Id, voice))
             {
                 args += " --voice " + ClassicSpeechRunner.Quote(_definition.Presets.Contains(voice) ? voice : Path.Combine(_job, voice + ".wav"));
                 if (!string.IsNullOrEmpty(transcript)) args += " --ref-text " + ClassicSpeechRunner.Quote(transcript);

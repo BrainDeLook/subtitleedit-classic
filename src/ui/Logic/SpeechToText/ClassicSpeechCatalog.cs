@@ -43,6 +43,8 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         public const string WhisperX = "WhisperX";
         public const string CppVulkan = "Whisper CPP Vulkan";
         public const string CompatibleApi = "OpenAI-compatible / vLLM";
+        public static readonly string[] CloudNames={"OpenRouter ASR","DashScope Qwen3 ASR","Google Cloud ASR v2"};
+        public static string CloudId(string name)=>name==CloudNames[0]?"openrouter":name==CloudNames[1]?"dashscope":"google";
         public static readonly List<SpeechEngine> Engines = Load();
         public static string Root => Path.Combine(Configuration.DataDirectory, "ClassicSpeechToText");
 
@@ -60,6 +62,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
 
         public static SpeechEngine Get(string selection, string backend)
         {
+            if(CloudNames.Contains(selection))return new SpeechEngine{Name=selection,Family="compatible-api",Backend=CloudId(selection),NativeTimings=true,Languages=new[]{new SpeechLanguage{Code="auto",Name="Auto detect"}}.Concat(WhisperLanguage.Languages.Select(l=>new SpeechLanguage{Code=l.Code,Name=l.Name})).ToList(),Models=new List<SpeechModel>{new SpeechModel{Name=ClassicCloudAsrSettings.Load(CloudId(selection)).Api.Model}}};
             if(selection==CompatibleApi)return new SpeechEngine{Name=CompatibleApi,Family="compatible-api",Backend="api",NativeTimings=true,Languages=new[]{new SpeechLanguage{Code="auto",Name="Auto detect"}}.Concat(WhisperLanguage.Languages.Select(l=>new SpeechLanguage{Code=l.Code,Name=l.Name})).ToList(),Models=new List<SpeechModel>{new SpeechModel{Name=ClassicCompatibleAsrSettings.Load().Model}}};
             if (selection == Crisp) return Engines.First(e => e.Family == "crisp" && (e.Backend == backend || e.Name == backend));
             if (selection == Qwen) return Engines.First(e => e.Family == "qwen");
