@@ -20,6 +20,8 @@ class TestSpeechPlayer
         {
             var data = Path.GetFullPath(args[0]); Directory.CreateDirectory(data);
             typeof(Configuration).GetField("DataDirectory", BindingFlags.Public | BindingFlags.Static).SetValue(null, data + Path.DirectorySeparatorChar);
+            // Hosted runners have no sound device. Exercise real MPV decoding/clocks with its null sink.
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true") Configuration.Settings.General.MpvExtraOptions = "--ao=null --vo=null";
             File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libmpv-2.dll"), Path.Combine(data, "libmpv-2.dll"), true);
             SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
             var task = Run(Path.GetFullPath(args[1]));

@@ -26,6 +26,7 @@ class TestSpeechWaveform
         try{
             var data=Path.GetFullPath(args[0]);Directory.CreateDirectory(data);Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Dictionaries"));
             typeof(Configuration).GetField("DataDirectory",BindingFlags.Public|BindingFlags.Static).SetValue(null,data+Path.DirectorySeparatorChar);
+            if(Environment.GetEnvironmentVariable("GITHUB_ACTIONS")=="true")Configuration.Settings.General.MpvExtraOptions="--ao=null --vo=null";
             Configuration.Settings.General.Language="ru-RU";Configuration.Settings.General.FFmpegLocation=args[1];LanguageSettings.Current=Language.Load(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Languages/ru-RU.xml"));Application.EnableVisualStyles(); File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"libmpv-2.dll"),Path.Combine(data,"libmpv-2.dll"),true);
             var first=Path.Combine(data,"first.wav");var second=Path.Combine(data,"second.wav");WriteWave(first,2.25);WriteWave(second,1.5);
             var sub=new Subtitle();sub.Paragraphs.Add(new Paragraph("Первая строка",1000,2000){Actor="A"});sub.Paragraphs.Add(new Paragraph("Second line",6000,10000){Actor="B"});

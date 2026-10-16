@@ -11,6 +11,11 @@ $OutputDirectory=(Resolve-Path $OutputDirectory).Path
 $ApplicationDirectory=(Resolve-Path $ApplicationDirectory).Path
 Copy-Item "$ApplicationDirectory/SubtitleEdit.exe", "$ApplicationDirectory/SubtitleEdit.exe.config", "$ApplicationDirectory/*.dll" $OutputDirectory -Force
 Copy-Item "$ApplicationDirectory/Languages" $OutputDirectory -Recurse -Force
+foreach ($architecture in @('x64','x86')) {
+    if (Test-Path -LiteralPath (Join-Path $ApplicationDirectory $architecture)) {
+        Copy-Item (Join-Path $ApplicationDirectory $architecture) $OutputDirectory -Recurse -Force
+    }
+}
 
 # MPV is an on-demand application dependency; fresh CI installs do not contain it yet.
 if (-not (Test-Path -LiteralPath (Join-Path $OutputDirectory 'libmpv-2.dll'))) {
