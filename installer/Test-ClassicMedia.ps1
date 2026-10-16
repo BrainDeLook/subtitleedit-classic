@@ -41,6 +41,7 @@ $tests=@{
     TestSpeechWaveform='tts-tests/TestSpeechWaveform.cs'
     TestSelectedSpeech='speech-tests/TestSelectedSpeech.cs'
     TestAudioTrackLabels='TestAudioTrackLabels.cs'
+    TestTtsModelExtras='tts-tests/TestTtsModelExtras.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -123,4 +124,6 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Selected ASR, partial results, retry and classic layout regression failed." }
     & "$OutputDirectory/TestAudioTrackLabels.exe" (Join-Path $OutputDirectory "audio-track-labels") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Burn-in audio language/title selection and stereo export regression failed." }
+    & "$OutputDirectory/TestTtsModelExtras.exe" unit (Join-Path $OutputDirectory "tts-model-extras") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "ElevenLabs protocol/pauses and custom Piper import regression failed." }
 }

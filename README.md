@@ -24,6 +24,8 @@ Selected-lines speech recognition now uses the classic ASR window with modern an
 
 Burn-in audio checkboxes now show the track language, embedded title and audio parameters in a full-width list below the audio settings. Hover for complete metadata when a title is long; each checked track is exported independently.
 
+ElevenLabs now includes stable v5.3 v4 Turbo/v4/v3 models, matching language lists and model-specific break/pause handling; its protocol is tested locally without paid API requests. Piper gains **Import voice** for a `.onnx` model and adjacent `.onnx.json` config. Imported pairs appear as Custom voices; existing files are preserved on name collisions. Real imported English/Russian Piper synthesis was checked.
+
 ## Classic 4.0.24
 
 ASR adds selectable VAD, speech isolation, speaker detection and new stable v5.3 models, including Parakeet Ultra, Phonon-2, Voxtral and Index-Echo. Speaker metadata survives postprocessing; batch subtitles use ASS when actors are present. Time-code review adds editable original/proposed waveforms and twelve language-specific wav2vec2 aligners. Download the normal Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). Native checks focus on Russian and English; see [the changelog](CLASSIC_CHANGELOG.md) for coverage and limits.

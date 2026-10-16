@@ -940,7 +940,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     }
                 }
 
-                var modelFileName = Path.Combine(piperPath, FixInvalidFileNameCharacters(voice.ModelShort));
+                var modelFileName = Path.Combine(piperPath, voice.ModelShort);
+                if (!File.Exists(modelFileName)) modelFileName = Path.Combine(piperPath, FixInvalidFileNameCharacters(voice.ModelShort));
                 if (!File.Exists(modelFileName))
                 {
                     using (var form = new PiperDownload("Piper TextToSpeech voice: " + voice.Voice) { AutoClose = true, ModelUrl = voice.Model, ModelFileName = modelFileName, PiperPath = piperPath })
@@ -952,7 +953,8 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     }
                 }
 
-                var configFileName = Path.Combine(piperPath, FixInvalidFileNameCharacters(voice.ConfigShort));
+                var configFileName = Path.Combine(piperPath, voice.ConfigShort);
+                if (!File.Exists(configFileName)) configFileName = Path.Combine(piperPath, FixInvalidFileNameCharacters(voice.ConfigShort));
                 if (!File.Exists(configFileName))
                 {
                     using (var form = new PiperDownload("Piper TextToSpeech voice config: " + voice.Voice) { AutoClose = true, ModelUrl = voice.Config, ModelFileName = configFileName, PiperPath = piperPath })
@@ -970,15 +972,17 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     {
                         WorkingDirectory = piperPath,
                         FileName = Configuration.IsRunningOnWindows ? piperExe : "piper",
-                        Arguments = $"-m \"{FixInvalidFileNameCharacters(voice.ModelShort)}\" -c \"{FixInvalidFileNameCharacters(voice.ConfigShort)}\" -f out.wav",
+                        Arguments = $"-m \"{modelFileName}\" -c \"{configFileName}\" -f \"{outputFileName}\"",
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         RedirectStandardInput = true,
+                        RedirectStandardError = true,
                     }
                 };
 
                 processPiper.Start();
-                var streamWriter = new StreamWriter(processPiper.StandardInput.BaseStream, Encoding.UTF8);
+                var piperError = processPiper.StandardError.ReadToEndAsync();
+                var streamWriter = new StreamWriter(processPiper.StandardInput.BaseStream, new UTF8Encoding(false));
                 var text = Utilities.UnbreakLine(p.Text);
                 streamWriter.Write(text);
                 streamWriter.Flush();
@@ -989,14 +993,20 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     Application.DoEvents();
                     if (_abort)
                     {
+                        processPiper.Kill(); processPiper.WaitForExit(); processPiper.Dispose();
                         progressBar1.Visible = false;
                         labelProgress.Text = string.Empty;
                         return false;
                     }
+                    Thread.Sleep(10);
                 }
 
-                var inputFile = Path.Combine(piperPath, "out.wav");
-                File.Move(inputFile, outputFileName);
+                if (processPiper.ExitCode != 0 || !File.Exists(outputFileName) || new FileInfo(outputFileName).Length <= 44)
+                {
+                    var error = piperError.GetAwaiter().GetResult(); processPiper.Dispose();
+                    MessageBox.Show(this, "Piper did not generate audio." + Environment.NewLine + error, Text); return false;
+                }
+                processPiper.Dispose();
 
                 progressBar1.Refresh();
                 labelProgress.Refresh();
@@ -1290,61 +1300,20 @@ namespace Nikse.SubtitleEdit.Forms.Tts
 
                     var voice = voices.First(x => x.ToString() == v);
 
-                    var url = "https://api.elevenlabs.io/v1/text-to-speech/" + voice.Model;
-                    var text = Utilities.UnbreakLine(p.Text);
-                    var model = nikseComboBoxRegion.Text;
-
-                    var language = string.Empty;
-                    if (model == "eleven_turbo_v2_5")
+                    var cast = SpeechCastRow(p);
+                    var model = string.IsNullOrEmpty(cast?.Model) ? nikseComboBoxRegion.Text : cast.Model;
+                    var language = string.IsNullOrEmpty(cast?.Language) ? (nikseComboBoxLanguage.SelectedItem as TranslationPair)?.Code ?? "" : ClassicElevenLabs.LanguageCode(cast.Language, model);
+                    byte[] bytes;
+                    using (var requestCancellation = new CancellationTokenSource())
                     {
-                        if (nikseComboBoxLanguage.SelectedItem is TranslationPair tp)
-                        {
-                            var languageCode = tp.Code;
-                            if (languageCode == "cz")
-                            {
-                                languageCode = "cs";
-                            }
-                            else if (languageCode == "ph")
-                            {
-                                languageCode = "fil";
-                            }
-
-                            language = $", \"language_code\": \"{languageCode}\"";
-                        }
+                        var request = ClassicElevenLabs.SpeakAsync(httpClient, p.Text, voice.Model, model, language, nikseTextBoxApiKey.Text,
+                            Configuration.Settings.Tools.TextToSpeechElevenLabsStability, Configuration.Settings.Tools.TextToSpeechElevenLabsSimilarity,
+                            Configuration.Settings.Tools.TextToSpeechElevenLabsSpeed, requestCancellation.Token);
+                        while (!request.IsCompleted) { Application.DoEvents(); if (_abort) requestCancellation.Cancel(); Thread.Sleep(15); }
+                        try { bytes = request.GetAwaiter().GetResult(); }
+                        catch (OperationCanceledException) { return false; }
+                        catch (Exception ex) { MessageBox.Show(this, ex.Message, Text); return false; }
                     }
-
-                    var stability = Math.Round(Configuration.Settings.Tools.TextToSpeechElevenLabsStability, 1).ToString(CultureInfo.InvariantCulture);
-                    var similarity = Math.Round(Configuration.Settings.Tools.TextToSpeechElevenLabsSimilarity, 1).ToString(CultureInfo.InvariantCulture);
-                    var speed = Math.Round(Configuration.Settings.Tools.TextToSpeechElevenLabsSpeed, 1).ToString(CultureInfo.InvariantCulture);
-                    var data = "{ \"text\": \"" + Json.EncodeJsonText(text) + $"\", \"model_id\": \"{model}\"{language}, \"voice_settings\": {{ \"stability\": {stability}, \"similarity_boost\": {similarity}, \"speed\": {speed} }} }}";
-                    var content = new StringContent(data, Encoding.UTF8);
-                    content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                    var result = httpClient.PostAsync(url, content, CancellationToken.None).Result;
-
-                    if ((int)result.StatusCode == 429)
-                    {
-                        Task.Delay(2753).Wait();
-                        content = new StringContent(data, Encoding.UTF8);
-                        result = httpClient.PostAsync(url, content, CancellationToken.None).Result;
-                    }
-
-                    if ((int)result.StatusCode == 429)
-                    {
-                        Task.Delay(5707).Wait();
-                        content = new StringContent(data, Encoding.UTF8);
-                        result = httpClient.PostAsync(url, content, CancellationToken.None).Result;
-                    }
-
-                    var bytes = result.Content.ReadAsByteArrayAsync().Result;
-
-                    if (!result.IsSuccessStatusCode)
-                    {
-                        var error = Encoding.UTF8.GetString(bytes).Trim();
-                        SeLogger.Error($"ElevenLabs TTS failed calling API as base address {httpClient.BaseAddress} : Status code={result.StatusCode} {error}" + Environment.NewLine + "Data=" + data);
-                        MessageBox.Show(this, "Calling url: " + url + Environment.NewLine + "With: " + data + Environment.NewLine + Environment.NewLine + "Error: " + error);
-                        return false;
-                    }
-
                     File.WriteAllBytes(outputFileName, bytes);
 
                     progressBar1.Refresh();
@@ -1819,8 +1788,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 labelRegion.Text = LanguageSettings.Current.AudioToText.Model;
                 labelRegion.Visible = true;
                 nikseComboBoxRegion.Items.Clear();
-                nikseComboBoxRegion.Items.Add("eleven_turbo_v2_5");
-                nikseComboBoxRegion.Items.Add("eleven_multilingual_v2");
+                nikseComboBoxRegion.Items.AddRange(ClassicElevenLabs.Models);
 
                 nikseComboBoxRegion.Text = Configuration.Settings.Tools.TextToSpeechElevenLabsModel;
                 if (nikseComboBoxRegion.SelectedIndex < 0)
@@ -2260,71 +2228,23 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     _actorsOn = true;
                 }
             }
+            UpdatePiperImportButton(engine.Id);
+            nikseUpDownSpeed.Enabled = nikseUpDownSimilarity.Enabled = engine.Id != TextToSpeechEngineId.ElevenLabs || nikseComboBoxRegion.Text != "eleven_v3";
         }
 
         private void FillElevenLabsLanguages(string model)
         {
-            // see https://help.elevenlabs.io/hc/en-us/articles/17883183930129-What-models-do-you-offer-and-what-is-the-difference-between-them
-
-            if (model != "eleven_turbo_v2_5")
-            {
-                nikseComboBoxLanguage.Visible = false;
-                labelLanguage.Visible = false;
-                return;
-            }
-
+            nikseUpDownSpeed.Enabled = nikseUpDownSimilarity.Enabled = model != "eleven_v3";
+            var previous = nikseComboBoxLanguage.Text;
             nikseComboBoxLanguage.Items.Clear();
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Arabic", "ar"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Bulgarian", "bg"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Chinese", "zh"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Croatian", "hr"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Czech", "cz"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Danish", "da"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Dutch", "nl"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("English", "en"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Filipino", "ph"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Finnish", "fi"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("French", "fr"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("German", "de"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Greek", "el"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Hindi", "hi"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Hungarian", "hu"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Indonesian", "id"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Italian", "it"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Japanese", "ja"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Korean", "kr"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Malay", "ms"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Norwegian", "no"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Polish", "pl"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Portuguese", "pt"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Romanian", "ro"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Russian", "ru"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Slovak", "sk"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Spanish", "es"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Swedish", "sv"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Tamil", "ta"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Turkish", "tr"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Ukrainian", "uk"));
-            nikseComboBoxLanguage.Items.Add(new TranslationPair("Vietnamese", "vi"));
-
-            nikseComboBoxLanguage.Visible = true;
-            labelLanguage.Visible = true;
-
-            nikseComboBoxLanguage.SelectedIndex = 7; // english
-            if (!string.IsNullOrEmpty(Configuration.Settings.Tools.TextToSpeechElevenLabsLanguage))
-            {
-                for (var i = 0; i < nikseComboBoxLanguage.Items.Count; i++)
-                {
-                    var tp = (TranslationPair)nikseComboBoxLanguage.Items[i];
-                    if (tp.ToString() == Configuration.Settings.Tools.TextToSpeechElevenLabsLanguage)
-                    {
-                        nikseComboBoxLanguage.SelectedIndex = i;
-                        break;
-                    }
-                }
-            }
+            nikseComboBoxLanguage.Items.Add(new TranslationPair(CL("Автоматически", "Automatic"), ""));
+            foreach (var language in ClassicElevenLabs.Languages(model).OrderBy(p => p[0], StringComparer.OrdinalIgnoreCase))
+                nikseComboBoxLanguage.Items.Add(new TranslationPair(language[0], language[1]));
+            nikseComboBoxLanguage.Visible = labelLanguage.Visible = true;
+            nikseComboBoxLanguage.SelectedItem = nikseComboBoxLanguage.Items.Cast<TranslationPair>().FirstOrDefault(p => p.ToString() == previous)
+                ?? nikseComboBoxLanguage.Items.Cast<TranslationPair>().FirstOrDefault(p => p.ToString() == Configuration.Settings.Tools.TextToSpeechElevenLabsLanguage)
+                ?? nikseComboBoxLanguage.Items[0];
         }
-
         private void SetFirstLanguageHitAsVoice()
         {
             nikseComboBoxVoice.Text = Configuration.Settings.Tools.TextToSpeechLastVoice;
@@ -2444,6 +2364,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 }
             }
 
+            ClassicPiperVoices.AddCustom(result);
             return result;
         }
 

@@ -2,6 +2,9 @@
 
 ## 4.0.25 — local preview
 
+- Added the stable v5.3 ElevenLabs v4 Turbo, v4 and v3 choices, with model-specific language catalogs. Legacy models enable SSML parsing for explicit break tags; v3/v4 translate them to expressive pause tags. V3 uses the dialogue endpoint and top-level language/stability, omitting unsupported speed/similarity. Request cancellation is supported; API failures no longer echo subtitle text or credentials. Validation uses an in-process HTTP handler with no paid calls.
+- Added Import voice for Piper: choose an ONNX model with its adjacent ONNX JSON config. Local custom pairs appear in the normal voice selector and remain available after reopening. Import validates configs, stages both files and preserves existing voices on name collisions. Piper writes to a unique job output instead of a shared out.wav and stops its own process on cancellation. Imported English and Russian voices were synthesized locally and independently transcribed for verification.
+
 - Burn-in audio selection now displays each track's language, embedded title and codec/channel details. The checkbox list spans the audio group below its encoding settings, with complete metadata available in tooltips. Input stream order and checked-track mapping remain unchanged. Verified named Unicode tracks, the reported Turkish/English MKV, classic layout bounds and a real English-only stereo hard-sub export.
 
 - Ported the stable v5.3 selected-lines ASR workflow to the classic speech window. Modern Crisp ASR, Qwen3 ASR CPP, Whisper CPP Vulkan and standalone WhisperX are available alongside legacy Whisper choices. Selected lines keep their existing timing, actor/style metadata and identity; only explicitly applied successful text is changed. Unselected and failed lines remain untouched, including the original-text column.

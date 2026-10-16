@@ -82,6 +82,12 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                 else if (FinalOnlineId(engine.Id) != null) { var id = FinalOnlineId(engine.Id); var settings = ClassicOnlineTtsSettings.Load(id); item.VoiceName = ClassicOnlineTts.ResolveVoice(id, item.VoiceName, settings.Voice); item.Model = string.IsNullOrEmpty(item.Model) ? settings.Model : item.Model; }
                 else if (engine.Id == TextToSpeechEngineId.OpenAiCompatible) { var settings = ClassicCompatibleTtsSettings.Load().Selected(); item.Model = string.IsNullOrEmpty(item.Model) ? settings.Model : item.Model; item.Instruction = string.IsNullOrEmpty(item.Instruction) ? settings.Instructions : item.Instruction; item.VoiceName = string.IsNullOrEmpty(item.VoiceName) ? settings.Voice : item.VoiceName; }
             }
+            if (existing == null && engine.Id == TextToSpeechEngineId.ElevenLabs)
+            {
+                var selected = _engines.First(e => e.Index == nikseComboBoxEngine.SelectedIndex).Id == TextToSpeechEngineId.ElevenLabs;
+                if (string.IsNullOrEmpty(item.Model)) item.Model = selected ? nikseComboBoxRegion.Text : Configuration.Settings.Tools.TextToSpeechElevenLabsModel;
+                if (string.IsNullOrEmpty(item.Language)) item.Language = ClassicElevenLabs.LanguageCode(selected ? nikseComboBoxLanguage.Text : Configuration.Settings.Tools.TextToSpeechElevenLabsLanguage, item.Model);
+            }
             item.Text = paragraph.Text; item.StartMs = (long)Math.Round(paragraph.StartTime.TotalMilliseconds); item.EndMs = (long)Math.Round(paragraph.EndTime.TotalMilliseconds);
             item.CueMetadata = new ClassicTtsCueMetadata { Forced = paragraph.Forced, IsComment = paragraph.IsComment, Region = paragraph.Region, MarginL = paragraph.MarginL, MarginR = paragraph.MarginR, MarginV = paragraph.MarginV, Effect = paragraph.Effect, Language = paragraph.Language, Style = paragraph.Style, NewSection = paragraph.NewSection, Bookmark = paragraph.Bookmark };
             item.Actor = paragraph.Actor ?? ""; item.Style = paragraph.Extra ?? ""; item.Layer = paragraph.Layer; item.AudioFileName = audio?.Filename ?? ""; item.SpeedFactor = audio?.Factor ?? 1; item.Include = include;
