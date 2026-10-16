@@ -28,6 +28,8 @@ ElevenLabs now includes stable v5.3 v4 Turbo/v4/v3 models, matching language lis
 
 Voice manager now displays a reference waveform with zoom and click-to-play through MPV. **Transcribe reference** opens the usual ASR dialog in both voice manager and import; import uses only the selected source interval. Recognized text stays editable until saved or imported, and empty results preserve existing text.
 
+The main waveform context menu now offers **Create voice reference** for a subtitle or a 1–30 second free selection. Classic voice import opens with the range, current audio track and available cue text/name already filled. Free selections can use ASR for their transcript. Imported references appear in the shared voice manager; original subtitles are unchanged.
+
 ## Classic 4.0.24
 
 ASR adds selectable VAD, speech isolation, speaker detection and new stable v5.3 models, including Parakeet Ultra, Phonon-2, Voxtral and Index-Echo. Speaker metadata survives postprocessing; batch subtitles use ASS when actors are present. Time-code review adds editable original/proposed waveforms and twelve language-specific wav2vec2 aligners. Download the normal Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). Native checks focus on Russian and English; see [the changelog](CLASSIC_CHANGELOG.md) for coverage and limits.

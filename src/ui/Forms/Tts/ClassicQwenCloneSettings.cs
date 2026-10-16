@@ -35,6 +35,22 @@ namespace Nikse.SubtitleEdit.Forms.Tts
         public ClassicQwenReference Reference { get; private set; }
         private CancellationTokenSource _operation;
         private bool _closeRequested;
+        private int _audioTrack;
+        public ClassicQwenReferenceImport(string source, Paragraph range, int audioTrack) : this(false)
+        {
+            if(range==null || range.StartTime.TotalSeconds<0 || range.DurationTotalSeconds<1 || range.DurationTotalSeconds>30)throw new ArgumentException("Select a 1–30 second voice reference range.");
+            _audioTrack=Math.Max(0,audioTrack);
+            ((TextBox)Controls.Find("textReferencePath",true)[0]).Text=source;
+            ((NumericUpDown)Controls.Find("referenceStart",true)[0]).DecimalPlaces=3;
+            ((NumericUpDown)Controls.Find("referenceStart",true)[0]).Value=(decimal)range.StartTime.TotalSeconds;
+            ((NumericUpDown)Controls.Find("referenceDuration",true)[0]).DecimalPlaces=3;
+            ((NumericUpDown)Controls.Find("referenceDuration",true)[0]).Value=(decimal)range.DurationTotalSeconds;
+            ((TextBox)Controls.Find("textTranscript",true)[0]).Text=Nikse.SubtitleEdit.Logic.ClassicCast.ClassicVideoVoices.Transcript(new[]{range});
+            ((TextBox)Controls.Find("textVoiceName",true)[0]).Text=string.IsNullOrWhiteSpace(range.Actor) ? "Voice " + range.StartTime.ToShortDisplayString().Replace(':','-') : range.Actor;
+            var ru=Configuration.Settings.General.Language.StartsWith("ru",StringComparison.OrdinalIgnoreCase);
+            var sourceLabel=Controls.Find("labelReferenceSource",true)[0];sourceLabel.Text=(ru ? "Аудиодорожка: " : "Audio track: ")+(_audioTrack+1);
+            sourceLabel.Visible=true;
+        }
         public ClassicQwenReferenceImport(ClassicQwenReference voice, bool requireTranscript = true) : this(requireTranscript)
         {
             ClassicQwenReference.Validate(voice.Id, requireTranscript);
@@ -51,9 +67,10 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             Text=l("Импорт голоса","Import voice");Size=new Size(650,500);MinimumSize=Size;StartPosition=FormStartPosition.CenterParent;
             var table=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=8,Padding=new Padding(12)};
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));foreach(var height in new[]{30,32,35,28})table.RowStyles.Add(new RowStyle(SizeType.Absolute,height));table.RowStyles.Add(new RowStyle(SizeType.Percent,100));table.RowStyles.Add(new RowStyle(SizeType.Absolute,45));table.RowStyles.Add(new RowStyle(SizeType.Absolute,40));
-            var path=new TextBox{Name="textReferencePath",ReadOnly=true,Dock=DockStyle.Fill};var open=new Button{Text=l("Выбрать аудио или видео…","Select audio or video…"),AutoSize=true};open.Click+=(s,e)=>{using(var picker=new OpenFileDialog{Filter="Media|*.wav;*.mp3;*.flac;*.m4a;*.ogg;*.mp4;*.mkv;*.mov;*.webm|All files|*.*"})if(picker.ShowDialog(this)==DialogResult.OK)path.Text=picker.FileName;};
+            var path=new TextBox{Name="textReferencePath",ReadOnly=true,Dock=DockStyle.Fill};var open=new Button{Text=l("Выбрать аудио или видео…","Select audio or video…"),AutoSize=true};open.Click+=(s,e)=>{using(var picker=new OpenFileDialog{Filter="Media|*.wav;*.mp3;*.flac;*.m4a;*.ogg;*.mp4;*.mkv;*.mov;*.webm|All files|*.*"})if(picker.ShowDialog(this)==DialogResult.OK){_audioTrack=0;path.Text=picker.FileName;var labels=Controls.Find("labelReferenceSource",true);if(labels.Length>0)labels[0].Visible=false;}};
             var transcribe = new Button { Name="buttonTranscribeImportReference",Text=l("Распознать текст…","Transcribe reference…"),AutoSize=true };
             var sourceBar = new FlowLayoutPanel {Dock=DockStyle.Fill,AutoSize=true,WrapContents=true};sourceBar.Controls.AddRange(new Control[]{open,transcribe});
+            sourceBar.Controls.Add(new Label{Name="labelReferenceSource",AutoSize=true,Visible=false,Margin=new Padding(3,8,3,3)});
             table.Controls.Add(sourceBar,0,0);table.Controls.Add(path,0,1);
             var name=new TextBox{Name="textVoiceName",Dock=DockStyle.Fill};var nameBar=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2};nameBar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,100));nameBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));nameBar.Controls.Add(new Label{Text=l("Имя голоса","Voice name"),AutoSize=true},0,0);nameBar.Controls.Add(name,1,0);table.Controls.Add(nameBar,0,2);
             var start=new NumericUpDown{Name="referenceStart",DecimalPlaces=2,Maximum=86400,Width=100};var duration=new NumericUpDown{Name="referenceDuration",Minimum=1,Maximum=30,Value=8,DecimalPlaces=2,Width=80};var range=new FlowLayoutPanel{Dock=DockStyle.Fill,WrapContents=false};range.Controls.Add(new Label{Text=l("Начало, сек","Start, sec"),AutoSize=true});range.Controls.Add(start);range.Controls.Add(new Label{Text=l("Длительность, сек","Duration, sec"),AutoSize=true});range.Controls.Add(duration);table.Controls.Add(range,0,3);
@@ -64,13 +81,13 @@ namespace Nikse.SubtitleEdit.Forms.Tts
             transcribe.Click+=async(s,e)=>{
                 if(_operation!=null)return;_operation=new CancellationTokenSource();var job=Path.Combine(Path.GetTempPath(),"se-reference-asr-"+Guid.NewGuid().ToString("N"));import.Enabled=open.Enabled=transcribe.Enabled=false;
                 try{
-                    var clip=await ClassicReferenceAudio.ExtractAsync(path.Text,(double)start.Value,(double)duration.Value,job,_operation.Token);
+                    var clip=await ClassicReferenceAudio.ExtractAsync(path.Text,(double)start.Value,(double)duration.Value,job,_operation.Token,_audioTrack);
                     _operation.Token.ThrowIfCancellationRequested();
                     using(var asr=new WhisperAudioToText(clip,new Subtitle(),0,this,null))if(asr.ShowDialog(this)==DialogResult.OK){var result=ClassicReferenceAudio.Transcript(asr.TranscribedSubtitle);if(!string.IsNullOrWhiteSpace(result))transcript.Text=result;}
                 }catch(OperationCanceledException){}catch(Exception error){MessageBox.Show(this,error.Message,Text);}
                 finally{try{if(Directory.Exists(job))Directory.Delete(job,true);}catch(IOException){}catch(UnauthorizedAccessException){}_operation.Dispose();_operation=null;import.Enabled=open.Enabled=transcribe.Enabled=true;if(_closeRequested)Close();}
             };
-            import.Click+=async(s,e)=>{_operation=new CancellationTokenSource();import.Enabled=open.Enabled=transcribe.Enabled=false;try{Reference=await ClassicQwenReference.ImportAsync(path.Text,name.Text,transcript.Text,(double)start.Value,(double)duration.Value,consent.Checked,_operation.Token, requireTranscript);}catch(OperationCanceledException){}catch(Exception error){MessageBox.Show(this,error.Message,Text);}finally{_operation.Dispose();_operation=null;import.Enabled=open.Enabled=transcribe.Enabled=true;if(Reference!=null){DialogResult=DialogResult.OK;Close();}else if(_closeRequested)Close();}};Controls.Add(table);AcceptButton=import;
+            import.Click+=async(s,e)=>{_operation=new CancellationTokenSource();import.Enabled=open.Enabled=transcribe.Enabled=false;try{Reference=await ClassicQwenReference.ImportAsync(path.Text,name.Text,transcript.Text,(double)start.Value,(double)duration.Value,consent.Checked,_operation.Token, requireTranscript,_audioTrack);}catch(OperationCanceledException){}catch(Exception error){MessageBox.Show(this,error.Message,Text);}finally{_operation.Dispose();_operation=null;import.Enabled=open.Enabled=transcribe.Enabled=true;if(Reference!=null){DialogResult=DialogResult.OK;Close();}else if(_closeRequested)Close();}};Controls.Add(table);AcceptButton=import;
         }
     }
 }

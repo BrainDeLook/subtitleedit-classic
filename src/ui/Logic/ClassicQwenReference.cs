@@ -37,7 +37,7 @@ namespace Nikse.SubtitleEdit.Logic
             if(!File.Exists(root+".wav") || !File.Exists(root+".txt") || requireTranscript && string.IsNullOrWhiteSpace(File.ReadAllText(root+".txt")))throw new InvalidDataException("Voice reference needs its recording and transcript");
             if(!File.Exists(root+".json") || JsonConvert.DeserializeObject<ClassicQwenReference>(File.ReadAllText(root+".json"))?.Consent!=true)throw new InvalidDataException("Voice reference permission was not confirmed");
         }
-        public static async Task<ClassicQwenReference> ImportAsync(string input,string name,string transcript,double start,double duration,bool consent,CancellationToken cancel, bool requireTranscript = true)
+        public static async Task<ClassicQwenReference> ImportAsync(string input,string name,string transcript,double start,double duration,bool consent,CancellationToken cancel, bool requireTranscript = true, int audioTrack = 0)
         {
             if(!consent)throw new ArgumentException("Confirm permission to use the reference voice");
             if(string.IsNullOrWhiteSpace(name) || requireTranscript && string.IsNullOrWhiteSpace(transcript))throw new ArgumentException("Enter a voice name and the exact reference transcript");
@@ -48,7 +48,7 @@ namespace Nikse.SubtitleEdit.Logic
                 using(var timeout=CancellationTokenSource.CreateLinkedTokenSource(cancel))
                 {
                     timeout.CancelAfter(TimeSpan.FromMinutes(2));
-                    var args="-nostdin -y -ss "+start.ToString(System.Globalization.CultureInfo.InvariantCulture)+" -i "+ClassicSpeechRunner.Quote(input)+" -t "+duration.ToString(System.Globalization.CultureInfo.InvariantCulture)+" -vn -ar 24000 -ac 1 -c:a pcm_s16le "+ClassicSpeechRunner.Quote(root+".wav");
+                    var args="-nostdin -y -ss "+start.ToString(System.Globalization.CultureInfo.InvariantCulture)+" -i "+ClassicSpeechRunner.Quote(input)+" -t "+duration.ToString(System.Globalization.CultureInfo.InvariantCulture)+" -map 0:a:"+Math.Max(0,audioTrack)+" -vn -ar 24000 -ac 1 -c:a pcm_s16le "+ClassicSpeechRunner.Quote(root+".wav");
                     await ClassicSpeechRunner.RunProcessAsync(new ProcessStartInfo(Configuration.Settings.General.FFmpegLocation,args){WorkingDirectory=Folder},timeout.Token,null).ConfigureAwait(false);
                 }
                 if(!File.Exists(root+".wav") || new FileInfo(root+".wav").Length<48000)throw new InvalidDataException("Reference recording is empty or too short");

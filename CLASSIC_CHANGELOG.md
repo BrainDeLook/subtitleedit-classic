@@ -2,6 +2,8 @@
 
 ## 4.0.25 — local preview
 
+- Added Create voice reference to the main waveform context menu, adapting stable v5.3's clone-from-line shortcut. A subtitle or free selection opens classic voice import with its exact range and current audio track. Subtitle text is stripped of formatting and the actor suggests the voice name; free selections leave the transcript blank for editing or ASR. References enter the shared voice library after explicit import and permission. Unsupported ranges are disabled rather than silently shortened. Real two-track extraction/import tests verify the selected stream, interval and unchanged source cue.
+
 - Added a voice-reference waveform to the classic voice manager, with zoom, scroll and MPV playback from the clicked position. Reference timing is read-only; switching voices cancels obsolete waveform loads. Toolbar rows grow with their contents, and waveform time labels avoid overlapping.
 - Added Transcribe reference to the voice manager and voice import. Both reuse the normal ASR dialog and selected engine. Import recognizes only the chosen 1–30 second source range; results remain editable and are saved/imported only through the existing explicit actions. Empty results preserve the previous transcript, and voice permission remains required for import. Tests cover real extraction/playback, mocked ASR dialog results, cancellation, rapid selection and classic layout. No paid ASR requests were made.
 

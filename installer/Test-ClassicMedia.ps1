@@ -43,6 +43,7 @@ $tests=@{
     TestAudioTrackLabels='TestAudioTrackLabels.cs'
     TestTtsModelExtras='tts-tests/TestTtsModelExtras.cs'
     TestVoiceReferenceTools='tts-tests/TestVoiceReferenceTools.cs'
+    TestWaveformReference='tts-tests/TestWaveformReference.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -129,4 +130,6 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "ElevenLabs protocol/pauses and custom Piper import regression failed." }
     & "$OutputDirectory/TestVoiceReferenceTools.exe" (Join-Path $OutputDirectory "voice-reference-tools") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Voice reference waveform, playback and ASR range regression failed." }
+    & "$OutputDirectory/TestWaveformReference.exe" (Join-Path $OutputDirectory "waveform-reference") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "Waveform voice reference selection, track mapping and import regression failed." }
 }

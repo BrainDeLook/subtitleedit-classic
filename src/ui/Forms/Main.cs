@@ -959,6 +959,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void AudioWaveform_OnNonParagraphRightClicked(object sender, AudioVisualizer.ParagraphEventArgs e)
         {
+            SetClassicVoiceReferenceRange(null,false);
             addParagraphHereToolStripMenuItem.Visible = false;
             addParagraphAndPasteToolStripMenuItem.Visible = false;
             toolStripMenuItemSetParagraphAsSelection.Visible = false;
@@ -1122,6 +1123,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void AudioWaveform_OnParagraphRightClicked(object sender, AudioVisualizer.ParagraphEventArgs e)
         {
+            SetClassicVoiceReferenceRange(e.Paragraph,false);
             if (ModifierKeys == Keys.Control)
             {
                 // toggle selection
@@ -1240,6 +1242,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void AudioWaveform_OnNewSelectionRightClicked(object sender, AudioVisualizer.ParagraphEventArgs e)
         {
+            SetClassicVoiceReferenceRange(e.Paragraph,true);
             SelectListViewIndexAndEnsureVisible(_subtitle.GetIndex(e.Paragraph));
 
             addParagraphHereToolStripMenuItem.Visible = true;
@@ -1738,6 +1741,7 @@ namespace Nikse.SubtitleEdit.Forms
             toolStripMenuItemImportDvdSubtitles.Text = _language.Menu.File.ImportOcrFromDvd;
             InitializeClassicVideoOcrMenu();
             InitializeClassicTimingMenu();
+            InitializeClassicVoiceReferenceMenu();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
