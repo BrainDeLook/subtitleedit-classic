@@ -1786,6 +1786,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private bool _checkedInstalledAndVersion;
         private void CheckIfInstalledAndVersion(string whisperChoice)
         {
+            if (IsDisposed || Disposing) return;
             if (IsModernSpeech) return;
             if (_checkedInstalledAndVersion)
             {

@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 namespace Nikse.SubtitleEdit.Forms.Tts
 {
- public sealed class ClassicVoiceManager : Form
+ public sealed partial class ClassicVoiceManager : Form
  {
   private readonly ListBox _voices=new ListBox{Dock=DockStyle.Left,Width=235,SelectionMode=SelectionMode.MultiExtended};
   private readonly TextBox _name=new TextBox{Dock=DockStyle.Top};
   private readonly TextBox _transcript=new TextBox{Dock=DockStyle.Fill,Multiline=true,ScrollBars=ScrollBars.Vertical};
   private readonly Label _progress=new Label{Dock=DockStyle.Bottom,Height=25,AutoEllipsis=true};
-  private readonly FlowLayoutPanel _toolbar=new FlowLayoutPanel{Dock=DockStyle.Top,Height=65,WrapContents=true};
+  private readonly FlowLayoutPanel _toolbar=new FlowLayoutPanel{Dock=DockStyle.Top,Height=65,WrapContents=true,AutoSize=true,AutoSizeMode=AutoSizeMode.GrowAndShrink};
   private readonly Button _cancel=new Button{Text="Отмена",Visible=false};
   private readonly System.Media.SoundPlayer _player=new System.Media.SoundPlayer();
   private CancellationTokenSource _operation;private bool _closeRequested;
@@ -24,11 +24,11 @@ namespace Nikse.SubtitleEdit.Forms.Tts
   private static string L(string ru,string en)=>Ru ? ru : en;
   public ClassicVoiceManager()
   {
-   Text=L("Менеджер голосов","Voice manager");Size=new Size(820,520);MinimumSize=new Size(730,440);StartPosition=FormStartPosition.CenterParent;Padding=new Padding(10);
+   Text=L("Менеджер голосов","Voice manager");Size=new Size(820,640);MinimumSize=new Size(780,580);StartPosition=FormStartPosition.CenterParent;Padding=new Padding(10);
    var editor=new Panel{Dock=DockStyle.Fill,Padding=new Padding(10,0,0,0)};editor.Controls.Add(_transcript);editor.Controls.Add(new Label{Text=L("Точный текст записи","Exact reference transcript"),Dock=DockStyle.Top,Height=24});editor.Controls.Add(_name);editor.Controls.Add(new Label{Text=L("Имя голоса","Voice name"),Dock=DockStyle.Top,Height=24});
    var bottom=new FlowLayoutPanel{Dock=DockStyle.Bottom,Height=35,FlowDirection=FlowDirection.RightToLeft};var close=new Button{Text=L("Закрыть","Close")};close.Click+=(s,e)=>Close();bottom.Controls.Add(close);bottom.Controls.Add(_cancel);_cancel.Text=L("Отмена","Cancel");_cancel.Click+=(s,e)=>_operation?.Cancel();
    var content=new Panel{Dock=DockStyle.Fill};content.Controls.Add(editor);content.Controls.Add(_voices);Controls.Add(content);Controls.Add(_toolbar);Controls.Add(_progress);Controls.Add(bottom);
-   Add(L("Прослушать","Listen"),()=>{var v=Selected();if(v==null)return;_player.Stop();_player.SoundLocation=Path.Combine(ClassicQwenReference.Folder,v.Id+".wav");_player.Play();});
+   Add(L("Прослушать","Listen"),()=>PlayReference(0));
    Add(L("Сохранить","Save"),()=>{var v=Selected();if(v==null)return;ClassicVoiceLibrary.Update(v,_name.Text,_transcript.Text);Reload(v.Id);});
    Add(L("Импорт…","Import…"),()=>{using(var f=new ClassicQwenReferenceImport(false))if(f.ShowDialog(this)==DialogResult.OK)Reload(f.Reference.Id);});
    Add(L("Обрезать образец…","Trim reference…"),()=>{var v=Selected();if(v==null)return;using(var f=new ClassicQwenReferenceImport(v, false))if(f.ShowDialog(this)==DialogResult.OK)Reload(f.Reference.Id);});
@@ -38,9 +38,9 @@ namespace Nikse.SubtitleEdit.Forms.Tts
    Add(L("Копировать образец…","Copy reference…"),()=>{var v=Selected();if(v==null)return;using(var f=new FolderBrowserDialog{Description=L("Папка образцов другого движка","Another engine's reference folder")})if(f.ShowDialog(this)==DialogResult.OK){var target=Path.Combine(f.SelectedPath,v.Id);if(File.Exists(target+".wav")||File.Exists(target+".txt"))throw new IOException("Reference already exists");foreach(var ext in new[]{".wav",".txt",".json"})File.Copy(Path.Combine(ClassicQwenReference.Folder,v.Id+ext),target+ext);}});
    Add(L("Очистить Sidon…","Clean with Sidon…"),()=>{var v=Selected();if(v==null)return;Run(async token=>{var job=NewJob();try{var variant=ClassicQwenTtsSettings.Load().Variant;var path=await ClassicSidon.CleanAsync(Path.Combine(ClassicQwenReference.Folder,v.Id+".wav"),job,variant=="cuda13" ? "cuda" : variant,token,Progress());var seconds=ClassicVoiceAssets.WaveSeconds(path);var reference=await ClassicQwenReference.ImportAsync(path,v.Name+" (Sidon)",File.ReadAllText(Path.Combine(ClassicQwenReference.Folder,v.Id+".txt")),0,Math.Min(30,seconds),v.Consent,token,false);Reload(reference.Id);}finally{Directory.Delete(job,true);}});});
    Add(L("VoiceDesign…","VoiceDesign…"),()=>Design());
-   Add(L("Удалить","Delete"),()=>{var v=Selected();if(v!=null && MessageBox.Show(this,L("Удалить выбранный образец голоса?","Delete this voice reference?"),Text,MessageBoxButtons.YesNo)==DialogResult.Yes){_player.Stop();ClassicVoiceLibrary.Delete(v);Reload();}});
-   _voices.SelectedIndexChanged+=(s,e)=>{_player.Stop();var v=Selected();_name.Text=v?.Name ?? "";_transcript.Text=v==null ? "" : File.ReadAllText(Path.Combine(ClassicQwenReference.Folder,v.Id+".txt"));};
-   FormClosing+=(s,e)=>{_player.Stop();if(_operation!=null){_closeRequested=true;_operation.Cancel();e.Cancel=true;}};FormClosed+=(s,e)=>_player.Dispose();Reload();
+   Add(L("Удалить","Delete"),()=>{var v=Selected();if(v!=null && MessageBox.Show(this,L("Удалить выбранный образец голоса?","Delete this voice reference?"),Text,MessageBoxButtons.YesNo)==DialogResult.Yes){StopReferencePreview();ClassicVoiceLibrary.Delete(v);Reload();}});
+   _voices.SelectedIndexChanged+=(s,e)=>{StopReferencePreview();var v=Selected();_name.Text=v?.Name ?? "";_transcript.Text=v==null ? "" : File.ReadAllText(Path.Combine(ClassicQwenReference.Folder,v.Id+".txt"));RefreshReferencePreview();};
+   FormClosing+=(s,e)=>{StopReferencePreview();if(_operation!=null){_closeRequested=true;_operation.Cancel();e.Cancel=true;}};FormClosed+=(s,e)=>_player.Dispose();InitializeReferencePreview(editor);Reload();
   }
   private void Add(string text,Action action){var b=new Button{Text=text,AutoSize=true};b.Click+=(s,e)=>{try{action();}catch(Exception error){MessageBox.Show(this,error.Message,Text);}};_toolbar.Controls.Add(b);}
   private ClassicQwenReference Selected()=>_voices.SelectedItem as ClassicQwenReference;

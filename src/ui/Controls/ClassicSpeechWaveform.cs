@@ -14,6 +14,7 @@ namespace Nikse.SubtitleEdit.Controls
         public double CueStart { get; private set; }
         public double CueEnd { get; private set; }
         public double PlaybackSeconds { get; set; } = -1;
+        public bool AllowTimingEdit { get; set; } = true;
         public event Action<double, double> TimingEdited;
         public event Action<double> SeekRequested;
         private double _viewStart, _viewSeconds = 5, _dragStart, _dragEnd;
@@ -63,11 +64,18 @@ namespace Nikse.SubtitleEdit.Controls
                 var step = Math.Pow(10, Math.Floor(Math.Log10(_viewSeconds / 6)));
                 if (_viewSeconds / step > 12) step *= 5;
                 else if (_viewSeconds / step > 6) step *= 2;
+                var previousLabelRight = -1;
                 for (var at = Math.Ceiling(_viewStart / step) * step; at <= _viewStart + _viewSeconds; at += step)
                 {
                     var x = TimeToX(at); g.DrawLine(grid, x, top, x, bottom);
                     var label = TimeSpan.FromSeconds(at).ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture);
-                    TextRenderer.DrawText(g, label, Font, new Point(Math.Min(Math.Max(0, Width - 90), x), Height - 19), ForeColor);
+                    var labelWidth = TextRenderer.MeasureText(g, label, Font).Width;
+                    var labelX = Math.Min(Math.Max(0, Width - labelWidth), x);
+                    if (labelX >= previousLabelRight + 6)
+                    {
+                        TextRenderer.DrawText(g, label, Font, new Point(labelX, Height - 19), ForeColor);
+                        previousLabelRight = labelX + labelWidth;
+                    }
                 }
             }
             if (Peaks != null && Peaks.Peaks.Count > 0)
@@ -105,7 +113,7 @@ namespace Nikse.SubtitleEdit.Controls
             if (e.Button != MouseButtons.Left || !Enabled) return;
             Focus();
             var nearStart = Math.Abs(e.X - TimeToX(CueStart)); var nearEnd = Math.Abs(e.X - TimeToX(CueEnd));
-            _drag = Math.Min(nearStart, nearEnd) <= 8 ? (nearStart < nearEnd ? 1 : 2) : 0;
+            _drag = AllowTimingEdit && Math.Min(nearStart, nearEnd) <= 8 ? (nearStart < nearEnd ? 1 : 2) : 0;
             _dragStart = CueStart; _dragEnd = CueEnd;
             if (_drag != 0) Capture = true;
             else if (Peaks != null) SeekRequested?.Invoke(Math.Max(0, Math.Min(AudioSeconds, XToTime(e.X) - CueStart)));
@@ -115,7 +123,7 @@ namespace Nikse.SubtitleEdit.Controls
             base.OnMouseMove(e);
             if (_drag == 1) { var duration = CueEnd - CueStart; _dragStart = XToTime(e.X); _dragEnd = _dragStart + duration; }
             else if (_drag == 2) _dragEnd = Math.Max(_dragStart + .01, XToTime(e.X));
-            Cursor = _drag != 0 || Math.Min(Math.Abs(e.X - TimeToX(CueStart)), Math.Abs(e.X - TimeToX(CueEnd))) <= 8 ? Cursors.SizeWE : Cursors.Hand;
+            Cursor = AllowTimingEdit && (_drag != 0 || Math.Min(Math.Abs(e.X - TimeToX(CueStart)), Math.Abs(e.X - TimeToX(CueEnd))) <= 8) ? Cursors.SizeWE : Cursors.Hand;
             if (_drag != 0) Invalidate();
         }
         protected override void OnMouseUp(MouseEventArgs e)

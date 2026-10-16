@@ -2,6 +2,9 @@
 
 ## 4.0.25 — local preview
 
+- Added a voice-reference waveform to the classic voice manager, with zoom, scroll and MPV playback from the clicked position. Reference timing is read-only; switching voices cancels obsolete waveform loads. Toolbar rows grow with their contents, and waveform time labels avoid overlapping.
+- Added Transcribe reference to the voice manager and voice import. Both reuse the normal ASR dialog and selected engine. Import recognizes only the chosen 1–30 second source range; results remain editable and are saved/imported only through the existing explicit actions. Empty results preserve the previous transcript, and voice permission remains required for import. Tests cover real extraction/playback, mocked ASR dialog results, cancellation, rapid selection and classic layout. No paid ASR requests were made.
+
 - Added the stable v5.3 ElevenLabs v4 Turbo, v4 and v3 choices, with model-specific language catalogs. Legacy models enable SSML parsing for explicit break tags; v3/v4 translate them to expressive pause tags. V3 uses the dialogue endpoint and top-level language/stability, omitting unsupported speed/similarity. Request cancellation is supported; API failures no longer echo subtitle text or credentials. Validation uses an in-process HTTP handler with no paid calls.
 - Added Import voice for Piper: choose an ONNX model with its adjacent ONNX JSON config. Local custom pairs appear in the normal voice selector and remain available after reopening. Import validates configs, stages both files and preserves existing voices on name collisions. Piper writes to a unique job output instead of a shared out.wav and stops its own process on cancellation. Imported English and Russian voices were synthesized locally and independently transcribed for verification.
 
