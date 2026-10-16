@@ -126,7 +126,7 @@ namespace Nikse.SubtitleEdit.Logic
             if (definition.Codec) args += " --codec-model " + Quote(Path.Combine(models, files[1].File));
             args += " --host 127.0.0.1 --port " + port + " --voice-dir " + Quote(job);
             var imported = !definition.Presets.Contains(voice);
-            if (imported) args += " --voice " + Quote(Path.Combine(job, voice + ".wav"));
+            if (imported && !UsesRequestVoice(definition.Id,voice)) args += " --voice " + Quote(Path.Combine(job, voice + ".wav"));
             if (imported && definition.ReferenceText)
             {
                 if (definition.RequiresReferenceTranscript && string.IsNullOrWhiteSpace(transcript)) throw new ArgumentException("Provide the exact reference transcript for " + definition.Name);

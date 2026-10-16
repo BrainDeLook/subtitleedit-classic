@@ -46,7 +46,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
     {
      if(operation!=null)return;if(!consent.Checked){MessageBox.Show(f,CL("Подтверди разрешение на использование голосов.","Confirm permission to use the voices."));return;}
      if(source==null && !string.IsNullOrEmpty(path.Text)){source=new Subtitle();if(source.LoadSubtitle(path.Text,out _,null)==null){source=null;return;}}
-     if(perLine.Checked && source==null && !ClassicLocalTts.Catalog.Any(d=>d.Id==SelectedLocalId && d.SupportsAudioOnlyPerLineClone)){MessageBox.Show(f,CL("Выбери движок с клонированием без расшифровки: Fish, Higgs, IndexTTS, Breeze, Pocket, VibeVoice, Dots, Confucius, MOSS, Chatterbox, VoxCPM, CosyVoice или OmniVoice (CrispASR).","Select an audio-only cloning engine: Fish, Higgs, IndexTTS, Breeze, Pocket, VibeVoice, Dots, Confucius, MOSS, Chatterbox, VoxCPM, CosyVoice or OmniVoice (CrispASR)."));return;}
+     if(perLine.Checked && source==null && !ClassicLocalTts.Catalog.Any(d=>d.Id==SelectedLocalId && d.SupportsAudioOnlyPerLineClone)){MessageBox.Show(f,CL("Выбери движок с клонированием без расшифровки: Fish, Higgs, IndexTTS, Breeze, Pocket, VibeVoice, Dots, Confucius, MOSS, Chatterbox, VoxCPM или CosyVoice. Для OmniVoice нужен исходный текст.","Select an audio-only cloning engine: Fish, Higgs, IndexTTS, Breeze, Pocket, VibeVoice, Dots, Confucius, MOSS, Chatterbox, VoxCPM or CosyVoice. OmniVoice needs original transcripts."));return;}
      grid.EndEdit();operation=new CancellationTokenSource();find.Enabled=apply.Enabled=top.Enabled=grid.Enabled=false;cancel.Visible=true;var added=new List<ClassicQwenReference>();job=Path.Combine(Path.GetTempPath(),"se-clone-speakers-"+Guid.NewGuid().ToString("N"));
      try
      {

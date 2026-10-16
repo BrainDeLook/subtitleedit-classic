@@ -1,7 +1,15 @@
 # Subtitle Edit Classic changelog
 
-## 4.0.25 — local preview
+## 4.0.25
 
+### Local increment 4.0.25.23
+
+- Matched per-request voice startup behavior to stable 5.3: Pocket/VibeVoice and per-line MOSS no longer receive a duplicate startup reference. Native MOSS output no longer includes the original reference sentence.
+- Added stable Higgs Audio v3's single retry when sampling reaches max_tokens without EOC. A repeated failure remains an error; no incomplete WAV is written. The real synthesis path is also exercised with simulated first-failure/success and repeated-failure responses.
+- Corrected the audio-only per-line capability list to thirteen engines: OmniVoice requires original transcripts for this workflow. Its transcript-conditioned two-reference test produces the intended target phrases; normal built-in/reference voice choices are retained.
+- VibeVoice CUDA now uses the runtime's CPU reference-encoder path while keeping GPU synthesis. Tests with complete synthetic English/Russian references recover the intended phrases on CPU and this mixed path; a short synthetic reference still produces incorrect speech. Settings document this reference sensitivity. No guarantee of arbitrary-reference quality or voice similarity is implied.
+- Native coverage: all seventeen Crisp ASR backends recovered the known synthetic English phrase (GigaAM used Russian), and all eight CrispEmbed choices recognized a known English bitmap. Supported per-line TTS backends were checked with two references and independent Parakeet recognition; CosyVoice retained a pronunciation error. Managed Qwen translation, source-matched grammar review, line breaks and context generation passed on CPU, Vulkan and CUDA. Google Cloud/OpenRouter/DashScope and other paid APIs used simulated responses only. These are small functional checks, not accuracy benchmarks or exhaustive quantization/hardware coverage.
+- Fresh CI media tests provision a pinned, SHA-256-checked official MPV dependency rather than assuming it was bundled with the installer.
 ### Local increment 4.0.25.21
 
 - Added a managed local llama.cpp server with the stable 5.3 model catalog, pinned b11553 CPU/Vulkan/CUDA 12/CUDA 13 runtime downloads and archive SHA-256 verification. Classic settings provide model download/import, a custom model folder, context/GPU controls and start/stop. Requests use an owned loopback-only server, reuse a loaded model and terminate the server on application exit. Model-specific template/thinking/sampling flags are retained.

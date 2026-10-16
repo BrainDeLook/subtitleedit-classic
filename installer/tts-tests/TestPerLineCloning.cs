@@ -28,7 +28,7 @@ class TestPerLineCloning
   else{WriteWave(wave);sub.Paragraphs.Add(new Paragraph("Translated A",0,300));sub.Paragraphs.Add(new Paragraph("Translated B",300,600));}
   var range=ClassicPerLineReference.Range(sub.Paragraphs[0],sub.Paragraphs);Check(range.Item1==0 && (native || range.Item2<=.301),"reference expansion never crosses the next subtitle");
   var single=ClassicPerLineReference.Range(new Paragraph("Short",2000,2200),new Paragraph[0]);Check(single.Item2>=2.99 && single.Item1>=0,"isolated short cue expands towards three seconds");
-  Check(ClassicLocalTts.Catalog.Where(d=>d.SupportsAudioOnlyPerLineClone).Select(d=>d.Id).OrderBy(s=>s).SequenceEqual(new[]{"breeze","chatter","confucius","cosy","dots","fish","higgs","index","index25","moss","omni","pocket","vibe","vox"}),"audio-only mode includes all stable compatible engines");
+  Check(ClassicLocalTts.Catalog.Where(d=>d.SupportsAudioOnlyPerLineClone).Select(d=>d.Id).OrderBy(s=>s).SequenceEqual(new[]{"breeze","chatter","confucius","cosy","dots","fish","higgs","index","index25","moss","pocket","vibe","vox"}),"audio-only mode includes all stable compatible engines");
   Check(ClassicLocalTts.Catalog.First(d=>d.Id=="firered").RequiresReferenceTranscript,"FireRed still requires the source transcript");
   var settings=ClassicLocalTtsSettings.Load("higgs");settings.Variant="cuda";settings.Model=ClassicLocalTts.Catalog.First(d=>d.Id=="higgs").Models[0].Key;settings.Language="en";settings.LicenseAccepted=ClassicAudioCpp.License("higgs")[0];settings.Save("higgs");
   using(var form=new TextToSpeech(sub,new SubRip(),wave,new VideoInfo{TotalSeconds=ClassicVoiceAssets.WaveSeconds(wave)},0)){

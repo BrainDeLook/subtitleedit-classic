@@ -12,6 +12,15 @@ $ApplicationDirectory=(Resolve-Path $ApplicationDirectory).Path
 Copy-Item "$ApplicationDirectory/SubtitleEdit.exe", "$ApplicationDirectory/SubtitleEdit.exe.config", "$ApplicationDirectory/*.dll" $OutputDirectory -Force
 Copy-Item "$ApplicationDirectory/Languages" $OutputDirectory -Recurse -Force
 
+# MPV is an on-demand application dependency; fresh CI installs do not contain it yet.
+if (-not (Test-Path -LiteralPath (Join-Path $OutputDirectory 'libmpv-2.dll'))) {
+    $mpvArchive = Join-Path $OutputDirectory 'mpv-test-runtime.zip'
+    Invoke-WebRequest -Uri 'https://github.com/SubtitleEdit/support-files/releases/download/libmpv-2025-01-25/libmpv2-64.zip' -OutFile $mpvArchive
+    if ((Get-FileHash -LiteralPath $mpvArchive -Algorithm SHA256).Hash -ne 'A735885ECF5854FBE6B228AD6F78C10B944866228E91AAE5AB547243764C8DCA') { throw 'MPV test runtime checksum mismatch.' }
+    Expand-Archive -LiteralPath $mpvArchive -DestinationPath $OutputDirectory -Force
+    Remove-Item -LiteralPath $mpvArchive
+}
+
 $sdk=Get-ChildItem 'C:/Program Files/dotnet/sdk' -Directory | Sort-Object { [version]$_.Name } | Select-Object -Last 1
 $framework="$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319"
 $refs=@('/reference:"'+(Join-Path $OutputDirectory 'SubtitleEdit.exe')+'"')

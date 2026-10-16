@@ -46,8 +46,8 @@ namespace Nikse.SubtitleEdit.Logic
         public double DefaultSpeed { get; set; }
         public bool ReferenceText { get; set; }
         public bool RequiresReferenceTranscript => IsAudioCpp ? Id == "firered" : Id != "chatter" && Id != "vox" && (!ClassicExtendedTts.Handles(Id) || Id == "f5" || Id == "omnicpp");
-        public bool SupportsAudioOnlyPerLineClone => SupportsCloning && (!RequiresReferenceTranscript || Id == "cosy");
-        public bool NeedsTranscript(string voice) => RequiresReferenceTranscript && !(Id == "cosy" && ClassicExtendedTts.IsPerLineVoice(voice));
+        public bool SupportsAudioOnlyPerLineClone => Id != "omni" && SupportsCloning && (!RequiresReferenceTranscript || Id == "cosy");
+        public bool NeedsTranscript(string voice) => (RequiresReferenceTranscript || (Id == "omni" && ClassicExtendedTts.IsPerLineVoice(voice))) && !(Id == "cosy" && ClassicExtendedTts.IsPerLineVoice(voice));
         public string RuntimeVersion { get; set; }
         public string RuntimeExecutable { get; set; }
         public ClassicTtsRuntimeArchive[] RuntimeArchives { get; set; }
@@ -209,15 +209,22 @@ namespace Nikse.SubtitleEdit.Logic
             {
                 StopServer(); await StartAsync(voice, transcript, cancel, progress).ConfigureAwait(false); _activeVoice = voice; _activeLanguage = _settings.Language; _activeRequestVoice = requestVoice;
             }
+            for(var attempt=0;;attempt++)
             using (var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"))
             using (var response = await _client.PostAsync(_baseUrl + (_definition.Id == "kokoro" ? "/v1/synthesize" : "/v1/audio/speech"), content, cancel).ConfigureAwait(false))
             {
-                if (!response.IsSuccessStatusCode) throw new InvalidOperationException(_definition.Name + ": " + await response.Content.ReadAsStringAsync().ConfigureAwait(false) + "\n" + Log());
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error=await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    if(_definition.Id=="higgs" && attempt==0 && error.IndexOf("max_tokens",StringComparison.OrdinalIgnoreCase)>=0 && error.Contains("EOC")) { cancel.ThrowIfCancellationRequested();progress?.Report(new SpeechProgress{Message="Higgs: retrying incomplete generation once."});continue; }
+                    throw new InvalidOperationException(_definition.Name + ": " + error + "\n" + Log());
+                }
                 var bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
                 if (bytes.Length < 44 || Encoding.ASCII.GetString(bytes, 0, 4) != "RIFF" || Encoding.ASCII.GetString(bytes, 8, 4) != "WAVE") throw new InvalidDataException("TTS returned invalid WAV audio");
                 cancel.ThrowIfCancellationRequested();
                 File.WriteAllBytes(output, bytes);
                 if (ClassicVoiceAssets.WaveSeconds(output) <= 0) throw new InvalidDataException("TTS returned empty audio");
+                return;
             }
         }
         private async Task StartAsync(string voice, string transcript, CancellationToken cancel, IProgress<SpeechProgress> progress)
@@ -246,6 +253,9 @@ namespace Nikse.SubtitleEdit.Logic
             }
             _server = new Process {StartInfo = new ProcessStartInfo(exe, args) {WorkingDirectory = _definition.Id == "kokoro" ? ClassicExtendedTts.RuntimeRoot(_definition, _settings.Variant) : _job, UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true, StandardErrorEncoding = Encoding.UTF8, StandardOutputEncoding = Encoding.UTF8}};
             if (_definition.Id == "zonos") ClassicZonosPhonemizer.Configure(_server.StartInfo);
+            // The CUDA reference encoder can corrupt otherwise valid VibeVoice references.
+            // Keep the LM/decoder on the selected GPU and use the runtime's CPU encoder path.
+            if (_definition.Id == "vibe" && _settings.Variant.StartsWith("cuda",StringComparison.Ordinal)) _server.StartInfo.EnvironmentVariables["CRISPASR_VIBEVOICE_ENC_BACKEND"] = "cpu";
             if (_definition.Id == "dots") _server.StartInfo.EnvironmentVariables["CRISPASR_DOTS_ODE_STEPS"] = ClassicExtendedTts.OdeSteps(_definition.Id, _settings).ToString();
             DataReceivedEventHandler capture = (s, e) => { if (e.Data != null) lock (_log) { _log.AppendLine(e.Data); if (_log.Length > 16000) _log.Remove(0, _log.Length - 16000); } };
             _server.OutputDataReceived += capture; _server.ErrorDataReceived += capture;

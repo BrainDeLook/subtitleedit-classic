@@ -732,10 +732,10 @@
         ]
       }
     ],
-    "Notes": "VibeVoice: reference cloning with automatic language inference. Speed defaults to 1.1, matching stable 5.3.",
+    "Notes": "VibeVoice: reference cloning with automatic language inference. Prefer a clean complete reference phrase; very short or synthetic references may produce unintelligible speech. CUDA uses CPU reference encoding while retaining GPU synthesis. Speed defaults to 1.1.",
     "SampleRate": 24000,
     "DefaultSpeed": 1.1,
-    "NotesRu": "VibeVoice: клонирование голоса, язык определяется по тексту. Начальная скорость 1,1 соответствует стабильной 5.3."
+    "NotesRu": "VibeVoice: клонирование голоса, язык определяется по тексту. Используй чистую законченную фразу: короткие или синтетические образцы могут давать неразборчивый результат. В CUDA кодирование образца выполняется на CPU, синтез остаётся на GPU. Скорость по умолчанию 1,1."
   },
   {
     "Id": "index",
@@ -1783,10 +1783,10 @@
       }
     ],
     "Codec": true,
-    "Notes": "OmniVoice: built-in Default voice or reference cloning. The server stays loaded between lines. Automatic or explicit target language.",
+    "Notes": "OmniVoice: built-in Default voice or reference cloning. Per-line cloning requires original transcripts; audio-only per-line cloning is not supported by stable 5.3. Automatic or explicit target language.",
     "SampleRate": 24000,
     "ReferenceText": true,
-    "NotesRu": "OmniVoice: готовый голос Default или клонирование по образцу. Модель остаётся загруженной между репликами. Язык можно выбрать явно или автоматически."
+    "NotesRu": "OmniVoice: голос Default или клонирование по образцу. Для построчного клонирования нужен исходный текст: режим без расшифровки не поддерживается стабильной 5.3. Язык выбирается явно или автоматически."
   },
   {
     "Id": "kokoro",

@@ -23,7 +23,7 @@ class TestClassicCompletion
  static HttpResponseMessage Reply(object value)=>new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(value is string?(string)value:Newtonsoft.Json.JsonConvert.SerializeObject(value),Encoding.UTF8,"application/json")};
  [STAThread]static int Main(string[] args){try{
   var root=Path.GetFullPath(args[1]);Directory.CreateDirectory(root);typeof(Configuration).GetField("DataDirectory",BindingFlags.Public|BindingFlags.Static).SetValue(null,root+Path.DirectorySeparatorChar);Configuration.Settings.General.FFmpegLocation=args[2];Configuration.Settings.General.Language="ru-RU";LanguageSettings.Current=Language.Load(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Languages/ru-RU.xml"));Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);Application.EnableVisualStyles();
-  if(args[0]=="native"){Pump(Native());return 0;}Pump(Unit(root));Ui(root);return 0;
+  if(args[0]=="native"){Pump(Native(args.Length>3?args[3]:"cuda13",args.Length>4?args[4]:""));return 0;}Pump(Unit(root));Ui(root);return 0;
  }catch(Exception e){Console.Error.WriteLine(e);return 1;}finally{ClassicLlamaServer.Stop();}}
  static async Task Unit(string root)
  {
@@ -43,6 +43,22 @@ class TestClassicCompletion
   using(var t=new ClassicNewTranslator("compatible",handler)){t.Initialize();Check((await t.Translate("First.\nSecond.","en","ru",CancellationToken.None)).Contains("\n") && calls==2,"Line-break drift is retried before applying a cue");}
   var merged=ClassicCloudAsr.MergeGoogleTail(JArray.Parse("[{\"word\":\"First\",\"start\":0,\"end\":20}]"),JArray.Parse("[{\"word\":\"duplicate\",\"start\":0,\"end\":1},{\"word\":\"recovered\",\"start\":2,\"end\":3}]"),19);Check(merged.Count==2 && (double)merged[1]["start"]==21,"ASR tail merge removes overlap and restores absolute timestamps");
   await Recovery(root);
+  await HiggsRetry(root);
+ }
+ static async Task HiggsRetry(string root)
+ {
+  var voice="voice_"+Guid.NewGuid().ToString("N");Directory.CreateDirectory(ClassicQwenReference.Folder);File.WriteAllBytes(Path.Combine(ClassicQwenReference.Folder,voice+".wav"),new byte[64]);File.WriteAllText(Path.Combine(ClassicQwenReference.Folder,voice+".txt"),"");File.WriteAllText(Path.Combine(ClassicQwenReference.Folder,voice+".json"),"{\"Consent\":true,\"PerLine\":true}");
+  for(var scenario=0;scenario<2;scenario++)
+  {
+   var calls=0;var failTwice=scenario==1;var handler=new Handler{Run=r=>{calls++;return Task.FromResult(calls==1||failTwice?new HttpResponseMessage(HttpStatusCode.InternalServerError){Content=new StringContent("{\"error\":\"max_tokens reached before EOC\"}")}:new HttpResponseMessage(HttpStatusCode.OK){Content=new ByteArrayContent(File.ReadAllBytes(Path.Combine(root,"recovery.wav")))});}};
+   using(var engine=new ClassicLocalTts("higgs",ClassicLocalTtsSettings.Load("higgs")))
+   {
+    var flags=BindingFlags.NonPublic|BindingFlags.Instance;Action<string,object> field=(name,value)=>typeof(ClassicLocalTts).GetField(name,flags).SetValue(engine,value);
+    ((HttpClient)typeof(ClassicLocalTts).GetField("_client",flags).GetValue(engine)).Dispose();field("_client",new HttpClient(handler));field("_ready",true);field("_activeRequestVoice",true);field("_server",new System.Diagnostics.Process());field("_baseUrl","http://127.0.0.1:1");
+    var job=(string)typeof(ClassicLocalTts).GetField("_job",flags).GetValue(engine);Directory.CreateDirectory(job);File.Copy(Path.Combine(root,"recovery.wav"),Path.Combine(job,voice+".wav"));var output=Path.Combine(root,"higgs-retry-"+scenario+".wav");
+    try{await engine.SpeakAsync("Hello.",voice,output,CancellationToken.None,null);Check(!failTwice && calls==2 && File.Exists(output),"Higgs retries an unfinished generation and writes only the successful WAV");}catch(InvalidOperationException){Check(failTwice && calls==2 && !File.Exists(output),"Higgs retry is bounded and leaves no audio after repeated failure");}
+   }
+  }
  }
  static async Task Recovery(string root)
  {
@@ -63,9 +79,9 @@ class TestClassicCompletion
  {
   foreach(var form in new Form[]{new ClassicLlamaForm(),new ClassicAiPromptForm("Test","Keep tags."),new ClassicTranslationForm("compatible")})using(form){form.ShowInTaskbar=false;form.StartPosition=FormStartPosition.Manual;form.Location=new Point(-20000,-20000);form.Show();Application.DoEvents();using(var image=new Bitmap(form.Width,form.Height)){form.DrawToBitmap(image,new Rectangle(Point.Empty,image.Size));image.Save(Path.Combine(root,form.GetType().Name+".png"));}Check(form.Controls.Count>0,"Classic settings opens "+form.GetType().Name);form.Close();}
  }
- static async Task Native()
+ static async Task Native(string variant,string folder)
  {
-  var s=new ClassicLlamaSettings{Variant="cuda13"};s.Save();await ClassicLlamaServer.EnsureInstalled(s,CancellationToken.None,new Progress<SpeechProgress>(p=>Console.WriteLine(p.Message)));var url=await ClassicLlamaServer.Start(s,CancellationToken.None);Console.WriteLine(url);
+  var s=new ClassicLlamaSettings{Variant=variant,Folder=folder};s.Save();await ClassicLlamaServer.EnsureInstalled(s,CancellationToken.None,new Progress<SpeechProgress>(p=>Console.WriteLine(p.Message)));var url=await ClassicLlamaServer.Start(s,CancellationToken.None);Console.WriteLine(url);
   using(var client=new ClassicAiClient(new ClassicCompatibleAsrSettings{Url=url,Model="classic-local",TimeoutSeconds=900})){
    foreach(var target in new[]{"Russian","Japanese"}){var result=await client.ChatAsync(new JArray(new JObject{["role"]="system",["content"]="Translate into "+target+". Output only the translation."},new JObject{["role"]="user",["content"]="Hello. How are you today?"}),false,CancellationToken.None);Console.WriteLine(target+": "+result);Check(result.Any(c=>target=="Russian"?c>='А'&&c<='я':c>='\u3040'&&c<='\u9fff'),"Managed native translation "+target);}
    var context=await AiReviewContextGenerator.GenerateAsync(new[]{"Mike Tyson is a boxer. Mike Tyson won the fight."},"English",(system,user,json,token)=>client.ChatAsync(new JArray(new JObject{["role"]="system",["content"]=system},new JObject{["role"]="user",["content"]=user}),json,token),null,CancellationToken.None);Console.WriteLine(context);Check(context.Contains("Tyson"),"Native local AI context generation");
