@@ -24,6 +24,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
    _videoOriginalFile=_castSettings.OriginalSubtitleFile ?? "";
    if(_castSettings.CloneConsent && string.Equals(_castSettings.PerLineVideoFile,_videoFileName,StringComparison.OrdinalIgnoreCase) && File.Exists(_videoOriginalFile))
    {var original=new Subtitle();if(original.LoadSubtitle(_videoOriginalFile,out _,null)!=null)_perLineOriginal=original;}
+   if(_castSettings.CloneConsent && _castSettings.PerLineAudioOnly && string.Equals(_castSettings.PerLineVideoFile,_videoFileName,StringComparison.OrdinalIgnoreCase))_perLineOriginal=AudioOnlyReferenceTimeline(_subtitle);
    ClientSize=new Size(ClientSize.Width,ClientSize.Height+36);MinimumSize=new Size(MinimumSize.Width,MinimumSize.Height+36);
    groupBoxSettings.Height-=36;listViewActors.Height-=36;
    var toolbar=new FlowLayoutPanel{Name="panelClassicCast",Anchor=AnchorStyles.Bottom|AnchorStyles.Left|AnchorStyles.Right,Location=new Point(groupBoxSettings.Left,groupBoxSettings.Bottom+5),Size=new Size(ClientSize.Width-24,30),WrapContents=false};
@@ -156,7 +157,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
      if(localDefinition!=null)
      {
       var config=ClassicLocalTtsSettings.Load(localDefinition.Id);if(!string.IsNullOrWhiteSpace(row.Model))config.Model=row.Model;if(!string.IsNullOrWhiteSpace(row.Language))config.Language=row.Language;if(!string.IsNullOrWhiteSpace(row.Instructions))config.Instructions=row.Instructions;if(!AcceptAudioLicense(localDefinition.Id,config))return false;
-      using(var engine=new ClassicLocalTts(localDefinition.Id,config))foreach(var i in group){cancel.ThrowIfCancellationRequested();var p=subtitle.Paragraphs[i];var actor=SpeechCastRow(p) ?? new ClassicCastRow();var voice=_castRegenerationVoice ?? (string.IsNullOrWhiteSpace(actor.Voice) ? config.Voice : actor.Voice);if(_perLineOriginal!=null && localDefinition.SupportsCloning)voice=await PerLineReferenceAsync(p,cancel) ?? voice;labelProgress.Text=CL("Озвучка актёра: ","Speaking actor: ")+p.Actor;await engine.SpeakAsync(Utilities.UnbreakLine(HtmlUtil.RemoveHtmlTags(p.Text)),voice,Path.Combine(_waveFolder,outputOverride ?? i+".wav"),cancel,new Progress<SpeechProgress>(x=>labelProgress.Text=x.Message));}continue;
+      using(var engine=new ClassicLocalTts(localDefinition.Id,config))foreach(var i in group){cancel.ThrowIfCancellationRequested();var p=subtitle.Paragraphs[i];var actor=SpeechCastRow(p) ?? new ClassicCastRow();var voice=_castRegenerationVoice ?? (string.IsNullOrWhiteSpace(actor.Voice) ? config.Voice : actor.Voice);if(_perLineOriginal!=null && localDefinition.SupportsCloning)voice=await PerLineReferenceAsync(p,cancel,localDefinition.Id) ?? voice;labelProgress.Text=CL("Озвучка актёра: ","Speaking actor: ")+p.Actor;await engine.SpeakAsync(Utilities.UnbreakLine(HtmlUtil.RemoveHtmlTags(p.Text)),voice,Path.Combine(_waveFolder,outputOverride ?? i+".wav"),cancel,new Progress<SpeechProgress>(x=>labelProgress.Text=x.Message));}continue;
      }
      var onlineId=_engines.Where(e=>e.Name==choice).Select(e=>FinalOnlineId(e.Id)).FirstOrDefault();
      if(onlineId!=null) {

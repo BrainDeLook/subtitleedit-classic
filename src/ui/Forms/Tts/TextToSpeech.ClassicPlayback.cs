@@ -58,7 +58,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                         if(!AcceptAudioLicense(d.Id,config))throw new OperationCanceledException();
                         var key=d.Id+"|"+config.Model+"|"+config.Language+"|"+config.Instructions;
                         if(!local.TryGetValue(key,out var engine)){engine=new ClassicLocalTts(d.Id,config);local.Add(key,engine);}
-                        var voice=string.IsNullOrWhiteSpace(row.Voice)?config.Voice:ClassicLocalTts.ResolveVoice(row.Voice);if(_perLineOriginal!=null && d.SupportsCloning)voice=await PerLineReferenceAsync(line.Paragraph,token) ?? voice;
+                        var voice=string.IsNullOrWhiteSpace(row.Voice)?config.Voice:ClassicLocalTts.ResolveVoice(row.Voice);if(_perLineOriginal!=null && d.SupportsCloning)voice=await PerLineReferenceAsync(line.Paragraph,token,d.Id) ?? voice;
                         await engine.SpeakAsync(text,voice,output,token);return output;
                     }
                     if(choice=="Qwen3" || choice=="Supertonic") {

@@ -45,7 +45,8 @@ namespace Nikse.SubtitleEdit.Logic
         public int SampleRate { get; set; }
         public double DefaultSpeed { get; set; }
         public bool ReferenceText { get; set; }
-        public bool RequiresReferenceTranscript => !ClassicExtendedTts.Handles(Id) || Id == "f5" || Id == "omnicpp";
+        public bool RequiresReferenceTranscript => IsAudioCpp ? Id == "firered" : !ClassicExtendedTts.Handles(Id) || Id == "f5" || Id == "omnicpp";
+        public bool SupportsAudioOnlyPerLineClone => IsAudioCpp && SupportsCloning && !RequiresReferenceTranscript;
         public string RuntimeVersion { get; set; }
         public string RuntimeExecutable { get; set; }
         public ClassicTtsRuntimeArchive[] RuntimeArchives { get; set; }

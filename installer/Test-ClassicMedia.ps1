@@ -46,6 +46,7 @@ $tests=@{
     TestTtsModelExtras='tts-tests/TestTtsModelExtras.cs'
     TestVoiceReferenceTools='tts-tests/TestVoiceReferenceTools.cs'
     TestWaveformReference='tts-tests/TestWaveformReference.cs'
+    TestPerLineCloning='tts-tests/TestPerLineCloning.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -134,6 +135,8 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Voice reference waveform, playback and ASR range regression failed." }
     & "$OutputDirectory/TestWaveformReference.exe" (Join-Path $OutputDirectory "waveform-reference") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Waveform voice reference selection, track mapping and import regression failed." }
+    & "$OutputDirectory/TestPerLineCloning.exe" unit (Join-Path $OutputDirectory "per-line-cloning") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "Audio-only per-line cloning, reference padding and session-copy regression failed." }
     if ($AudioSelectionSample) {
         $env:CLASSIC_AUDIO_TEST_DATA=Join-Path $OutputDirectory 'editor-audio-selection'
         $env:CLASSIC_AUDIO_TEST_SOURCE=(Resolve-Path -LiteralPath $AudioSelectionSample).Path

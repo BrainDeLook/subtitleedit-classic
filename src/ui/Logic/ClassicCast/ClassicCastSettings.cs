@@ -21,6 +21,7 @@ namespace Nikse.SubtitleEdit.Logic.ClassicCast
  {
   public string OriginalSubtitleFile {get;set;}="";
   public string PerLineVideoFile {get;set;}="";
+  public bool PerLineAudioOnly {get;set;}
   public bool CloneConsent {get;set;}
   public List<ClassicCastRow> Rows {get;set;}=new List<ClassicCastRow>();
   public static string PathName=>Path.Combine(Configuration.DataDirectory,"TextToSpeech","ClassicCast.json");

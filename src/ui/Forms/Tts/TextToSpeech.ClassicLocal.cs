@@ -119,7 +119,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
                     cancel.ThrowIfCancellationRequested(); var p = subtitle.Paragraphs[i]; var text = Utilities.UnbreakLine(HtmlUtil.RemoveHtmlTags(p.Text)); if (string.IsNullOrWhiteSpace(text)) continue;
                     var actor = _actorAndVoices.FirstOrDefault(a => a.Actor == p.Actor);
                     var voice = _castRegenerationVoice ?? (string.IsNullOrWhiteSpace(actor?.Voice) ? settings.Voice : ClassicLocalTts.ResolveVoice(actor.Voice));
-                    if (_perLineOriginal != null && ClassicLocalTts.Catalog.First(e => e.Id == id).SupportsCloning) voice = await PerLineReferenceAsync(p, cancel) ?? voice;
+                    if (_perLineOriginal != null && ClassicLocalTts.Catalog.First(e => e.Id == id).SupportsCloning) voice = await PerLineReferenceAsync(p, cancel,id) ?? voice;
                     labelProgress.Text = CL("Озвучка ", "Generating ") + (i + 1) + " / " + subtitle.Paragraphs.Count;
                     await engine.SpeakAsync(text, voice, Path.Combine(_waveFolder, outputOverride ?? i + ".wav"), cancel, new Progress<SpeechProgress>(x => labelProgress.Text = x.Message));
                     progressBar1.Value = i + 1;
