@@ -20,6 +20,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
     public sealed partial class WhisperAudioToText
     {
         private bool _modernReady;
+        private const string LegacyOpenAiPython = "OpenAI Python (local whisper.exe)";
         private bool _modernUpdating;
         private CancellationTokenSource _modernCancellation;
         private ClassicSpeechOptions _modernOptions;
@@ -42,6 +43,8 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private void InitializeModernSpeech()
         {
             if (IntPtr.Size != 8) return;
+            var pythonIndex=comboBoxWhisperEngine.Items.IndexOf(WhisperChoice.OpenAi);
+            if(pythonIndex>=0){var selected=comboBoxWhisperEngine.SelectedIndex;comboBoxWhisperEngine.Items[pythonIndex]=LegacyOpenAiPython;if(selected==pythonIndex){comboBoxWhisperEngine.SelectedIndexReset();comboBoxWhisperEngine.SelectedIndex=selected;}}
             _modernOptions = ClassicSpeechOptions.Load();
             _modernClock = new System.Windows.Forms.Timer { Interval = 500 };
             _modernClock.Tick += (s, e) => { if (_modernCancellation != null) labelElapsed.Text = _modernWatch.Elapsed.ToString(@"hh\:mm\:ss"); };

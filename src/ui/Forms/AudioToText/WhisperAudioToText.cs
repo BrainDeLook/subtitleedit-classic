@@ -349,6 +349,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private void ButtonGenerate_Click(object sender, EventArgs e)
         {
             if (IsModernSpeech) { _ = _selectedSpeech == null ? GenerateModernSpeech() : GenerateSelectedSpeech(); return; }
+            if((comboBoxWhisperEngine.Text==WhisperChoice.OpenAi || comboBoxWhisperEngine.Text==LegacyOpenAiPython) && !File.Exists(WhisperHelper.GetWhisperPathAndFileName(WhisperChoice.OpenAi)) && !WhisperPhpOriginalChoose())return;
             _cancel = false;
 
             // Check if chosen whisper implementation is installed
@@ -2084,14 +2085,14 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             }
         }
 
-        private void WhisperPhpOriginalChoose()
+        private bool WhisperPhpOriginalChoose()
         {
             Configuration.Settings.Tools.WhisperChoice = WhisperChoice.OpenAi;
 
             if (Configuration.IsRunningOnWindows)
             {
-                var path = WhisperHelper.GetWhisperFolder();
-                if (string.IsNullOrEmpty(path))
+                var path = WhisperHelper.GetWhisperPathAndFileName(WhisperChoice.OpenAi);
+                if (!File.Exists(path))
                 {
                     using (var openFileDialog1 = new OpenFileDialog())
                     {
@@ -2101,8 +2102,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
                         if (openFileDialog1.ShowDialog() != DialogResult.OK || !openFileDialog1.FileName.EndsWith("whisper.exe", StringComparison.OrdinalIgnoreCase))
                         {
-                            Configuration.Settings.Tools.WhisperChoice = WhisperChoice.Cpp;
-                            comboBoxWhisperEngine.Text = WhisperChoice.Cpp;
+                            return false;
                         }
                         else
                         {
@@ -2113,6 +2113,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             }
 
             Init();
+            return true;
         }
 
         private void removeTemporaryFilesToolStripMenuItem_Click(object sender, EventArgs e)
@@ -2289,9 +2290,10 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 return;
             }
 
-            if (comboBoxWhisperEngine.Text == WhisperChoice.OpenAi)
+            if (comboBoxWhisperEngine.Text == WhisperChoice.OpenAi || comboBoxWhisperEngine.Text == LegacyOpenAiPython)
             {
-                WhisperPhpOriginalChoose();
+                Configuration.Settings.Tools.WhisperChoice=WhisperChoice.OpenAi;
+                Init();
             }
             else if (comboBoxWhisperEngine.Text == WhisperChoice.Cpp)
             {
