@@ -40,6 +40,7 @@ $tests=@{
     TestSpeechSession='tts-tests/TestSpeechSession.cs'
     TestSpeechWaveform='tts-tests/TestSpeechWaveform.cs'
     TestSelectedSpeech='speech-tests/TestSelectedSpeech.cs'
+    TestAudioTrackLabels='TestAudioTrackLabels.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -120,4 +121,6 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Speech review waveform, timing, seek and session regression failed." }
     & "$OutputDirectory/TestSelectedSpeech.exe" unit (Join-Path $OutputDirectory "selected-speech") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Selected ASR, partial results, retry and classic layout regression failed." }
+    & "$OutputDirectory/TestAudioTrackLabels.exe" (Join-Path $OutputDirectory "audio-track-labels") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "Burn-in audio language/title selection and stereo export regression failed." }
 }

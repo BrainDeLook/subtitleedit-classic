@@ -372,6 +372,7 @@ namespace Nikse.SubtitleEdit.Forms
             labelFileName.ForeColor = DarkTheme.DarkThemeDisabledColor;
             labelFileName.Font = new Font(labelFileName.Font.FontFamily, labelFileName.Font.Size - 1, FontStyle.Regular);
             InitializeClassicBurnIn();
+            InitializeAudioTrackLabels();
         }
 
         private void FontEnableOrDisable(bool enabled)
@@ -2359,7 +2360,8 @@ namespace Nikse.SubtitleEdit.Forms
         private void GenerateVideoWithHardSubs_ResizeEnd(object sender, EventArgs e)
         {
             listViewBatch.AutoSizeLastColumn();
-            listViewAudioTracks.AutoSizeLastColumn();
+            if (listViewAudioTracks.HeaderStyle == ColumnHeaderStyle.None) FitAudioTrackColumn();
+            else listViewAudioTracks.AutoSizeLastColumn();
         }
 
         private void GenerateVideoWithHardSubs_Resize(object sender, EventArgs e)

@@ -2,6 +2,8 @@
 
 ## 4.0.25 — local preview
 
+- Burn-in audio selection now displays each track's language, embedded title and codec/channel details. The checkbox list spans the audio group below its encoding settings, with complete metadata available in tooltips. Input stream order and checked-track mapping remain unchanged. Verified named Unicode tracks, the reported Turkish/English MKV, classic layout bounds and a real English-only stereo hard-sub export.
+
 - Ported the stable v5.3 selected-lines ASR workflow to the classic speech window. Modern Crisp ASR, Qwen3 ASR CPP, Whisper CPP Vulkan and standalone WhisperX are available alongside legacy Whisper choices. Selected lines keep their existing timing, actor/style metadata and identity; only explicitly applied successful text is changed. Unselected and failed lines remain untouched, including the original-text column.
 - Added per-line result/error status, Apply transcribed lines and Retry failed lines. Successful results survive other clips failing, empty transcripts and cancellation; retry excludes completed clips. Each attempt uses an isolated job directory, preventing stale transcripts from being read on retries. A single long clip can still use the explicit context-menu command for segmentation with new timings. Already-demuxed clips use their own first audio stream instead of the video's stream index.
 - Validated partial failures, retries, empty results, cancellation, metadata retention, classic layout and real Russian/English Parakeet CUDA 13 transcription. Paid API validation continues to use local protocol tests without paid requests.

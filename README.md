@@ -22,6 +22,8 @@ Speech review now shows the selected generated clip on a waveform, with draggabl
 
 Selected-lines speech recognition now uses the classic ASR window with modern and legacy engine choices. Review per-line results, **Retry failed lines**, then **Apply transcribed lines**: only successful selected text changes, while timing, actors/styles and unselected/failed text remain intact. Cancellation keeps completed results available. For one long clip, the context menu retains the option to transcribe with splitting and new timings. Russian and English were checked with real Parakeet CUDA 13 inference.
 
+Burn-in audio checkboxes now show the track language, embedded title and audio parameters in a full-width list below the audio settings. Hover for complete metadata when a title is long; each checked track is exported independently.
+
 ## Classic 4.0.24
 
 ASR adds selectable VAD, speech isolation, speaker detection and new stable v5.3 models, including Parakeet Ultra, Phonon-2, Voxtral and Index-Echo. Speaker metadata survives postprocessing; batch subtitles use ASS when actors are present. Time-code review adds editable original/proposed waveforms and twelve language-specific wav2vec2 aligners. Download the normal Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). Native checks focus on Russian and English; see [the changelog](CLASSIC_CHANGELOG.md) for coverage and limits.
