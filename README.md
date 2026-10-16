@@ -32,6 +32,8 @@ The main waveform context menu now offers **Create voice reference** for a subti
 
 **Voices from video → Clone each line** can now work without original subtitle files with Fish, Higgs, IndexTTS 2.5 and Breeze. Each cue uses its own source-audio range; translated target text is never treated as the source transcript. Short clips grow into free gaps and are padded to at least one second. Other engines retain their transcript requirement. Real Higgs English/Russian output was independently transcribed for verification.
 
+ASR now includes **OpenAI-compatible / vLLM**. Use **Advanced** to configure the URL, model, optional API key, prompt, chunk duration and timeout. Compatible local servers can run without a key. Segment/word timestamps are preserved; plain-text JSON receives estimated cue timing. Long audio is sent in bounded chunks. Protocol and loopback HTTP tests passed without paid calls; a real vLLM model and commercial services were not tested in this increment.
+
 ## Classic 4.0.24
 
 ASR adds selectable VAD, speech isolation, speaker detection and new stable v5.3 models, including Parakeet Ultra, Phonon-2, Voxtral and Index-Echo. Speaker metadata survives postprocessing; batch subtitles use ASS when actors are present. Time-code review adds editable original/proposed waveforms and twelve language-specific wav2vec2 aligners. Download the normal Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). Native checks focus on Russian and English; see [the changelog](CLASSIC_CHANGELOG.md) for coverage and limits.

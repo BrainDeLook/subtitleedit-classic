@@ -33,7 +33,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private System.Windows.Forms.Timer _modernClock;
         private Stopwatch _modernWatch;
         private static readonly HashSet<string> ModernNames = new HashSet<string>
-        { ClassicSpeechCatalog.Crisp, ClassicSpeechCatalog.Qwen, ClassicSpeechCatalog.WhisperX, ClassicSpeechCatalog.CppVulkan };
+        { ClassicSpeechCatalog.Crisp, ClassicSpeechCatalog.Qwen, ClassicSpeechCatalog.WhisperX, ClassicSpeechCatalog.CppVulkan, ClassicSpeechCatalog.CompatibleApi };
 
         private bool IsModernSpeech => _modernReady && ModernNames.Contains(comboBoxWhisperEngine.Text);
         private SpeechEngine ModernEngine => IsModernSpeech ? ClassicSpeechCatalog.Get(comboBoxWhisperEngine.Text,
@@ -83,7 +83,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             labelAdvanced.Width = Math.Max(100, _qualityButton.Left - labelAdvanced.Left - 10);
             labelProgress.AutoSize = false; labelProgress.Width = ClientSize.Width - 24; labelProgress.Height = 18;
             MinimumSize = new Size(Math.Max(800, MinimumSize.Width), Math.Max(380, MinimumSize.Height));
-            foreach (var name in new[] { ClassicSpeechCatalog.Crisp, ClassicSpeechCatalog.Qwen, ClassicSpeechCatalog.CppVulkan }) comboBoxWhisperEngine.Items.Add(name);
+            foreach (var name in new[] { ClassicSpeechCatalog.Crisp, ClassicSpeechCatalog.Qwen, ClassicSpeechCatalog.CppVulkan, ClassicSpeechCatalog.CompatibleApi }) comboBoxWhisperEngine.Items.Add(name);
             _modernReady = true;
             comboBoxModels.SelectedIndexChanged += (s, e) => SaveModernSelection();
             if (File.Exists(Path.Combine(ClassicSpeechCatalog.Root, "settings.json")) && comboBoxWhisperEngine.Items.Contains(_modernOptions.Engine))
@@ -109,6 +109,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             if (!_modernReady) return false;
             if (!IsModernSpeech)
             {
+                linkLabelOpenModelsFolder.Visible = true;
                 _modernBackend.Visible = _modernBackendLabel.Visible = false;
                 _modernStatus.Text = "";
                 labelInfo.Text = LanguageSettings.Current.AudioToText.WhisperInfo;
@@ -126,6 +127,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             try
             {
                 var engine = ModernEngine;
+                linkLabelOpenModelsFolder.Visible = engine.Family != "compatible-api";
                 labelInfo.Text = ClassicSpeechSettings.L("Распознавание речи: ", "Speech recognition: ") + engine.Name;
                 linkLabeWhisperWebSite.Text = ClassicSpeechSettings.L("Сайт движка", "Engine website");
                 _modernOptions.Engine = comboBoxWhisperEngine.Text;
@@ -172,6 +174,10 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         {
             var engine = ModernEngine;
             if (engine == null) return;
+            if(engine.Family=="compatible-api"){
+                _modernStatus.Text=ClassicSpeechSettings.L("Настройки сервера — кнопка «Дополнительно»","Server settings — Advanced button");
+                labelAdvanced.Text=ClassicSpeechSettings.L("Аудио отправляется указанному серверу. Без таймингов сервера время оценивается.","Audio is sent to the configured server. Missing timestamps are estimated.");return;
+            }
             var installed = File.Exists(ClassicSpeechCatalog.Executable(engine, _modernOptions.Variant));
             var model = comboBoxModels.SelectedItem as SpeechModel;
             var modelInstalled = model != null && File.Exists(ClassicSpeechCatalog.ModelPath(engine, model));
@@ -183,6 +189,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private SpeechModel ModernAligner(SpeechEngine engine)
         {
+            if(engine.Family=="compatible-api")return null;
             if (engine.NativeTimings && string.IsNullOrEmpty(_modernOptions.Aligner)) return null;
             var models = engine.Family == "crisp" ? ClassicSpeechExtras.RankedAligners(_modernOptions.Language).Select(a => a.Model).ToList() : engine.Models.Where(m => m.Aligner).ToList();
             return models.FirstOrDefault(m => m.Name == _modernOptions.Aligner) ?? (engine.NativeTimings ? null : models.FirstOrDefault());
@@ -190,6 +197,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         private async Task EnsureModernDependencies(SpeechEngine engine, SpeechModel model, CancellationToken cancel, IProgress<SpeechProgress> progress)
         {
+            if(engine.Family=="compatible-api"){ClassicCompatibleAsrSettings.Load().Validate();return;}
             await ClassicSpeechDownload.EnsureRuntimeAsync(engine, _modernOptions.Variant, cancel, progress);
             await ClassicSpeechDownload.EnsureModelAsync(engine, model, cancel, progress);
             var aligner = ModernAligner(engine);
@@ -241,6 +249,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         private async Task DownloadModernSelection()
         {
             if (_modernCancellation != null) return;
+            if(ModernEngine?.Family=="compatible-api"){EditCompatibleAsrSettings();return;}
             SaveModernSelection();
             var engine = ModernEngine; var model = comboBoxModels.SelectedItem as SpeechModel;
             if (model == null) return;
@@ -257,12 +266,12 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             SaveModernSelection();
             var engine = ModernEngine; var model = comboBoxModels.SelectedItem as SpeechModel;
             if (model == null) return;
-            if (EnglishOnly(model) && _modernOptions.Language != "en")
+            if (engine.Family!="compatible-api" && EnglishOnly(model) && _modernOptions.Language != "en")
             {
                 MessageBox.Show(this, ClassicSpeechSettings.L("Эта модель предназначена только для английского. Выбери English или многоязычную модель.",
                     "This model is English-only. Choose English or a multilingual model."), Text); return;
             }
-            if ((model.Name.StartsWith("reazonspeech-",StringComparison.OrdinalIgnoreCase) || model.Name.Contains("-ja-")) && _modernOptions.Language != "ja")
+            if (engine.Family!="compatible-api" && (model.Name.StartsWith("reazonspeech-",StringComparison.OrdinalIgnoreCase) || model.Name.Contains("-ja-")) && _modernOptions.Language != "ja")
             {MessageBox.Show(this,ClassicSpeechSettings.L("Эта модель предназначена для японского. Выбери Japanese.","This model is Japanese-only. Choose Japanese."),Text);return;}
             var inputs = _batchMode ? listViewInputFiles.Items.Cast<ListViewItem>().Select(i => i.Text).ToList() : new List<string> { _videoFileName };
             if (inputs.Count == 0 || inputs.Any(f => !File.Exists(f))) { MessageBox.Show(this, ClassicSpeechSettings.L("Выбери входной файл.", "Choose an input file."), Text); return; }

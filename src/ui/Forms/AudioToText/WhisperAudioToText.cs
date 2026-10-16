@@ -1489,6 +1489,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             if (IsModernSpeech)
             {
                 var family = ModernEngine.Family;
+                if(family=="compatible-api"){UiUtil.OpenUrl("https://github.com/vllm-project/vllm");return;}
                 UiUtil.OpenUrl(family == "crisp" ? "https://github.com/CrispStrobe/CrispASR" : family == "qwen" ?
                     "https://github.com/niksedk/qwen3-asr.cpp" : family == "cpp" ? "https://github.com/ggml-org/whisper.cpp" : "https://github.com/m-bain/whisperX");
                 return;
@@ -2476,6 +2477,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         {
             if (IsModernSpeech)
             {
+                if(ModernEngine.Family=="compatible-api"){EditCompatibleAsrSettings();return;}
                 using (var settings = new ClassicSpeechSettings(ModernEngine, _modernOptions)) settings.ShowDialog(this);
                 UpdateModernRuntimeStatus(); return;
             }
