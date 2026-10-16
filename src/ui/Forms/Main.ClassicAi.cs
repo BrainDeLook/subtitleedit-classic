@@ -13,6 +13,8 @@ namespace Nikse.SubtitleEdit.Forms
             review.Click += (s,e) => OpenClassicAiReview(false);
             assistant.Click += (s,e) => OpenClassicAiReview(true);
             toolsToolStripMenuItem.DropDownItems.Add(review); toolsToolStripMenuItem.DropDownItems.Add(assistant);
+            var local=new ToolStripMenuItem(VoiceReferenceRu ? "Локальные AI-модели…" : "Local AI models…") { Name="classicLlamaModels" };
+            local.Click+=(s,e)=>{using(var form=new ClassicLlamaForm())form.ShowDialog(this);};toolsToolStripMenuItem.DropDownItems.Add(local);
         }
         private void OpenClassicAiReview(bool assistant)
         {

@@ -2,6 +2,13 @@
 
 ## 4.0.25 — local preview
 
+### Local increment 4.0.25.21
+
+- Added a managed local llama.cpp server with the stable 5.3 model catalog, pinned b11553 CPU/Vulkan/CUDA 12/CUDA 13 runtime downloads and archive SHA-256 verification. Classic settings provide model download/import, a custom model folder, context/GPU controls and start/stop. Requests use an owned loopback-only server, reuse a loaded model and terminate the server on application exit. Model-specific template/thinking/sampling flags are retained.
+- AI review/current-line assistance can use the managed local model. Added the full stable ASR-cleanup, machine-translation and SDH prompts, a separate persistent custom-template editor and context generation from bounded subtitle parts. Generated names/terms must occur in the source text; summaries merge into a synopsis. Review remains explicit, source-matched and undoable.
+- Compatible translation gains editable prompt placeholders, terminology, formality and read-only recent context. The stable untranslated-source guard retries once at a higher temperature. Optional strict line-break preservation retries a drifted response before applying it and bypasses classic automatic rewrapping. Managed llama.cpp translation starts its configured model automatically; external servers remain supported.
+- Google Cloud ASR v2 detects a transcript ending before 90% of a billed chunk longer than a minute, re-transcribes the tail once with a one-second overlap and restores absolute word times without duplicated overlap. Both remote objects and the local cut are cleaned. Impossible word offsets are filtered using billed/result bounds. Tests use simulated cloud responses and a real local FFmpeg cut, never paid calls.
+- Local translation windows cancel active work before closing and dispose their provider clients. Shared download/start actions cannot run concurrently; managed-server settings retain readable controls at the minimum window size.
 ### Local increment 4.0.25.20
 
 - MADLAD translation now opens its installation settings before starting when the model or selected runtime is missing. The classic model label shows the missing state; settings display installation status, the model path and approximate 2 GB download size. Cancelling setup leaves translation idle and cues untouched. Local translator errors show a concise message while full diagnostics remain in the log. Regression coverage exercises the real Translate button with a missing model and cancelled setup.

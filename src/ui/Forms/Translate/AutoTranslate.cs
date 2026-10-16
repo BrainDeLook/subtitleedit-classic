@@ -831,7 +831,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 catch (Exception ex)
                 {
                     SeLogger.Error(ex);
-                    // log and ignore   
+                    // log and ignore
                 }
             }
 
@@ -982,6 +982,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             var linesTranslated = 0;
 
             var forceSingleLineMode = Configuration.Settings.Tools.AutoTranslateStrategy == TranslateStrategy.TranslateEachLineSeparately.ToString() ||
+                                      (_autoTranslator is ClassicNewTranslator classicTranslator && classicTranslator.KeepLineBreaks) ||
                                       _autoTranslator.Name == NoLanguageLeftBehindApi.StaticName ||  // NLLB seems to miss some text...
                                       _autoTranslator.Name == NoLanguageLeftBehindServe.StaticName ||
                                       _singleLineMode;
@@ -1053,7 +1054,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                             reFormattedText = reFormattedText.TrimStart('-').Trim();
                         }
 
-                        TranslatedSubtitle.Paragraphs[index].Text = Utilities.AutoBreakLine(reFormattedText);
+                        TranslatedSubtitle.Paragraphs[index].Text = _autoTranslator is ClassicNewTranslator ct && ct.KeepLineBreaks ? reFormattedText : Utilities.AutoBreakLine(reFormattedText);
                         linesTranslated++;
 
                         _translationProgressIndex = index;
@@ -1103,6 +1104,11 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private bool EnsureClassicTranslatorReady()
         {
+            if (GetCurrentEngine() is ClassicNewTranslator local && local.Id == "llama" && ClassicTranslationSettings.Load("llama").UseLocalLlama && !ClassicLlamaServer.Installed(ClassicLlamaSettings.Load()))
+            {
+                using(var form=new ClassicLlamaForm())form.ShowDialog(this);
+                if(!ClassicLlamaServer.Installed(ClassicLlamaSettings.Load()))return false;
+            }
             if (!(GetCurrentEngine() is ClassicNewTranslator translator) || translator.Id != "madlad") return true;
             if (ClassicNewTranslator.MadladReady(ClassicTranslationSettings.Load("madlad").Variant)) return true;
             using (var form = new ClassicTranslationForm("madlad")) form.ShowDialog(this);
@@ -1500,6 +1506,8 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private void AutoTranslate_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if(_translationInProgress){_cancellationTokenSource?.Cancel();_breakTranslation=true;e.Cancel=true;return;}
+            foreach(var translator in _autoTranslatorEngines.OfType<IDisposable>())translator.Dispose();
             var engine = GetCurrentEngine();
             Configuration.Settings.Tools.AutoTranslateLastName = engine.Name;
             Configuration.Settings.Tools.AutoTranslateLastUrl = nikseComboBoxUrl.Text;

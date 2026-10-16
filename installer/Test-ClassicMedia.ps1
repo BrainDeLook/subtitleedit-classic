@@ -50,6 +50,7 @@ $tests=@{
     TestCompatibleAsr='speech-tests/TestCompatibleAsr.cs'
     TestLocalAsrGrowth='speech-tests/TestLocalAsrGrowth.cs'
     TestPriorityIntegration='speech-tests/TestPriorityIntegration.cs'
+    TestClassicCompletion='speech-tests/TestClassicCompletion.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -146,6 +147,8 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Local ASR catalog, multilingual language selection and anime model regression failed." }
     & "$OutputDirectory/TestPriorityIntegration.exe" unit (Join-Path $OutputDirectory "priority-integrations") $FFmpegLocation
     if ($LASTEXITCODE -ne 0) { throw "Cloud ASR, SSE, AI review, translation, bitmap OCR and classic settings regression failed." }
+    & "$OutputDirectory/TestClassicCompletion.exe" unit (Join-Path $OutputDirectory "classic-completion") $FFmpegLocation
+    if ($LASTEXITCODE -ne 0) { throw "Local AI, translation, context and ASR recovery regression failed." }
     if ($AudioSelectionSample) {
         $env:CLASSIC_AUDIO_TEST_DATA=Join-Path $OutputDirectory 'editor-audio-selection'
         $env:CLASSIC_AUDIO_TEST_SOURCE=(Resolve-Path -LiteralPath $AudioSelectionSample).Path

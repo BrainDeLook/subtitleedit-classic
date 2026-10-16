@@ -168,7 +168,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             if (string.IsNullOrWhiteSpace(_token)) throw new InvalidDataException("Google returned no access token.");
             return _token;
         }
-        private async Task<string> Google(string file, string language, CancellationToken cancel)
+        private async Task<string> Google(string file, string language, CancellationToken cancel, bool recover = true)
         {
             await GoogleToken(cancel).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(_settings.Project)) throw new ArgumentException("Enter the Google Cloud project ID.");
@@ -205,7 +205,24 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
                     if ((bool?)state["done"] == true)
                     {
                         if (state["error"] != null) throw new InvalidOperationException("Google Cloud transcription failed.");
-                        return ParseGoogle(state);
+                        var parsed = JObject.Parse(ParseGoogle(state));
+                        var billed = (double?)parsed["duration"] ?? 0;
+                        var covered = parsed["words"].Select(w => (double)w["end"]).DefaultIfEmpty(0).Max();
+                        if (recover && billed > 60 && covered < billed * .9)
+                        {
+                            var resume = Math.Max(0, covered - 1);
+                            var tailFile = Path.Combine(Path.GetDirectoryName(file), Guid.NewGuid().ToString("N") + "-tail.wav");
+                            try
+                            {
+                                SeLogger.Error("Google Cloud ASR: recovering transcript tail from " + resume.ToString(System.Globalization.CultureInfo.InvariantCulture) + " seconds.");
+                                var args="-hide_banner -nostdin -y -ss "+resume.ToString("0.###",System.Globalization.CultureInfo.InvariantCulture)+" -i "+ClassicSpeechRunner.Quote(file)+" -vn -ac 1 -ar 16000 -c:a pcm_s16le "+ClassicSpeechRunner.Quote(tailFile);
+                                await ClassicSpeechRunner.RunProcessAsync(new System.Diagnostics.ProcessStartInfo(Configuration.Settings.General.FFmpegLocation,args),cancel,null).ConfigureAwait(false);
+                                var tail=JObject.Parse(await Google(tailFile,language,cancel,false).ConfigureAwait(false));
+                                parsed["words"]=MergeGoogleTail((JArray)parsed["words"],(JArray)tail["words"],resume);
+                            }
+                            finally { if(File.Exists(tailFile))File.Delete(tailFile); }
+                        }
+                        return parsed.ToString();
                     }
                     await Task.Delay(5000, cancel).ConfigureAwait(false);
                 }
@@ -220,21 +237,40 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         public static string ParseGoogle(JObject state)
         {
             var words = new JArray();
+            var billed=Seconds(state["response"]?["totalBilledDuration"]);
+            var largest=state.SelectTokens("response.results.*.inlineResult.transcript.results[*].resultEndOffset").Select(Seconds).DefaultIfEmpty(0).Max();
+            var bound=billed>0?billed:largest;double previous=0;
             foreach (var file in (state["response"]?["results"] as JObject ?? new JObject()).Properties())
             {
                 if (file.Value["error"] != null) throw new InvalidOperationException("Google Cloud returned a file error.");
                 foreach (var result in file.Value.SelectTokens("inlineResult.transcript.results[*]"))
                 {
+                    var count=words.Count;
                     var alternative = result["alternatives"]?.First;
                     foreach (var word in alternative?["words"] as JArray ?? new JArray())
                     {
                         var start = Seconds(word["startOffset"]); var end = Seconds(word["endOffset"]);
-                        if (start >= 0 && end > start) words.Add(new JObject { ["word"] = word["word"], ["start"] = start, ["end"] = end });
+                        if (start >= 0 && end > start && (bound<=0 || end<=bound+1)) { words.Add(new JObject { ["word"] = word["word"], ["start"] = start, ["end"] = end });previous=Math.Max(previous,end); }
+                    }
+                    if(count==words.Count && !string.IsNullOrWhiteSpace((string)alternative?["transcript"]))
+                    {
+                        var end=Seconds(result["resultEndOffset"]);if(end>previous && (bound<=0 || end<=bound+1)){words.Add(new JObject{["word"]=alternative["transcript"],["start"]=previous,["end"]=end});previous=end;}
                     }
                 }
             }
             if (words.Count == 0) throw new InvalidDataException("Google returned no timed words.");
-            return new JObject { ["words"] = words }.ToString();
+            return new JObject { ["words"] = words, ["duration"] = billed }.ToString();
+        }
+        public static JArray MergeGoogleTail(JArray original,JArray tail,double resume)
+        {
+            var merged=(JArray)original.DeepClone();var covered=original.Select(w=>(double)w["end"]).DefaultIfEmpty(0).Max();
+            foreach(var word in tail)
+            {
+                var start=(double)word["start"]+resume;var end=(double)word["end"]+resume;
+                if(start<=covered-.5 || end<=covered)continue;
+                merged.Add(new JObject{["word"]=word["word"],["start"]=start,["end"]=end});
+            }
+            return merged;
         }
         private static double Seconds(JToken token) => token == null ? 0 : double.Parse(((string)token).TrimEnd('s'), System.Globalization.CultureInfo.InvariantCulture);
         public void Dispose() => _http.Dispose();

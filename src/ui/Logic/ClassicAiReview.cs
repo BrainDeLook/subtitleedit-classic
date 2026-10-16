@@ -20,6 +20,7 @@ namespace Nikse.SubtitleEdit.Logic
         public ClassicCompatibleAsrSettings Api { get; set; } = new ClassicCompatibleAsrSettings { Url = "http://localhost:11434/v1/chat/completions", Model = "qwen3:8b", TimeoutSeconds = 900 };
         public string Prompt { get; set; } = "You are a subtitle proofreader. Fix typos, spelling, grammar and punctuation. Do not rephrase correct speech or change meaning. Preserve tags and line breaks.";
         public string Context { get; set; } = "";
+        public bool UseLocalLlama { get; set; }
         public static string FileName => Path.Combine(Configuration.DataDirectory, "ClassicAI", "review.json");
         public static ClassicAiSettings Load() { try { var saved=JsonConvert.DeserializeObject<ClassicAiSettings>(File.ReadAllText(FileName)); if(saved?.Api!=null)return saved; } catch (IOException) { } catch (JsonException) { } return new ClassicAiSettings(); }
         public void Save()
@@ -39,7 +40,7 @@ namespace Nikse.SubtitleEdit.Logic
             _settings = settings; _http = new HttpClient(handler ?? new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
         }
         public static string ChatUrl(string url) => url.TrimEnd('/').EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase) ? url.TrimEnd('/') : url.TrimEnd('/') + "/chat/completions";
-        public async Task<string> ChatAsync(JArray messages, bool json, CancellationToken cancel)
+        public async Task<string> ChatAsync(JArray messages, bool json, CancellationToken cancel, double temperature = 0, LlamaCppModel definition = null)
         {
             using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel))
             {
@@ -48,7 +49,11 @@ namespace Nikse.SubtitleEdit.Logic
                     for (var attempt = 0; attempt < 5; attempt++)
                     {
                         var payload = new JObject { ["model"] = _settings.Model, ["messages"] = messages };
-                        if (!_noTemperature) payload["temperature"] = 0;
+                        payload["max_tokens"] = 2048;
+                        if (!_noTemperature) payload["temperature"] = temperature;
+                        if (definition?.TopP >= 0) payload["top_p"] = definition.TopP;
+                        if (definition?.TopK >= 0) payload["top_k"] = definition.TopK;
+                        if (definition?.RepeatPenalty >= 0) payload["repeat_penalty"] = definition.RepeatPenalty;
                         if (json && !_noJson) payload["response_format"] = new JObject { ["type"] = "json_object" };
                         using (var request = new HttpRequestMessage(HttpMethod.Post, ChatUrl(_settings.Url)) { Content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json") })
                         {

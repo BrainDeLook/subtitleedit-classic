@@ -14,8 +14,8 @@ namespace Nikse.SubtitleEdit.Forms
     public class ClassicServiceSettingsForm : Form
     {
         protected readonly Dictionary<string, TextBox> Fields = new Dictionary<string, TextBox>();
-        private readonly TableLayoutPanel _table;
-        private readonly FlowLayoutPanel _footer;
+        protected readonly TableLayoutPanel _table;
+        protected readonly FlowLayoutPanel _footer;
         private readonly Button _save;
         private CancellationTokenSource _download;
         public ClassicServiceSettingsForm(string title)
@@ -39,16 +39,23 @@ namespace Nikse.SubtitleEdit.Forms
             Fields.Add(key, text); _table.Controls.Add(text, 1, row);
         }
         protected void SaveWith(Action save) => _save.Click += (s, e) => { try { save(); DialogResult = DialogResult.OK; } catch (Exception error) { MessageBox.Show(this, error.Message, Text); } };
-        protected void DownloadWith(Func<CancellationToken, IProgress<SpeechProgress>, Task> action)
+        protected CheckBox AddCheck(string label,bool value)
         {
-            var button = new Button { Text = ClassicSpeechSettings.L("Скачать движок и модели", "Download engine and models"), AutoSize = true };
+            var box=new CheckBox{Text=label,Checked=value,AutoSize=true};var row=_table.RowCount++;_table.RowStyles.Add(new RowStyle(SizeType.AutoSize));_table.Controls.Add(box,1,row);return box;
+        }
+        protected void DownloadWith(Func<CancellationToken, IProgress<SpeechProgress>, Task> action, string caption = null)
+        {
+            var button = new Button { Text = caption ?? ClassicSpeechSettings.L("Скачать движок и модели", "Download engine and models"), AutoSize = true };
             _footer.Controls.Add(button);
             button.Click += async (s, e) => {
+                if (_download != null) return;
+                var enabled = _footer.Controls.OfType<Button>().ToDictionary(b => b, b => b.Enabled);
+                foreach (var item in enabled.Keys.Where(b => b.DialogResult != DialogResult.Cancel)) item.Enabled = false;
                 _download = new CancellationTokenSource(); _save.Enabled = button.Enabled = false; _table.Enabled = false; var title = Text;
                 try { await action(_download.Token, new Progress<SpeechProgress>(p => Text = title + " — " + p.Message)); MessageBox.Show(this, ClassicSpeechSettings.L("Готово", "Ready"), title); }
                 catch (OperationCanceledException) { }
                 catch (Exception error) { MessageBox.Show(this, error.Message, title); }
-                finally { _download.Dispose(); _download = null; _save.Enabled = button.Enabled = true; _table.Enabled = true; Text = title; }
+                finally { _download.Dispose(); _download = null; foreach (var item in enabled) item.Key.Enabled = item.Value; _table.Enabled = true; Text = title; }
             };
         }
     }
@@ -57,8 +64,15 @@ namespace Nikse.SubtitleEdit.Forms
         public ClassicTranslationForm(string id) : base("Translation: " + id)
         {
             var settings = ClassicTranslationSettings.Load(id);
+            CheckBox local=null;
+            if(id=="llama")
+            {
+                local=AddCheck(ClassicSpeechSettings.L("Запускать локальный llama.cpp автоматически","Start managed local llama.cpp automatically"),settings.UseLocalLlama);
+                var manager=new Button{Text=ClassicSpeechSettings.L("Движок и AI-модели…","Engine and AI models…"),AutoSize=true};var row=_table.RowCount++;_table.Controls.Add(manager,1,row);manager.Click+=(o,e)=>{using(var form=new ClassicLlamaForm())form.ShowDialog(this);};
+            }
             if (id != "madlad") { Add("url", "URL", settings.Api.Url); Add("key", id == "lara" ? "Lara secret" : "API key", settings.Api.ApiKey, true); }
             if (id != "lara") Add("model", "Model", settings.Api.Model);
+            if(local!=null){Action enabled=()=>{Fields["url"].Enabled=Fields["key"].Enabled=Fields["model"].Enabled=!local.Checked;};local.CheckedChanged+=(o,e)=>enabled();enabled();}
             if (id == "madlad")
             {
                 Fields["model"].ReadOnly = true; Add("variant", "cpu / vulkan / cuda13", settings.Variant);
@@ -68,11 +82,20 @@ namespace Nikse.SubtitleEdit.Forms
             }
             if (id == "lara") Add("accessId", "Lara access key ID", settings.AccessId);
             Add("context", ClassicSpeechSettings.L("Контекст: имена, термины", "Context: names, terms"), settings.Context, multiline: true);
+            var breaks=AddCheck(ClassicSpeechSettings.L("Сохранять переносы строк","Keep line breaks"),settings.KeepLineBreaks);
+            if(id!="madlad" && id!="lara")
+            {
+                Add("prompt",ClassicSpeechSettings.L("Инструкция ({0} → {1})","Prompt ({0} → {1})"),settings.Prompt,multiline:true);
+                Add("glossary",ClassicSpeechSettings.L("Термины: исходник = перевод","Glossary: source = target"),settings.Glossary,multiline:true);
+                Add("formality", "default / formal / informal",settings.Formality);
+            }
             SaveWith(() => {
                 if (id != "madlad") { settings.Api.Url = Fields["url"].Text.Trim(); settings.Api.ApiKey = Fields["key"].Text.Trim(); }
                 if (id != "lara") settings.Api.Model = Fields["model"].Text.Trim();
                 if (id == "lara") settings.AccessId = Fields["accessId"].Text.Trim();
                 settings.Context = Fields["context"].Text;
+                settings.KeepLineBreaks=breaks.Checked;if(local!=null)settings.UseLocalLlama=local.Checked;
+                if(Fields.ContainsKey("prompt")){settings.Prompt=Fields["prompt"].Text;settings.Glossary=Fields["glossary"].Text;settings.Formality=Fields["formality"].Text.Trim();if(!new[]{"default","formal","informal"}.Contains(settings.Formality))throw new ArgumentException("Select default, formal or informal.");}
                 if (id == "madlad") settings.Variant = Fields["variant"].Text.Trim();
                 if (id == "madlad" && !new[] { "cpu", "cpu-legacy", "vulkan", "cuda", "cuda13" }.Contains(settings.Variant)) throw new ArgumentException("Select cpu, vulkan or cuda13.");
                 settings.Save(id);
