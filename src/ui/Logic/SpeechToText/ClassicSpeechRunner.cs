@@ -143,9 +143,9 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             else if (engine.Family == "whisperx")
             {
                 if (options.Language != "auto") args.AddRange(new[] { "--language", options.Language });
-                args.AddRange(new[] { "--model", model.Name, "--output_format", "srt", "--output_dir", Path.GetDirectoryName(outputPrefix),
-                    "--model_dir", Path.Combine(ClassicSpeechCatalog.Root, "Models", "whisperx"), "--device", "cpu", "--compute_type", "int8", inputWave });
-                if (options.TranslateToEnglish) args.AddRange(new[] { "--task", "translate" });
+                args.AddRange(new[] { "--model", model.Name==ClassicLegacyAsr.AnimeName ? ClassicLegacyAsr.AnimeFolder : model.Name, "--output_format", "srt", "--output_dir", Path.GetDirectoryName(outputPrefix),
+                    "--model_dir", Path.Combine(ClassicSpeechCatalog.Root, "Models", "whisperx"), "--device", "cpu", "--compute_type", "int8", "--verbose", "False", inputWave });
+                if (options.TranslateToEnglish && model.Name!=ClassicLegacyAsr.AnimeName) args.AddRange(new[] { "--task", "translate" });
                 else if (!options.WhisperXAlignWords) args.Add("--no_align");
                 else if (options.Language == "ru") args.AddRange(new[] { "--align_model", ClassicSpeechCatalog.WhisperXRussianAligner });
             }

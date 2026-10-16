@@ -24,7 +24,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             var alignerLabel = new Label { Text = L("Выравнивание таймингов", "Forced aligner"), AutoSize = true, Left = 15, Top = 55 };
             var aligner = new ComboBox { Left = 230, Top = 51, Width = 410, DropDownStyle = ComboBoxStyle.DropDownList, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
             var alignerModels = engine.Models.Where(m => m.Aligner).ToList();
-            if (engine.Family == "crisp") alignerModels = ClassicSpeechExtras.RankedAligners(options.Language).Select(a => a.Model).ToList();
+            if (engine.Family == "crisp") alignerModels = ClassicSpeechExtras.RankedAligners(options.Language).Where(a=>ClassicSpeechExtras.SupportsAligner(a,options.Language)).Select(a => a.Model).ToList();
             aligner.Items.Add(L("Встроенное (native timings)", "Built-in (native timings)"));
             foreach (var model in alignerModels) aligner.Items.Add(model);
             aligner.SelectedIndex = 0;

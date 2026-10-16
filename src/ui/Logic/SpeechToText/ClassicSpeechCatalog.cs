@@ -66,7 +66,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             if (selection == WhisperX || selection == CppVulkan)
             {
                 var cpp = selection == CppVulkan;
-                var sourceModels = cpp ? new WhisperCppModel().Models : new WhisperPurfviewFasterWhisperModel().Models;
+                var sourceModels = cpp ? new WhisperCppModel().Models : new WhisperPurfviewFasterWhisperModel().Models.Concat(new[]{ClassicLegacyAsr.AnimeModel()}).ToArray();
                 return new SpeechEngine
                 {
                     Name = selection, Family = cpp ? "cpp" : "whisperx", Backend = "", NativeTimings = true,

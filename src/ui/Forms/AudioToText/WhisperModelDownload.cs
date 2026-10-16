@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.AudioToText;
+using Nikse.SubtitleEdit.Core.AudioToText;
 using Nikse.SubtitleEdit.Core.Http;
 using Nikse.SubtitleEdit.Logic;
 using System;
@@ -30,7 +30,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             UiUtil.FixLargeFonts(this, buttonDownload);
 
             var selectedIndex = 0;
-            foreach (var downloadModel in WhisperHelper.GetWhisperModel().Models)
+            foreach (var downloadModel in Nikse.SubtitleEdit.Logic.SpeechToText.ClassicLegacyAsr.Models(WhisperHelper.GetWhisperModel()))
             {
                 var fileName = MakeDownloadFileName(downloadModel, downloadModel.Urls[0]);
                 downloadModel.AlreadyDownloaded = File.Exists(fileName);
@@ -140,11 +140,13 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                                 return;
                             }
 
+                            downloadTask.GetAwaiter().GetResult();
                             CompleteDownload(downloadStream);
                         }
                     }
                 }
 
+                if(LastDownloadedModel.Name==Nikse.SubtitleEdit.Logic.SpeechToText.ClassicLegacyAsr.AnimeName)Nikse.SubtitleEdit.Logic.SpeechToText.ClassicLegacyAsr.RepairAnimeAlignment(folder);
                 Cursor = Cursors.Default;
                 labelPleaseWait.Text = string.Empty;
 

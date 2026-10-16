@@ -159,6 +159,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
 
         public static async Task EnsureModelAsync(SpeechEngine engine, SpeechModel model, CancellationToken cancel, IProgress<SpeechProgress> progress)
         {
+            if(engine.Family=="whisperx" && model.Name==ClassicLegacyAsr.AnimeName){await ClassicLegacyAsr.EnsureAnimeAsync(cancel,progress).ConfigureAwait(false);return;}
             if (engine.Family == "whisperx") return; // WhisperX downloads to its private HF/model cache on first inference.
             if (model.Assets != null && model.Assets.Length > 0)
             {

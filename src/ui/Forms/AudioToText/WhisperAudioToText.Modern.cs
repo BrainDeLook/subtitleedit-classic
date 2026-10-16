@@ -65,10 +65,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             groupBoxModels.Height += 36;
             _modernBackendLabel = new Label { Left = 6, Top = 78, AutoSize = true, Text = ClassicSpeechSettings.L("Модуль", "Backend") };
             _modernBackend = new ComboBox { Name = "classicSpeechBackend", Left = 85, Top = 74, Width = 220, DropDownStyle = ComboBoxStyle.DropDownList };
-            // Start with the backends verified on the Windows execution path. The
-            // full stable catalog stays available for subsequent backend validation.
-            foreach (var engine in ClassicSpeechCatalog.Engines.Where(e => e.Family == "crisp" &&
-                new[] { "parakeet", "gigaam", "qwen3", "voxtral", "index-echo" }.Contains(e.Backend))) _modernBackend.Items.Add(engine);
+            foreach (var engine in ClassicSpeechCatalog.Engines.Where(e => e.Family == "crisp")) _modernBackend.Items.Add(engine);
             _modernBackend.SelectedItem = _modernBackend.Items.Cast<SpeechEngine>().FirstOrDefault(e => e.Backend == _modernOptions.Backend) ?? _modernBackend.Items[0];
             _modernBackend.SelectedIndexChanged += (s, e) => { if (!_modernUpdating && IsModernSpeech) RefreshModernSpeech(); };
             _modernStatus = new Label { Name = "classicSpeechRuntimeStatus", Left = 320, Top = 79, Width = groupBoxModels.Width - 330,
@@ -194,7 +191,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         {
             if(engine.Family=="compatible-api")return null;
             if (engine.NativeTimings && string.IsNullOrEmpty(_modernOptions.Aligner)) return null;
-            var models = engine.Family == "crisp" ? ClassicSpeechExtras.RankedAligners(_modernOptions.Language).Select(a => a.Model).ToList() : engine.Models.Where(m => m.Aligner).ToList();
+            var models = engine.Family == "crisp" ? ClassicSpeechExtras.RankedAligners(_modernOptions.Language).Where(a=>ClassicSpeechExtras.SupportsAligner(a,_modernOptions.Language)).Select(a => a.Model).ToList() : engine.Models.Where(m => m.Aligner).ToList();
             return models.FirstOrDefault(m => m.Name == _modernOptions.Aligner) ?? (engine.NativeTimings ? null : models.FirstOrDefault());
         }
 
@@ -274,7 +271,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 MessageBox.Show(this, ClassicSpeechSettings.L("Эта модель предназначена только для английского. Выбери English или многоязычную модель.",
                     "This model is English-only. Choose English or a multilingual model."), Text); return;
             }
-            if (engine.Family!="compatible-api" && (model.Name.StartsWith("reazonspeech-",StringComparison.OrdinalIgnoreCase) || model.Name.Contains("-ja-")) && _modernOptions.Language != "ja")
+            if (engine.Family!="compatible-api" && (model.Name==ClassicLegacyAsr.AnimeName || model.Name.StartsWith("reazonspeech-",StringComparison.OrdinalIgnoreCase) || model.Name.Contains("-ja-")) && _modernOptions.Language != "ja")
             {MessageBox.Show(this,ClassicSpeechSettings.L("Эта модель предназначена для японского. Выбери Japanese.","This model is Japanese-only. Choose Japanese."),Text);return;}
             var inputs = _batchMode ? listViewInputFiles.Items.Cast<ListViewItem>().Select(i => i.Text).ToList() : new List<string> { _videoFileName };
             if (inputs.Count == 0 || inputs.Any(f => !File.Exists(f))) { MessageBox.Show(this, ClassicSpeechSettings.L("Выбери входной файл.", "Choose an input file."), Text); return; }

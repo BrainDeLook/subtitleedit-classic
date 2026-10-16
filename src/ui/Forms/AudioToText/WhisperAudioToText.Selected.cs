@@ -93,7 +93,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             var engine = modern ? ModernEngine : null; var model = comboBoxModels.SelectedItem as SpeechModel;
             if (modern && model == null) return;
             if (modern && engine.Family!="compatible-api" && EnglishOnly(model) && _modernOptions.Language != "en") { MessageBox.Show(this, ClassicSpeechSettings.L("Выбери English или многоязычную модель.", "Choose English or a multilingual model."), Text); return; }
-            if (modern && engine.Family!="compatible-api" && (model.Name.StartsWith("reazonspeech-", StringComparison.OrdinalIgnoreCase) || model.Name.Contains("-ja-")) && _modernOptions.Language != "ja") { MessageBox.Show(this, ClassicSpeechSettings.L("Для этой модели выбери Japanese.", "Choose Japanese for this model."), Text); return; }
+            if (modern && engine.Family!="compatible-api" && (model.Name==ClassicLegacyAsr.AnimeName || model.Name.StartsWith("reazonspeech-", StringComparison.OrdinalIgnoreCase) || model.Name.Contains("-ja-")) && _modernOptions.Language != "ja") { MessageBox.Show(this, ClassicSpeechSettings.L("Для этой модели выбери Japanese.", "Choose Japanese for this model."), Text); return; }
             BeginModernOperation(); SetSelectedSpeechState();
             var job = Path.Combine(ClassicSpeechCatalog.Root, "Jobs", "selected-" + Guid.NewGuid().ToString("N"));
             try

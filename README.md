@@ -34,6 +34,8 @@ The main waveform context menu now offers **Create voice reference** for a subti
 
 ASR now includes **OpenAI-compatible / vLLM**. Use **Advanced** to configure the URL, model, optional API key, prompt, chunk duration and timeout. Compatible local servers can run without a key. Segment/word timestamps are preserved; plain-text JSON receives estimated cue timing. Long audio is sent in bounded chunks. Protocol and loopback HTTP tests passed without paid calls; a real vLLM model and commercial services were not tested in this increment.
 
+All 17 stable Crisp ASR backends are now selectable, with language-compatible forced aligners. Faster-Whisper-XXL offers **Multilingual (per segment)** alongside automatic language detection. **anime.ja** is available for Japanese transcription in XXL, CTranslate2 and modern WhisperX, with distilled alignment-config repair. Native tests cover Canary English/Russian, SenseVoice English/Japanese execution and WhisperX anime recognition against known Japanese dialogue phrases. Other new backend models and mixed-language XXL inference remain unverified natively.
+
 ## Classic 4.0.24
 
 ASR adds selectable VAD, speech isolation, speaker detection and new stable v5.3 models, including Parakeet Ultra, Phonon-2, Voxtral and Index-Echo. Speaker metadata survives postprocessing; batch subtitles use ASS when actors are present. Time-code review adds editable original/proposed waveforms and twelve language-specific wav2vec2 aligners. Download the normal Windows installer from [Releases](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest). Native checks focus on Russian and English; see [the changelog](CLASSIC_CHANGELOG.md) for coverage and limits.

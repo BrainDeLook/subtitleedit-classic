@@ -5,6 +5,7 @@ using Nikse.SubtitleEdit.Core.ContainerFormats.Matroska;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Forms.Options;
 using Nikse.SubtitleEdit.Logic;
+using Nikse.SubtitleEdit.Logic.SpeechToText;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -60,6 +61,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
+            comboBoxModels.SelectedIndexChanged += (sender, args) => UpdateLegacyTranslation();
             UiUtil.FixFonts(this);
             UiUtil.FixLargeFonts(this, buttonGenerate);
             _videoFileName = videoFileName;
@@ -197,6 +199,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
             removeTemporaryFilesToolStripMenuItem.Checked = Configuration.Settings.Tools.WhisperDeleteTempFiles;
             checkBoxTranslateToEnglish.Checked = Configuration.Settings.Tools.WhisperTranslateToEnglish;
+            UpdateLegacyTranslation();
             ContextMenuStrip = contextMenuStripWhisperAdvanced;
         }
 
@@ -216,7 +219,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             if (Configuration.Settings.Tools.WhisperChoice == WhisperChoice.CTranslate2 ||
                 Configuration.Settings.Tools.WhisperChoice == WhisperChoice.PurfviewFasterWhisperXxl)
             {
-                foreach (var model in whisperModel.Models)
+                foreach (var model in ClassicLegacyAsr.Models(whisperModel))
                 {
                     var path = modelsFolder;
                     var parts = model.Folder.Split('/', '\\').ToList();
@@ -244,7 +247,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 foreach (var modelSubFolder in modelSubFolders)
                 {
                     var folderNameOnly = Path.GetFileName(modelSubFolder);
-                    var x = whisperModel.Models.Where(p => p.Folder.Equals(folderNameOnly, StringComparison.OrdinalIgnoreCase)).ToList();
+                    var x = ClassicLegacyAsr.Models(whisperModel).Where(p => p.Folder.Equals(folderNameOnly, StringComparison.OrdinalIgnoreCase)).ToList();
                     if (!x.Any())
                     {
                         long fileSize = 0;
@@ -301,7 +304,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             foreach (var fileName in Directory.GetFiles(modelsFolder))
             {
                 var name = Path.GetFileName(fileName);
-                var model = whisperModel.Models.FirstOrDefault(p => p.Name + WhisperHelper.ModelExtension() == name);
+                var model = ClassicLegacyAsr.Models(whisperModel).FirstOrDefault(p => p.Name + WhisperHelper.ModelExtension() == name);
                 if (model == null)
                 {
                     continue;
@@ -433,6 +436,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             }
 
             _languageCode = GetLanguage(comboBoxLanguages.Text);
+            if(comboBoxModels.SelectedItem is WhisperModel animeModel && animeModel.Name==ClassicLegacyAsr.AnimeName && _languageCode!="ja"){MessageBox.Show(this,"anime-whisper: choose Japanese.",Text);return;}
 
             if (comboBoxModels.Items[comboBoxModels.SelectedIndex] is WhisperModel model &&
                 _languageCode != "en" && IsModelEnglishOnly(model))
@@ -862,6 +866,8 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 
         internal static string GetLanguage(string name)
         {
+            if(name==ClassicLegacyAsr.AutoName)return "auto";
+            if(name==ClassicLegacyAsr.MultilingualName)return "multilingual";
             var language = WhisperLanguage.Languages.FirstOrDefault(l => l.Name == name);
             return language != null ? language.Code : "en";
         }
@@ -1416,8 +1422,10 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             }
 
             var w = WhisperHelper.GetWhisperPathAndFileName();
-            var m = WhisperHelper.GetWhisperModelForCmdLine(model);
-            var parameters = $"--language {language} --model \"{m}\" {outputSrt}{translateToEnglish}{Configuration.Settings.Tools.WhisperExtraSettings} \"{waveFileName}\"{postParams}";
+            var m = ClassicLegacyAsr.ModelArgument(model);
+            if(model==ClassicLegacyAsr.AnimeName){if(language!="ja")throw new ArgumentException("anime-whisper supports Japanese transcription only.");translateToEnglish="";}
+            var languageArgument=ClassicLegacyAsr.LanguageArguments(Configuration.Settings.Tools.WhisperChoice,language,Configuration.Settings.Tools.WhisperExtraSettings);
+            var parameters = $"{languageArgument}--model \"{m}\" {outputSrt}{translateToEnglish}{Configuration.Settings.Tools.WhisperExtraSettings} \"{waveFileName}\"{postParams}";
 
             SeLogger.WhisperInfo($"{w} {parameters}");
 
@@ -1508,6 +1516,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 Configuration.Settings.Tools.WhisperModel = model.Name;
             }
 
+            if(!IsModernSpeech && (comboBoxLanguages.Text==ClassicLegacyAsr.AutoName || comboBoxLanguages.Text==ClassicLegacyAsr.MultilingualName))Configuration.Settings.Tools.WhisperLanguageCode=GetLanguage(comboBoxLanguages.Text);
             if (comboBoxLanguages.SelectedItem is WhisperLanguage language)
             {
                 Configuration.Settings.Tools.WhisperLanguageCode = language.Code;
@@ -2038,7 +2047,15 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 return;
             }
 
-            checkBoxTranslateToEnglish.Enabled = comboBoxLanguages.Text.ToLowerInvariant() != "english";
+            UpdateLegacyTranslation();
+        }
+
+        private void UpdateLegacyTranslation()
+        {
+            if (IsModernSpeech) return;
+            var anime = comboBoxModels.SelectedItem is WhisperModel model && model.Name == ClassicLegacyAsr.AnimeName;
+            checkBoxTranslateToEnglish.Enabled = !anime && comboBoxLanguages.Text.ToLowerInvariant() != "english";
+            if (anime) checkBoxTranslateToEnglish.Checked = false;
         }
 
         internal static void InitializeLanguageNames(NikseComboBox comboBox)
@@ -2077,6 +2094,10 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 comboBox.Text = lang != null ? lang.ToString() : "English";
             }
 
+            comboBox.Items.Insert(0,ClassicLegacyAsr.AutoName);
+            if(Configuration.Settings.Tools.WhisperChoice==WhisperChoice.PurfviewFasterWhisperXxl)comboBox.Items.Insert(1,ClassicLegacyAsr.MultilingualName);
+            if(Configuration.Settings.Tools.WhisperLanguageCode=="auto")comboBox.SelectedItem=ClassicLegacyAsr.AutoName;
+            else if(Configuration.Settings.Tools.WhisperLanguageCode=="multilingual" && Configuration.Settings.Tools.WhisperChoice==WhisperChoice.PurfviewFasterWhisperXxl)comboBox.SelectedItem=ClassicLegacyAsr.MultilingualName;
             comboBox.Items.Add(LanguageSettings.Current.General.ChangeLanguageFilter);
 
             if (string.IsNullOrEmpty(comboBox.Text) && comboBox.Items.Count > 0)

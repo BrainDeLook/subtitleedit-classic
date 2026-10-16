@@ -92,11 +92,12 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         }
         public static IEnumerable<ClassicSpeechAssetOption> RankedAligners(string language)
         {
-            language = (language ?? "auto").ToLowerInvariant();
+            language = NormalizeLanguage(language);
             return Catalog.Aligners.OrderBy(a => a.Language == language ? (language == "en" ? 1.5 : 0) : a.Choice == "canary-ctc" ? (CanaryLanguages.Contains(language) || language == "auto" ? 1 : 3) : a.Choice == "qwen3-forced" ? (QwenLanguages.Contains(language) ? 2 : 4) : 5);
         }
         public static bool CanCheckSpeech(string language) => string.IsNullOrEmpty(language) || language == "auto" || CanaryLanguages.Contains(language);
-        public static bool SupportsAligner(ClassicSpeechAssetOption aligner, string language) => string.IsNullOrEmpty(language) || language == "auto" || (!string.IsNullOrEmpty(aligner.Language) ? aligner.Language == language : aligner.Choice == "canary-ctc" ? CanaryLanguages.Contains(language) : QwenLanguages.Contains(language));
+        public static string NormalizeLanguage(string language){var code=(language??"auto").Split('_')[0].ToLowerInvariant();if(code.Length==3){var culture=System.Globalization.CultureInfo.GetCultures(System.Globalization.CultureTypes.NeutralCultures).FirstOrDefault(c=>c.ThreeLetterISOLanguageName==code);if(culture!=null)code=culture.TwoLetterISOLanguageName;}return code;}
+        public static bool SupportsAligner(ClassicSpeechAssetOption aligner, string language){language=NormalizeLanguage(language);return string.IsNullOrEmpty(language) || language == "auto" || (!string.IsNullOrEmpty(aligner.Language) ? aligner.Language == language : aligner.Choice == "canary-ctc" ? CanaryLanguages.Contains(language) : QwenLanguages.Contains(language));}
         public static Subtitle ProcessByActor(Subtitle source, Func<Subtitle, Subtitle> process)
         {
             if (source.Paragraphs.All(p => string.IsNullOrEmpty(p.Actor))) return process(source);
