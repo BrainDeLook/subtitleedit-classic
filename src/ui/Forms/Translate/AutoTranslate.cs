@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Controls;
+using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Translate;
@@ -186,7 +186,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 var saved=ClassicTranslationSettings.Load(classic.Id);
                 FillUrls(new List<string>{saved.Api.Url});
                 nikseTextBoxApiKey.Text=saved.Api.ApiKey; nikseTextBoxApiKey.Visible=labelApiKey.Visible=classic.Id!="madlad";
-                labelFormality.Text=LanguageSettings.Current.AudioToText.Model;labelFormality.Visible=comboBoxFormality.Visible=classic.Id!="lara";
+                labelFormality.Text=classic.Id=="madlad" && !ClassicNewTranslator.MadladReady(saved.Variant) ? (Configuration.Settings.General.Language.StartsWith("ru") ? "Модель (не установлена)" : "Model (not installed)") : LanguageSettings.Current.AudioToText.Model;labelFormality.Visible=comboBoxFormality.Visible=classic.Id!="lara";
                 comboBoxFormality.DropDownStyle=ComboBoxStyle.DropDown;comboBoxFormality.Items.Clear();comboBoxFormality.Text=saved.Api.Model;comboBoxFormality.Left=labelFormality.Right+3;
                 labelApiKey.Left=nikseComboBoxUrl.Right+12;nikseTextBoxApiKey.Left=labelApiKey.Right+3;
                 if(classic.Id=="madlad"){labelUrl.Visible=nikseComboBoxUrl.Visible=false;comboBoxFormality.Items.Add(saved.Api.Model);comboBoxFormality.DropDownStyle=ComboBoxStyle.DropDownList;comboBoxFormality.SelectedIndex=0;}
@@ -936,6 +936,8 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 return;
             }
 
+            if (!EnsureClassicTranslatorReady()) { _singleLineMode = false; return; }
+
             _translationInProgress = true;
             _cancellationTokenSource = new CancellationTokenSource();
             _autoTranslator = GetCurrentEngine();
@@ -1099,6 +1101,15 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             buttonOK.Focus();
         }
 
+        private bool EnsureClassicTranslatorReady()
+        {
+            if (!(GetCurrentEngine() is ClassicNewTranslator translator) || translator.Id != "madlad") return true;
+            if (ClassicNewTranslator.MadladReady(ClassicTranslationSettings.Load("madlad").Variant)) return true;
+            using (var form = new ClassicTranslationForm("madlad")) form.ShowDialog(this);
+            SetAutoTranslatorEngine();
+            return ClassicNewTranslator.MadladReady(ClassicTranslationSettings.Load("madlad").Variant);
+        }
+
         private void Delay(int delaySeconds, int start, int index)
         {
             if (index > start && delaySeconds > 0)
@@ -1123,6 +1134,12 @@ namespace Nikse.SubtitleEdit.Forms.Translate
         private void HandleError(Exception exception, int linesTranslate, Type engineType)
         {
             SeLogger.Error(exception);
+
+            if (_autoTranslator is ClassicNewTranslator)
+            {
+                MessageBox.Show(this, exception.GetBaseException().Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             if (nikseTextBoxApiKey.Visible &&
                 string.IsNullOrWhiteSpace(nikseTextBoxApiKey.Text) &&

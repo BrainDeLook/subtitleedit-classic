@@ -59,7 +59,13 @@ namespace Nikse.SubtitleEdit.Forms
             var settings = ClassicTranslationSettings.Load(id);
             if (id != "madlad") { Add("url", "URL", settings.Api.Url); Add("key", id == "lara" ? "Lara secret" : "API key", settings.Api.ApiKey, true); }
             if (id != "lara") Add("model", "Model", settings.Api.Model);
-            if (id == "madlad") { Fields["model"].ReadOnly = true; Add("variant", "cpu / vulkan / cuda13", settings.Variant); }
+            if (id == "madlad")
+            {
+                Fields["model"].ReadOnly = true; Add("variant", "cpu / vulkan / cuda13", settings.Variant);
+                Add("installed", ClassicSpeechSettings.L("Установка", "Installation"), ClassicNewTranslator.MadladReady(settings.Variant) ? ClassicSpeechSettings.L("Готово", "Ready") : ClassicSpeechSettings.L("Не установлено. Нажми «Скачать движок и модели» внизу. Загрузка модели — около 2 ГБ. После завершения нажми «Сохранить».", "Not installed. Click Download engine and models below (about 2 GB), then Save."), multiline: true);
+                Fields["installed"].ReadOnly = true;
+                Add("path", ClassicSpeechSettings.L("Файл модели", "Model file"), ClassicNewTranslator.MadladModel); Fields["path"].ReadOnly = true;
+            }
             if (id == "lara") Add("accessId", "Lara access key ID", settings.AccessId);
             Add("context", ClassicSpeechSettings.L("Контекст: имена, термины", "Context: names, terms"), settings.Context, multiline: true);
             SaveWith(() => {
@@ -71,7 +77,12 @@ namespace Nikse.SubtitleEdit.Forms
                 if (id == "madlad" && !new[] { "cpu", "cpu-legacy", "vulkan", "cuda", "cuda13" }.Contains(settings.Variant)) throw new ArgumentException("Select cpu, vulkan or cuda13.");
                 settings.Save(id);
             });
-            if (id == "madlad") DownloadWith((cancel, progress) => ClassicNewTranslator.EnsureMadladAsync(Fields["variant"].Text.Trim(), cancel, progress));
+            if (id == "madlad") DownloadWith(async (cancel, progress) => {
+                var variant = Fields["variant"].Text.Trim();
+                if (!new[] { "cpu", "cpu-legacy", "vulkan", "cuda", "cuda13" }.Contains(variant)) throw new ArgumentException("Select cpu, vulkan or cuda13.");
+                await ClassicNewTranslator.EnsureMadladAsync(variant, cancel, progress);
+                Fields["installed"].Text = ClassicSpeechSettings.L("Готово. Нажми «Сохранить».", "Ready. Click Save.");
+            });
         }
     }
 }

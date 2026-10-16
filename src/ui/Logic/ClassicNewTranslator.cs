@@ -115,16 +115,18 @@ namespace Nikse.SubtitleEdit.Logic
             }
         }
         public static string MadladModel => Path.Combine(ClassicSpeechCatalog.Root, "Models", "crisp", "madlad400-3b-mt-q4_k.gguf");
+        public static bool MadladModelInstalled => File.Exists(MadladModel) && new FileInfo(MadladModel).Length > 1900000000;
+        public static bool MadladReady(string variant) => MadladModelInstalled && File.Exists(ClassicSpeechCatalog.Executable(new SpeechEngine { Family = "crisp" }, variant));
         public static async Task EnsureMadladAsync(string variant, CancellationToken cancel, IProgress<SpeechProgress> progress)
         {
             await ClassicSpeechDownload.EnsureRuntimeAsync(new SpeechEngine { Family = "crisp" }, variant, cancel, progress).ConfigureAwait(false);
-            if (File.Exists(MadladModel) && new FileInfo(MadladModel).Length > 1900000000) return;
+            if (MadladModelInstalled) return;
             await ClassicSpeechDownload.DownloadFileAsync("https://huggingface.co/cstr/madlad400-3b-mt-GGUF/resolve/main/madlad400-3b-mt-q4_k.gguf", MadladModel, true, cancel, progress).ConfigureAwait(false);
         }
         private async Task<string> TranslateMadlad(string text, string source, string target, CancellationToken cancel)
         {
             if (!ClassicMadladLanguages.IsSupported(target)) throw new ArgumentException("MADLAD has no control token for this target language.");
-            if (!File.Exists(MadladModel)) throw new FileNotFoundException("Download MADLAD from Advanced first.");
+            if (!MadladReady(_settings.Variant)) throw new FileNotFoundException(Configuration.Settings.General.Language.StartsWith("ru") ? "MADLAD ещё не установлен. Открой «Дополнительно» → «Скачать движок и модели», дождись завершения и сохрани настройки." : "MADLAD is not installed. Open Advanced → Download engine and models, wait for completion, then save settings.");
             var exe = ClassicSpeechCatalog.Executable(new SpeechEngine { Family = "crisp" }, _settings.Variant);
             var args = new[] { "--backend", "madlad", "-m", MadladModel, "--text", text, "-sl", source, "-tl", target, "--translate-max-tokens", "2048", "--no-prints" };
             return await ClassicNativeOutput.Run(exe, string.Join(" ", args.Select(ClassicSpeechRunner.Quote)), cancel).ConfigureAwait(false);

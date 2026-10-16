@@ -2,6 +2,10 @@
 
 ## 4.0.25 — local preview
 
+### Local increment 4.0.25.20
+
+- MADLAD translation now opens its installation settings before starting when the model or selected runtime is missing. The classic model label shows the missing state; settings display installation status, the model path and approximate 2 GB download size. Cancelling setup leaves translation idle and cues untouched. Local translator errors show a concise message while full diagnostics remain in the log. Regression coverage exercises the real Translate button with a missing model and cancelled setup.
+
 ### Local increment 4.0.25.19
 
 - Expanded audio-only per-line cloning from four to fourteen local backends: Breeze, Chatterbox, Confucius, CosyVoice, Dots, Fish, Higgs, IndexTTS, IndexTTS 2.5, MOSS, OmniVoice, Pocket, VibeVoice and VoxCPM. Temporary per-line references are explicitly marked; ordinary transcript-dependent references keep their validation. Pocket/VibeVoice and per-line MOSS/VoxCPM/CosyVoice switch references per request, with language-sensitive reloads where required.

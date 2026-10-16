@@ -7,7 +7,7 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 English · [Русский](README.ru.md)
 
 ## Local 4.0.25 preview
-The latest local increment, **4.0.25.19**, expands audio-only per-line cloning to fourteen backends and adds OpenRouter/DashScope/Google Cloud v2 ASR plus optional compatible-API SSE responses. **Tools → AI subtitle review / Current-line AI assistant** uses an existing compatible server and applies only checked text changes, preserving timing and metadata. It does not install a chat-model server.
+The latest local increment, **4.0.25.20**, expands audio-only per-line cloning to fourteen backends and adds OpenRouter/DashScope/Google Cloud v2 ASR plus optional compatible-API SSE responses. **Tools → AI subtitle review / Current-line AI assistant** uses an existing compatible server and applies only checked text changes, preserving timing and metadata. It does not install a chat-model server. If MADLAD is missing, Translate opens installation settings with status, path and download size; cancelling preserves existing cues.
 
 Translation adds OpenAI-compatible, llama.cpp, NVIDIA, API Route, Perplexity Responses, Lara and downloadable local MADLAD (419 language tokens). Bitmap OCR adds Google Lens Sharp, Mistral OCR, CrispEmbed GGUF models and llama.cpp / compatible Vision, reusing the classic correction workflow. Settings provide local OCR runtime/model downloads. Lens sends the selected subtitle image to Google; the other API engines send data to their configured providers.
 
