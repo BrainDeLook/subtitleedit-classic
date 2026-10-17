@@ -743,6 +743,8 @@ namespace Nikse.SubtitleEdit.Forms
                 new NoLanguageLeftBehindServe(),
                 new NoLanguageLeftBehindApi(),
             };
+            _autoTranslatorEngines.AddRange(ClassicNewTranslator.Ids.Select(id=>new ClassicNewTranslator(id)));
+            InitializeClassicBatchTranslation();
             nikseComboBoxEngine.Items.Clear();
             nikseComboBoxEngine.Items.AddItems(_autoTranslatorEngines.Select(p => p.Name));
             nikseComboBoxEngine.SelectedIndex = 0;
@@ -1294,6 +1296,7 @@ namespace Nikse.SubtitleEdit.Forms
             UpdateChangeCasingSettings();
             UpdateRtlSettings();
             UpdateActionEnabledCache();
+            if(IsActionEnabled(CommandLineConverter.BatchAction.AutoTranslate) && !PrepareClassicBatchTranslation())return;
             _converting = true;
             progressBar1.Style = ProgressBarStyle.Blocks;
             progressBar1.Maximum = listViewInputFiles.Items.Count;
@@ -1774,6 +1777,8 @@ namespace Nikse.SubtitleEdit.Forms
                                             {
                                                 SeLogger.Error(exception, "Batch translate failed");
                                                 item.SubItems[3].Text = "Translate failed";
+                                                _errors++;
+                                                continue;
                                             }
                                         }
 
@@ -1828,6 +1833,8 @@ namespace Nikse.SubtitleEdit.Forms
                                         {
                                             SeLogger.Error(exception, "Batch translate failed");
                                             item.SubItems[3].Text = "Translate failed";
+                                            _errors++;
+                                            continue;
                                         }
                                     }
 
@@ -2032,6 +2039,9 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 target = targetItem;
             }
+
+            if(_autoTranslator is ClassicNewTranslator modern)
+                return new TranslateResult{Source=source,Target=target,Subtitle=RunClassicBatchTranslation(subtitle,modern,source.Code,target.Code)};
 
             var forceSingleLineMode =
                 _autoTranslator.Name == NoLanguageLeftBehindApi.StaticName ||  // NLLB seems to miss some text...
@@ -4303,14 +4313,19 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void nikseComboBoxEngine_SelectedIndexChanged(object sender, EventArgs e)
         {
+            var oldSource=comboBoxSource.SelectedItem as TranslationPair;
+            var oldTarget=comboBoxTarget.SelectedItem as TranslationPair;
             SetAutoTranslatorEngine();
             SetupLanguageSettings();
+            if(oldSource!=null)AutoTranslate.SelectLanguageCode(comboBoxSource,oldSource.Code);
+            if(oldTarget!=null)AutoTranslate.SelectLanguageCode(comboBoxTarget,oldTarget.Code);
         }
 
         private void SetAutoTranslatorEngine()
         {
             _autoTranslator = GetCurrentEngine();
             linkLabelPoweredBy.Text = string.Format(LanguageSettings.Current.GoogleTranslate.PoweredByX, _autoTranslator.Name);
+            if(_classicBatchTranslateSettings!=null)_classicBatchTranslateSettings.Visible=_autoTranslator is ClassicNewTranslator;
 
             if (_autoTranslator.Name == OllamaTranslate.StaticName)
             {

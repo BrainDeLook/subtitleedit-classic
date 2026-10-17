@@ -40,7 +40,7 @@ namespace Nikse.SubtitleEdit.Logic
             _settings = settings; _http = new HttpClient(handler ?? new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
         }
         public static string ChatUrl(string url) => url.TrimEnd('/').EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase) ? url.TrimEnd('/') : url.TrimEnd('/') + "/chat/completions";
-        public async Task<string> ChatAsync(JArray messages, bool json, CancellationToken cancel, double temperature = 0, LlamaCppModel definition = null)
+        public async Task<string> ChatAsync(JArray messages, bool json, CancellationToken cancel, double temperature = 0, LlamaCppModel definition = null, JObject responseFormat = null)
         {
             using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel))
             {
@@ -54,7 +54,7 @@ namespace Nikse.SubtitleEdit.Logic
                         if (definition?.TopP >= 0) payload["top_p"] = definition.TopP;
                         if (definition?.TopK >= 0) payload["top_k"] = definition.TopK;
                         if (definition?.RepeatPenalty >= 0) payload["repeat_penalty"] = definition.RepeatPenalty;
-                        if (json && !_noJson) payload["response_format"] = new JObject { ["type"] = "json_object" };
+                        if (json && !_noJson) payload["response_format"] = responseFormat ?? new JObject { ["type"] = "json_object" };
                         using (var request = new HttpRequestMessage(HttpMethod.Post, ChatUrl(_settings.Url)) { Content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json") })
                         {
                             if (!string.IsNullOrEmpty(_settings.ApiKey)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
@@ -69,7 +69,7 @@ namespace Nikse.SubtitleEdit.Logic
                                     return text;
                                 }
                                 if ((int)response.StatusCode == 400 && !_noTemperature && body.IndexOf("temperature", StringComparison.OrdinalIgnoreCase) >= 0) { _noTemperature = true; continue; }
-                                if ((int)response.StatusCode == 400 && json && !_noJson && body.IndexOf("response_format", StringComparison.OrdinalIgnoreCase) >= 0) { _noJson = true; continue; }
+                                if ((int)response.StatusCode == 400 && json && !_noJson && (body.IndexOf("response_format", StringComparison.OrdinalIgnoreCase) >= 0 || body.IndexOf("json_schema",StringComparison.OrdinalIgnoreCase)>=0)) { if(responseFormat!=null)responseFormat=null;else _noJson = true; continue; }
                                 if (((int)response.StatusCode == 429 || (int)response.StatusCode >= 500) && attempt < 2)
                                 {
                                     var delay = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(attempt + 1);

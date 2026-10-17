@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Nikse.SubtitleEdit.Core.Settings;
+using Nikse.SubtitleEdit.Logic;
 
 namespace Nikse.SubtitleEdit.Forms.Translate
 {
@@ -18,6 +19,15 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         public static async Task<int> MergeAndTranslateIfPossible(Subtitle sourceSubtitle, Subtitle targetSubtitle, TranslationPair source, TranslationPair target, int index, IAutoTranslator autoTranslator, bool forceSingleLineMode, CancellationToken cancellationToken)
         {
+            if(autoTranslator is ClassicNewTranslator advanced && advanced.IsAdvanced)
+            {
+                var count=Math.Min(forceSingleLineMode?1:advanced.AdvancedBatchSize,sourceSubtitle.Paragraphs.Count-index);
+                var texts=sourceSubtitle.Paragraphs.Skip(index).Take(count).Select(p=>p.Text).ToList();
+                var translations=await advanced.TranslateBatchAsync(texts,source.Code,target.Code,cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+                for(var i=0;i<count;i++)targetSubtitle.Paragraphs[index+i].Text=translations[i];
+                return count;
+            }
             if (forceSingleLineMode)
             {
                 return 0;

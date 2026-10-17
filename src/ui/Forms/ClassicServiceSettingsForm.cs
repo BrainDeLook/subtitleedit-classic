@@ -65,7 +65,7 @@ namespace Nikse.SubtitleEdit.Forms
         {
             var settings = ClassicTranslationSettings.Load(id);
             CheckBox local=null;
-            if(id=="llama")
+            if(id=="llama" || id=="llama-advanced")
             {
                 local=AddCheck(ClassicSpeechSettings.L("Запускать локальный llama.cpp автоматически","Start managed local llama.cpp automatically"),settings.UseLocalLlama);
                 var manager=new Button{Text=ClassicSpeechSettings.L("Движок и AI-модели…","Engine and AI models…"),AutoSize=true};var row=_table.RowCount++;_table.Controls.Add(manager,1,row);manager.Click+=(o,e)=>{using(var form=new ClassicLlamaForm())form.ShowDialog(this);};
@@ -83,6 +83,11 @@ namespace Nikse.SubtitleEdit.Forms
             if (id == "lara") Add("accessId", "Lara access key ID", settings.AccessId);
             Add("context", ClassicSpeechSettings.L("Контекст: имена, термины", "Context: names, terms"), settings.Context, multiline: true);
             var breaks=AddCheck(ClassicSpeechSettings.L("Сохранять переносы строк","Keep line breaks"),settings.KeepLineBreaks);
+            if(id.EndsWith("-advanced",StringComparison.Ordinal))
+            {
+                Add("batchSize",ClassicSpeechSettings.L("Реплик в запросе (1–32)","Cues per request (1–32)"),settings.BatchSize.ToString());
+                Add("historyLines",ClassicSpeechSettings.L("Предыдущих реплик в контексте (0–100)","Previous context cues (0–100)"),settings.HistoryLines.ToString());
+            }
             if(id!="madlad" && id!="lara")
             {
                 Add("prompt",ClassicSpeechSettings.L("Инструкция ({0} → {1})","Prompt ({0} → {1})"),settings.Prompt,multiline:true);
@@ -95,6 +100,7 @@ namespace Nikse.SubtitleEdit.Forms
                 if (id == "lara") settings.AccessId = Fields["accessId"].Text.Trim();
                 settings.Context = Fields["context"].Text;
                 settings.KeepLineBreaks=breaks.Checked;if(local!=null)settings.UseLocalLlama=local.Checked;
+                if(Fields.ContainsKey("batchSize")){settings.BatchSize=int.Parse(Fields["batchSize"].Text);settings.HistoryLines=int.Parse(Fields["historyLines"].Text);if(settings.BatchSize<1 || settings.BatchSize>32 || settings.HistoryLines<0 || settings.HistoryLines>100)throw new ArgumentException("Use 1–32 cues per request and 0–100 history cues.");}
                 if(Fields.ContainsKey("prompt")){settings.Prompt=Fields["prompt"].Text;settings.Glossary=Fields["glossary"].Text;settings.Formality=Fields["formality"].Text.Trim();if(!new[]{"default","formal","informal"}.Contains(settings.Formality))throw new ArgumentException("Select default, formal or informal.");}
                 if (id == "madlad") settings.Variant = Fields["variant"].Text.Trim();
                 if (id == "madlad" && !new[] { "cpu", "cpu-legacy", "vulkan", "cuda", "cuda13" }.Contains(settings.Variant)) throw new ArgumentException("Select cpu, vulkan or cuda13.");

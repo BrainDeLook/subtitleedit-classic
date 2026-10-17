@@ -30,15 +30,19 @@ namespace Nikse.SubtitleEdit.Logic
         public string Prompt { get; set; } = "Translate subtitles from {0} to {1}. Return only the translation. Preserve meaning and formatting tags.";
         public string Glossary { get; set; } = "";
         public string Formality { get; set; } = "default";
+        public int BatchSize { get; set; } = 8;
+        public int HistoryLines { get; set; } = 10;
         public static string FileName(string id) => Path.Combine(Configuration.DataDirectory, "ClassicAI", "translate-" + id + ".json");
         public static ClassicTranslationSettings Load(string id)
         {
             try { var saved=JsonConvert.DeserializeObject<ClassicTranslationSettings>(File.ReadAllText(FileName(id))); if(saved?.Api!=null)return saved; } catch (IOException) { } catch (JsonException) { }
             var s = new ClassicTranslationSettings();
-            s.UseLocalLlama = id == "llama";
+            s.UseLocalLlama = id == "llama" || id == "llama-advanced";
             s.Api.Url = id == "nvidia" ? "https://integrate.api.nvidia.com/v1/chat/completions" : id == "route" ? "https://global.api-route.com/v1/chat/completions" :
                 id == "perplexity" ? "https://api.perplexity.ai/v1/responses" : id == "lara" ? "https://api.laratranslate.com/translate" : "http://localhost:8080/v1/chat/completions";
             s.Api.Model = id == "nvidia" ? "meta/llama-3.3-70b-instruct" : id == "perplexity" ? "openai/gpt-5-mini" : id == "route" ? "deepseek-chat" : id == "madlad" ? "madlad400-3b-mt-q4_k.gguf" : "local-model";
+            if(id=="ollama-advanced"){s.Api.Url="http://localhost:11434/v1/chat/completions";s.Api.Model="qwen3:8b";}
+            if(id=="lmstudio-advanced")s.Api.Url="http://localhost:1234/v1/chat/completions";
             return s;
         }
         public void Save(string id)
@@ -48,7 +52,7 @@ namespace Nikse.SubtitleEdit.Logic
             finally { if (File.Exists(part)) File.Delete(part); }
         }
     }
-    public sealed class ClassicNewTranslator : IAutoTranslator, IDisposable
+    public sealed partial class ClassicNewTranslator : IAutoTranslator, IDisposable
     {
         public string Id { get; }
         public string Name { get; }
@@ -61,19 +65,20 @@ namespace Nikse.SubtitleEdit.Logic
         private HttpClient _http;
         private readonly HttpMessageHandler _handler;
         private readonly Queue<string> _context = new Queue<string>();
-        public static readonly string[] Ids = { "compatible", "llama", "nvidia", "route", "perplexity", "lara", "madlad" };
-        public static readonly string[] Names = { "OpenAI-compatible", "llama.cpp", "NVIDIA", "API Route", "Perplexity", "Lara", "CrispASR MADLAD" };
+        public static readonly string[] Ids = { "compatible", "llama", "nvidia", "route", "perplexity", "lara", "madlad", "llama-advanced", "ollama-advanced", "lmstudio-advanced" };
+        public static readonly string[] Names = { "OpenAI-compatible", "llama.cpp", "NVIDIA", "API Route", "Perplexity", "Lara", "CrispASR MADLAD", "llama.cpp advanced", "Ollama advanced", "LM Studio advanced" };
         public override string ToString() => Name;
         public ClassicNewTranslator(string id, HttpMessageHandler handler = null) { _handler=handler; Id = id; Name = Names[Array.IndexOf(Ids, id)]; }
         public void Initialize()
         {
             _chat?.Dispose(); _http?.Dispose(); _settings = ClassicTranslationSettings.Load(Id); _chat = new ClassicAiClient(_settings.Api,_handler);
-            _http = new HttpClient(_handler??new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(_settings.Api.TimeoutSeconds) }; _context.Clear();
+            _http = new HttpClient(_handler??new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(_settings.Api.TimeoutSeconds) }; _context.Clear(); _advancedHistory.Clear(); Error=null;
         }
         public List<TranslationPair> GetSupportedSourceLanguages() => Id == "madlad" ? ClassicMadladLanguages.List() : Id == "lara" ? ClassicProviderLanguages.Lara() : ChatGptTranslate.ListLanguages();
         public List<TranslationPair> GetSupportedTargetLanguages() => GetSupportedSourceLanguages();
         public async Task<string> Translate(string text, string sourceLanguageCode, string targetLanguageCode, CancellationToken cancellationToken)
         {
+            if(IsAdvanced)return (await TranslateBatchAsync(new[]{text},sourceLanguageCode,targetLanguageCode,cancellationToken).ConfigureAwait(false))[0];
             if (_settings == null) Initialize();
             LlamaCppModel definition = null;
             if (Id == "llama" && _settings.UseLocalLlama && _handler == null)

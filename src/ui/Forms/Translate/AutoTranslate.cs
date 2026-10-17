@@ -1002,6 +1002,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 {
                     var start = subtitleListViewTarget.SelectedIndex >= 0 ? subtitleListViewTarget.SelectedIndex : 0;
                     var index = start;
+                    if(_autoTranslator is ClassicNewTranslator advanced && advanced.IsAdvanced)forceSingleLineMode=_singleLineMode;
                     while (index < _subtitle.Paragraphs.Count)
                     {
                         Delay(delaySeconds, start, index);
@@ -1024,6 +1025,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                             index += linesMergedAndTranslated;
                             linesTranslated += linesMergedAndTranslated;
                             _translationProgressIndex = index - 1;
+                            if(_singleLineMode)break;
                             continue;
                         }
 
@@ -1104,7 +1106,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private bool EnsureClassicTranslatorReady()
         {
-            if (GetCurrentEngine() is ClassicNewTranslator local && local.Id == "llama" && ClassicTranslationSettings.Load("llama").UseLocalLlama && !ClassicLlamaServer.Installed(ClassicLlamaSettings.Load()))
+            if (GetCurrentEngine() is ClassicNewTranslator local && (local.Id == "llama" || local.Id=="llama-advanced") && ClassicTranslationSettings.Load(local.Id).UseLocalLlama && !ClassicLlamaServer.Installed(ClassicLlamaSettings.Load()))
             {
                 using(var form=new ClassicLlamaForm())form.ShowDialog(this);
                 if(!ClassicLlamaServer.Installed(ClassicLlamaSettings.Load()))return false;

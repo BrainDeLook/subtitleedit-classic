@@ -1,5 +1,12 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.24
+
+- Added the stable 5.3 advanced translation workflow for llama.cpp, Ollama and LM Studio to both ordinary translation and Batch Convert: numbered cue batches, bounded translated history, synopsis/context, glossary, formality and strict JSON-schema output with compatibility fallbacks. Cue numbers, completeness, duplicate keys, tags and optional line-break preservation are validated before applying a batch; invalid/echoed output retries once and then fails explicitly. Completion-only managed models are rejected with guidance to use the ordinary engine.
+- Connected all seven previously adapted translators and the three advanced variants to classic Batch Convert. A separate Translation settings button reuses the existing provider settings and managed-model downloads. Language choices survive engine changes where supported, and missing local components open setup before conversion begins.
+- Each queued file starts with fresh translation history. The modern batch path keeps Cancel responsive, forwards cancellation into requests, preserves cue metadata and does not return a partial file. Transport-stream translation failures now skip the failed track rather than writing untranslated content as a successful conversion.
+- Validation: real Convert-button runs write two translated SRT files and write none after failed translations; mocked APIs cover schema fallbacks, malformed/missing/duplicate keys, tag/line-break loss, bounded history and cancellation without paid calls. Native managed Qwen CUDA 13 translates a two-cue batch to Russian. Classic dialogs were rendered and inspected. This increment is local and is not a new stable release.
+
 ## 4.0.25
 
 ### Local increment 4.0.25.23
