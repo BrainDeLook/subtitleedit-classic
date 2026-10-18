@@ -66,6 +66,7 @@ $tests=@{
     TestPriorityIntegration='speech-tests/TestPriorityIntegration.cs'
     TestClassicCompletion='speech-tests/TestClassicCompletion.cs'
     TestAdvancedBatchTranslation='speech-tests/TestAdvancedBatchTranslation.cs'
+    TestAiReviewPasses='speech-tests/TestAiReviewPasses.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -166,6 +167,8 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Local AI, translation, context and ASR recovery regression failed." }
     & "$OutputDirectory/TestAdvancedBatchTranslation.exe" unit (Join-Path $OutputDirectory "advanced-batch-translation")
     if ($LASTEXITCODE -ne 0) { throw "Advanced translation, batch file output, cancellation and classic layout regression failed." }
+    & "$OutputDirectory/TestAiReviewPasses.exe" unit (Join-Path $OutputDirectory "ai-review-passes")
+    if ($LASTEXITCODE -ne 0) { throw "AI review filters, warnings, apply passes, main undo and cancellation regression failed." }
     if ($AudioSelectionSample) {
         $env:CLASSIC_AUDIO_TEST_DATA=Join-Path $OutputDirectory 'editor-audio-selection'
         $env:CLASSIC_AUDIO_TEST_SOURCE=(Resolve-Path -LiteralPath $AudioSelectionSample).Path

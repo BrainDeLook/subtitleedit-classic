@@ -1,5 +1,12 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.25
+
+- Adapted stable 5.3 AI review categories and filters, warnings for large rewrites (unchecked by default), editable suggestions and Select none. Selections persist when filtering/sorting; checked suggestions are counted across categories. Formatting tags and line breaks are validated again after manual edits.
+- Main-window AI review applies checked fixes in separate passes without closing. Each successful pass uses the normal undo history and changes text only; timing, actors, styles and unchecked cues are retained. Applied proposals disappear, the next review uses the updated text, and stale source text rejects a pass before changing anything. Added the selected-lines context-menu entry.
+- Added Play current using the selected suggestion's actual cue number, managed-server start/stop and a persisted request delay. Closing waits for active cancellation, stops preview playback and releases the review's managed model; Stop retains completed suggestions. Settings scroll above the results and footer actions wrap at smaller widths.
+- Validation: actual main-window application and two separate Undo operations, category/warning filters, sorting, edited proposals, stale-source rejection, request pacing, stop/close cleanup and normal/minimum-width rendering. Native managed Qwen corrects a known English grammar error and passes server stop/restart/close checks. Paid API tests use simulated responses only. Playback callback routing is checked; arbitrary video/player combinations still need normal user testing. This increment remains local.
+
 ## Unreleased — local 4.0.25.24
 
 - Added the stable 5.3 advanced translation workflow for llama.cpp, Ollama and LM Studio to both ordinary translation and Batch Convert: numbered cue batches, bounded translated history, synopsis/context, glossary, formality and strict JSON-schema output with compatibility fallbacks. Cue numbers, completeness, duplicate keys, tags and optional line-break preservation are validated before applying a batch; invalid/echoed output retries once and then fails explicitly. Completion-only managed models are rejected with guidance to use the ordinary engine.

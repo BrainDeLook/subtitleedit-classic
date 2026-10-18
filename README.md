@@ -8,6 +8,8 @@ English · [Русский](README.ru.md)
 
 ## Classic 4.0.25
 
+Local development also extends AI review with category/warning filters, editable suggestions, unchecked large rewrites, separate apply/undo passes, selected-line review, preview playback, server start/stop and request pacing. These additions retain the classic interface and are not yet included in the published installer.
+
 Local development after this release adds **llama.cpp advanced, Ollama advanced and LM Studio advanced** with numbered cue batches, bounded translated context and schema-validated output. All ten modern translation choices are also connected to classic Batch Convert, with shared settings, per-file context reset and cancellation. This local increment is not yet part of the published 4.0.25 installer; see [the unreleased changelog](CLASSIC_CHANGELOG.md).
 
 **Classic 4.0.25** expands audio-only per-line cloning to thirteen backends (OmniVoice needs original transcripts for per-line cloning) and adds OpenRouter/DashScope/Google Cloud v2 ASR plus optional compatible-API SSE responses. **Tools → AI subtitle review / Current-line AI assistant** can download and start its own local llama.cpp model or use an existing compatible server. Only checked text changes are applied, preserving timing and metadata. **Tools → Local AI models** provides pinned engine/model downloads, CPU/Vulkan/CUDA selection, a custom model folder and start/stop controls. If MADLAD is missing, Translate opens installation settings with status, path and download size; cancelling preserves existing cues.

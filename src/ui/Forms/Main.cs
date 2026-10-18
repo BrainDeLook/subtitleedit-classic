@@ -9181,6 +9181,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             var selectLinesMultipleReplace = new ToolStripMenuItem(LanguageSettings.Current.Main.Menu.Edit.MultipleReplace);
+            AddClassicAiSelectedMenu();
             UiUtil.FixFonts(selectLinesMultipleReplace);
             selectLinesMultipleReplace.Tag = "(REMOVE)";
             if (SubtitleListview1.SelectedItems.Count > 0)

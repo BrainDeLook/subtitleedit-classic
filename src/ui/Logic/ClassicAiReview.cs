@@ -21,6 +21,7 @@ namespace Nikse.SubtitleEdit.Logic
         public string Prompt { get; set; } = "You are a subtitle proofreader. Fix typos, spelling, grammar and punctuation. Do not rephrase correct speech or change meaning. Preserve tags and line breaks.";
         public string Context { get; set; } = "";
         public bool UseLocalLlama { get; set; }
+        public int RequestDelaySeconds { get; set; }
         public static string FileName => Path.Combine(Configuration.DataDirectory, "ClassicAI", "review.json");
         public static ClassicAiSettings Load() { try { var saved=JsonConvert.DeserializeObject<ClassicAiSettings>(File.ReadAllText(FileName)); if(saved?.Api!=null)return saved; } catch (IOException) { } catch (JsonException) { } return new ClassicAiSettings(); }
         public void Save()
@@ -85,12 +86,16 @@ namespace Nikse.SubtitleEdit.Logic
         }
         public void Dispose() => _http.Dispose();
     }
+    public enum ClassicAiCategory { Spelling, Grammar, Punctuation, Casing, Other }
     public sealed class ClassicAiChange
     {
         public int Number { get; set; }
         public string Original { get; set; }
         public string Text { get; set; }
         public string Reason { get; set; }
+        public ClassicAiCategory Category { get; set; } = ClassicAiCategory.Other;
+        public bool IsWarning { get; set; }
+        public bool Selected { get; set; } = true;
     }
     public static class ClassicAiReview
     {
@@ -125,9 +130,35 @@ namespace Nikse.SubtitleEdit.Logic
                 var originalTags = Regex.Matches(original, @"<[^>]+>|\{\\[^}]+\}").Cast<Match>().Select(m => m.Value);
                 var newTags = Regex.Matches(text, @"<[^>]+>|\{\\[^}]+\}").Cast<Match>().Select(m => m.Value);
                 if (!originalTags.SequenceEqual(newTags) || original.Count(c => c == '\n') != text.Count(c => c == '\n')) continue;
-                output.Add(new ClassicAiChange { Number = n, Original = editable[n], Text = text.Replace("\n", Environment.NewLine), Reason = (string)row["reason"] ?? "" });
+                ClassicAiCategory category;
+                if(!Enum.TryParse((string)row["category"],true,out category) || !Enum.IsDefined(typeof(ClassicAiCategory),category))category=ClassicAiCategory.Other;
+                var warning=IsLargeChange(original,text);
+                output.Add(new ClassicAiChange { Number = n, Original = editable[n], Text = text.Replace("\n", Environment.NewLine), Reason = (string)row["reason"] ?? "",Category=category,IsWarning=warning,Selected=!warning });
             }
             return output;
+        }
+        public static bool PreservesFormatting(string original,string text)
+        {
+            if(string.IsNullOrWhiteSpace(text))return false;
+            var before=Normal(original);var after=Normal(text);
+            return before.Count(c=>c=='\n')==after.Count(c=>c=='\n') &&
+                Regex.Matches(before,@"<[^>]+>|\{\\[^}]+\}").Cast<Match>().Select(m=>m.Value).SequenceEqual(Regex.Matches(after,@"<[^>]+>|\{\\[^}]+\}").Cast<Match>().Select(m=>m.Value));
+        }
+        // Stable 5.3 warns on a 40% length change or less than 50% similarity.
+        public static bool IsLargeChange(string before,string after)
+        {
+            var ratio=(after??"").Length/(double)Math.Max(1,(before??"").Length);
+            return ratio>1.4 || ratio<.6 || SimilarityPercent(before,after)<50;
+        }
+        public static int SimilarityPercent(string before,string after)
+        {
+            Func<string,string> clean=s=>new string(Regex.Replace(s??"",@"<[^>]+>|\{\\[^}]+\}","").Where(c=>!char.IsWhiteSpace(c)).Select(char.ToLowerInvariant).ToArray());
+            var a=clean(before);var b=clean(after);var length=Math.Max(a.Length,b.Length);
+            if(length==0)return 100;
+            if(length>4096)return a==b?100:0; // Bound work on unexpectedly large model responses.
+            var previous=new int[b.Length+1];var current=new int[b.Length+1];for(var j=0;j<=b.Length;j++)previous[j]=j;
+            for(var i=1;i<=a.Length;i++){current[0]=i;for(var j=1;j<=b.Length;j++)current[j]=Math.Min(Math.Min(previous[j]+1,current[j-1]+1),previous[j-1]+(a[i-1]==b[j-1]?0:1));var swap=previous;previous=current;current=swap;}
+            return (int)Math.Round(100.0*(length-previous[b.Length])/length);
         }
     }
 }
