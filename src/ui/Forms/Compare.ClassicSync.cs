@@ -62,11 +62,11 @@ namespace Nikse.SubtitleEdit.Forms
             menu.Opening += (s, e) =>
             {
                 var pair = SelectedClassicPair();
-                pick.Enabled = pair != null && (left ? pair.Left : pair.Right) >= 0;
+                pick.Enabled = !ClassicInlineEditing && pair != null && (left ? pair.Left : pair.Right) >= 0;
                 pick.Text = left && _classicPendingRight != null ? C("Связать с выбранной репликой справа", "Sync with the picked reference line")
                     : !left && _classicPendingLeft != null ? C("Связать с выбранной репликой слева", "Sync with the picked current line")
                     : left ? C("Точка синхронизации: эта реплика слева", "Sync point: use this current line") : C("Точка синхронизации: эта реплика справа", "Sync point: use this reference line");
-                remove.Enabled = IsClassicSyncPair(pair);
+                remove.Enabled = !ClassicInlineEditing && IsClassicSyncPair(pair);
             };
             list.MouseDown += (s, e) =>
             {
@@ -133,6 +133,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void PickClassicSyncHalf(bool left)
         {
+            if (ClassicInlineEditing) return;
             var pair = SelectedClassicPair(); if (pair == null) return;
             var paragraph = left ? _subtitle1.GetParagraphOrDefault(pair.Left) : _subtitle2?.GetParagraphOrDefault(pair.Right);
             if (paragraph == null) return;
@@ -144,6 +145,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private bool AddClassicSyncPoint(string leftId, string rightId)
         {
+            if (ClassicInlineEditing) return false;
             var leftIndex = _subtitle1.Paragraphs.FindIndex(p => p.Id == leftId);
             var rightIndex = _subtitle2.Paragraphs.FindIndex(p => p.Id == rightId);
             if (leftIndex < 0 || rightIndex < 0) { CancelClassicSync(); return false; }
@@ -188,12 +190,14 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ResetClassicReferenceSync()
         {
+            CancelClassicInlineEdit();
             ClearClassicSyncState();
             foreach (var state in _classicHistory) state.SyncPoints.Clear();
         }
 
         private void RemoveClassicSyncPoint()
         {
+            if (ClassicInlineEditing) return;
             var pair = SelectedClassicPair(); if (!IsClassicSyncPair(pair)) return;
             RememberClassicCompareEdit();
             var leftId = _subtitle1.Paragraphs[pair.Left].Id; var rightId = _subtitle2.Paragraphs[pair.Right].Id;
@@ -203,6 +207,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ClearClassicSyncPoints()
         {
+            if (ClassicInlineEditing) return;
             if (_classicSyncPoints.Count == 0) return;
             RememberClassicCompareEdit(); ClearClassicSyncState(); RecompareClassicMerge();
         }

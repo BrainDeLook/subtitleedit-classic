@@ -82,6 +82,7 @@ namespace Nikse.SubtitleEdit.Forms
             Compare_Resize(null, null);
             labelStatus.Text = string.Empty;
             BeginClassicMerge(subtitle1);
+            _classicSavedFile = subtitleFileName1; RefreshClassicMerge();
             labelSubtitle1.Text = subtitleFileName1;
             if (string.IsNullOrEmpty(subtitleFileName1))
             {
@@ -106,6 +107,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
             subtitleListView1.SelectIndexAndEnsureVisible(0);
             _language = LanguageAutoDetect.AutoDetectGoogleLanguage(_subtitle1);
+            CompareSubtitles(0);
         }
 
         public void Initialize(Subtitle subtitle1, string subtitleFileName1, Subtitle subtitle2, string subtitleFileName2)
@@ -113,6 +115,7 @@ namespace Nikse.SubtitleEdit.Forms
             Compare_Resize(null, null);
             labelStatus.Text = string.Empty;
             BeginClassicMerge(subtitle1);
+            _classicSavedFile = subtitleFileName1; RefreshClassicMerge();
             labelSubtitle1.Text = subtitleFileName1;
 
             _subtitle2 = new Subtitle(subtitle2, false);
@@ -120,6 +123,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             _language = LanguageAutoDetect.AutoDetectGoogleLanguage(_subtitle1);
             CompareSubtitles(0);
+            subtitleListView1.AutoSizeAllColumns(this); subtitleListView2.AutoSizeAllColumns(this);
 
             if (!string.IsNullOrEmpty(subtitleFileName1) && File.Exists(subtitleFileName1))
             {
@@ -375,234 +379,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void CompareSubtitles(int selectedIndex)
         {
-            if (_loadingConfig || _subtitle2 == null)
-            {
-                return;
-            }
-            buttonExport.Enabled = true;
-            timer1.Stop();
-            var sub1 = new Subtitle();
-            var sub2 = new Subtitle();
-            _classicRows.Clear(); _classicSelection = null;
-            foreach (var aligned in AlignClassicComparison())
-            {
-                _classicRows.Add(new ClassicComparePair { Left = aligned.Left, Right = aligned.Right });
-                sub1.Paragraphs.Add(aligned.Left < 0 ? new Paragraph() : new Paragraph(_subtitle1.Paragraphs[aligned.Left], false));
-                sub2.Paragraphs.Add(aligned.Right < 0 ? new Paragraph() : new Paragraph(_subtitle2.Paragraphs[aligned.Right], false));
-            }
-            subtitleListView1.Fill(sub1);
-            subtitleListView2.Fill(sub2);
-            for (var row = 0; row < _classicRows.Count; row++)
-            {
-                subtitleListView1.Items[row].Tag = _classicRows[row];
-                subtitleListView2.Items[row].Tag = _classicRows[row];
-            }
-            var index = 0;
-            var p1 = sub1.GetParagraphOrDefault(index);
-            var p2 = sub2.GetParagraphOrDefault(index);
-            var max = Math.Max(sub1.Paragraphs.Count, sub2.Paragraphs.Count);
-
-            // coloring + differences index list
-            _differences = new List<int>();
-            index = 0;
-            p1 = sub1.GetParagraphOrDefault(index);
-            p2 = sub2.GetParagraphOrDefault(index);
-            var totalWords = 0;
-            var wordsChanged = 0;
-            max = Math.Max(sub1.Paragraphs.Count, sub2.Paragraphs.Count);
-            var min = Math.Min(sub1.Paragraphs.Count, sub2.Paragraphs.Count);
-            var onlyTextDiff = checkBoxOnlyListDifferencesInText.Checked;
-
-            if (onlyTextDiff)
-            {
-                while (index < min)
-                {
-                    var addIndexToDifferences = false;
-                    Utilities.GetTotalAndChangedWords(p1.Text, p2.Text, ref totalWords, ref wordsChanged, checkBoxIgnoreLineBreaks.Checked, checkBoxIgnoreFormatting.Checked, ShouldBreakToLetter());
-                    if (p1.IsDefault)
-                    {
-                        addIndexToDifferences = true;
-                        subtitleListView1.ColorOut(index, ListViewRed);
-                    }
-                    else if (p2.IsDefault)
-                    {
-                        addIndexToDifferences = true;
-                        subtitleListView2.ColorOut(index, ListViewRed);
-                    }
-                    else if (IsTextDifferent(p1, p2))
-                    {
-                        addIndexToDifferences = true;
-                        subtitleListView1.SetBackgroundColor(index, ListViewGreen, subtitleListView1.ColumnIndexText);
-                        subtitleListView2.SetBackgroundColor(index, ListViewGreen, subtitleListView2.ColumnIndexText);
-                    }
-                    if (addIndexToDifferences)
-                    {
-                        _differences.Add(index);
-                    }
-                    index++;
-                    p1 = sub1.GetParagraphOrDefault(index);
-                    p2 = sub2.GetParagraphOrDefault(index);
-                }
-            }
-            else
-            {
-                while (index < min)
-                {
-                    Utilities.GetTotalAndChangedWords(p1.Text, p2.Text, ref totalWords, ref wordsChanged, checkBoxIgnoreLineBreaks.Checked, checkBoxIgnoreFormatting.Checked, ShouldBreakToLetter());
-                    var addIndexToDifferences = false;
-                    if (p1.IsDefault)
-                    {
-                        addIndexToDifferences = true;
-                        subtitleListView1.ColorOut(index, ListViewRed);
-                    }
-                    else if (p2.IsDefault)
-                    {
-                        addIndexToDifferences = true;
-                        subtitleListView2.ColorOut(index, ListViewRed);
-                    }
-                    else
-                    {
-                        var columnsAlike = GetColumnsEqualExceptNumber(p1, p2);
-                        // Not alike paragraphs
-                        if (columnsAlike == 0)
-                        {
-                            addIndexToDifferences = true;
-                            subtitleListView1.SetBackgroundColor(index, ListViewGreen);
-                            subtitleListView2.SetBackgroundColor(index, ListViewGreen);
-                            subtitleListView1.SetBackgroundColor(index, subtitleListView1.BackColor, subtitleListView1.ColumnIndexNumber);
-                            subtitleListView2.SetBackgroundColor(index, subtitleListView2.BackColor, subtitleListView2.ColumnIndexNumber);
-                        }
-                        else if (columnsAlike < 4)
-                        {
-                            addIndexToDifferences = true;
-                            // Start time
-                            if (!IsTimeEqual(p1.StartTime, p2.StartTime))
-                            {
-                                subtitleListView1.SetBackgroundColor(index, ListViewGreen, subtitleListView1.ColumnIndexStart);
-                                subtitleListView2.SetBackgroundColor(index, ListViewGreen, subtitleListView2.ColumnIndexStart);
-                            }
-                            // End time
-                            if (!IsTimeEqual(p1.EndTime, p2.EndTime))
-                            {
-                                subtitleListView1.SetBackgroundColor(index, ListViewGreen, subtitleListView1.ColumnIndexEnd);
-                                subtitleListView2.SetBackgroundColor(index, ListViewGreen, subtitleListView2.ColumnIndexEnd);
-                            }
-                            // Duration
-                            if (!IsTimeEqual(p1.Duration, p2.Duration) && !(IsTimeEqual(p1.StartTime, p2.StartTime) && IsTimeEqual(p1.EndTime, p2.EndTime)))
-                            {
-                                subtitleListView1.SetBackgroundColor(index, ListViewGreen, subtitleListView1.ColumnIndexDuration);
-                                subtitleListView2.SetBackgroundColor(index, ListViewGreen, subtitleListView2.ColumnIndexDuration);
-                            }
-                            // Text
-                            if (IsTextDifferent(p1, p2))
-                            {
-                                subtitleListView1.SetBackgroundColor(index, ListViewGreen, subtitleListView1.ColumnIndexText);
-                                subtitleListView2.SetBackgroundColor(index, ListViewGreen, subtitleListView2.ColumnIndexText);
-                            }
-                        }
-                        // Number
-                        if (p1.Number != p2.Number)
-                        {
-                            addIndexToDifferences = true;
-                            subtitleListView1.SetBackgroundColor(index, Color.FromArgb(255, 200, 100), subtitleListView1.ColumnIndexNumber);
-                            subtitleListView2.SetBackgroundColor(index, Color.FromArgb(255, 200, 100), subtitleListView2.ColumnIndexNumber);
-                        }
-                    }
-                    if (addIndexToDifferences)
-                    {
-                        _differences.Add(index);
-                    }
-
-                    index++;
-                    p1 = sub1.GetParagraphOrDefault(index);
-                    p2 = sub2.GetParagraphOrDefault(index);
-                }
-            }
-            UpdatePreviousAndNextButtons();
-
-            if (max > min) // color extra lines as has-difference
-            {
-                var listView = subtitleListView1.Items.Count > subtitleListView2.Items.Count ? subtitleListView1 : subtitleListView2;
-                for (var i = min; i < max; i++)
-                {
-                    if (!onlyTextDiff)
-                    {
-                        listView.SetBackgroundColor(i, Color.FromArgb(255, 200, 100), listView.ColumnIndexNumber);
-                        listView.SetBackgroundColor(i, ListViewGreen, listView.ColumnIndexStart);
-                        listView.SetBackgroundColor(i, ListViewGreen, listView.ColumnIndexEnd);
-                        listView.SetBackgroundColor(i, ListViewGreen, listView.ColumnIndexDuration);
-                    }
-                    listView.SetBackgroundColor(i, ListViewGreen, listView.ColumnIndexText);
-                }
-            }
-
-            if (_differences.Count >= min)
-            {
-                labelStatus.Text = LanguageSettings.Current.CompareSubtitles.SubtitlesNotAlike;
-                labelStatus.Font = new Font(labelStatus.Font.FontFamily, labelStatus.Font.Size, FontStyle.Bold);
-            }
-            else
-            {
-                if (wordsChanged != totalWords && wordsChanged > 0)
-                {
-                    var formatString = LanguageSettings.Current.CompareSubtitles.XNumberOfDifferenceAndPercentChanged;
-                    if (ShouldBreakToLetter())
-                    {
-                        formatString = LanguageSettings.Current.CompareSubtitles.XNumberOfDifferenceAndPercentLettersChanged;
-                    }
-
-                    labelStatus.Text = string.Format(formatString, _differences.Count, wordsChanged * 100.00 / totalWords);
-                }
-                else
-                {
-                    labelStatus.Text = string.Format(LanguageSettings.Current.CompareSubtitles.XNumberOfDifference, _differences.Count);
-                }
-                labelStatus.Font = new Font(labelStatus.Font.FontFamily, labelStatus.Font.Size);
-            }
-
-            if (checkBoxShowOnlyDifferences.Checked)
-            { // Remove all lines with no difference
-                subtitleListView1.BeginUpdate();
-                subtitleListView2.BeginUpdate();
-                if (_differences.Count < min)
-                {
-                    for (index = Math.Max(subtitleListView1.Items.Count, subtitleListView2.Items.Count) - 1; index >= 0; index--)
-                    {
-                        if (!_differences.Contains(index))
-                        {
-                            if (subtitleListView1.Items.Count > index)
-                            {
-                                subtitleListView1.Items.RemoveAt(index);
-                            }
-
-                            if (subtitleListView2.Items.Count > index)
-                            {
-                                subtitleListView2.Items.RemoveAt(index);
-                            }
-                        }
-                    }
-                }
-                subtitleListView1.EndUpdate();
-                subtitleListView2.EndUpdate();
-                _differences = new List<int>();
-                max = Math.Max(subtitleListView1.Items.Count, subtitleListView2.Items.Count);
-                for (index = 0; index < max; index++)
-                {
-                    _differences.Add(index);
-                }
-            }
-            timer1.Start();
-            subtitleListView1.FirstVisibleIndex = -1;
-
-            if (subtitleListView1.Items.Count < selectedIndex)
-            {
-                selectedIndex = 0;
-            }
-
-            subtitleListView1.SelectIndexAndEnsureVisible(selectedIndex);
-            SelectLinesInBothListViews('L');
-            MarkClassicSyncPoints();
-            RefreshClassicMerge();
+            CompareClassicRows(selectedIndex);
         }
 
         private bool ShouldBreakToLetter() => _language != null && (_language == "ja" || _language == "zh");
@@ -705,6 +482,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void Compare_KeyDown(object sender, KeyEventArgs e)
         {
+            if (ClassicInlineEditing) return;
             if (e.KeyCode == Keys.Escape)
             {
                 Close();
@@ -775,11 +553,12 @@ namespace Nikse.SubtitleEdit.Forms
                     text2 = subtitleListView2.GetText(subtitleListView1.SelectedItems[0].Index);
                 }
             }
+            if (checkBoxIgnoreFormatting.Checked) { text1 = HtmlUtil.RemoveHtmlTags(text1, true); text2 = HtmlUtil.RemoveHtmlTags(text2, true); }
             richTextBox1.Text = text1;
             richTextBox2.Text = text2;
 
             // show diff
-            if (string.IsNullOrWhiteSpace(text1) || string.IsNullOrWhiteSpace(text2) || text1 == text2)
+            if (string.IsNullOrWhiteSpace(text1) || string.IsNullOrWhiteSpace(text2) || NormalizeClassicCompareText(text1) == NormalizeClassicCompareText(text2))
             {
                 return;
             }
@@ -1032,6 +811,7 @@ namespace Nikse.SubtitleEdit.Forms
             richTextBox1.Width = subtitleListView1.Width;
             richTextBox2.Width = subtitleListView2.Width;
             richTextBox2.Left = subtitleListView2.Left;
+            LayoutClassicComplete();
         }
 
         private void ButtonPreviousDifferenceClick(object sender, EventArgs e)
@@ -1380,61 +1160,65 @@ namespace Nikse.SubtitleEdit.Forms
                     return;
                 }
 
-                var fileName = saveFile.FileName;
-                var sb = new StringBuilder();
-                var gridColor = "rgba(" + ForeColor.R + "," + ForeColor.G + "," + ForeColor.B + ",0.25)";
-                sb.AppendLine("<!DOCTYPE html>");
-                sb.AppendLine("<html>");
-                sb.AppendLine("  <head>");
-                sb.AppendLine("    <title>Subtitle Edit compare</title>");
-                sb.AppendLine("  <style>");
-                sb.AppendLine("    body { background-color: " + ColorTranslator.ToHtml(BackColor) + "; color: " + ColorTranslator.ToHtml(ForeColor) + "; }");
-                sb.AppendLine("    table { border-collapse: collapse; }");
-                sb.AppendLine("    td { background-color: " + ColorTranslator.ToHtml(subtitleListView1.BackColor) + "; border: 1px solid " + gridColor + "; color: " + ColorTranslator.ToHtml(subtitleListView1.ForeColor) + "; font-family: Tahoma, Verdana, 'Noto Sans', Ubuntu; padding: 8px; }");
-                sb.AppendLine("    td.separator { border: 0; background-color: " + ColorTranslator.ToHtml(BackColor) + "; }");
-                sb.AppendLine("  </style>");
-                sb.AppendLine("  </head>");
-                sb.AppendLine("  <body>");
-                sb.AppendLine("    <h1>Subtitle Edit compare</h1>");
-                sb.AppendLine("    <table>");
-                sb.AppendLine("    <tr>");
-                sb.AppendLine("      <th colspan='4' style='text-align:left'>" + GetFileName(labelSubtitle1.Text) + "</th>");
-                sb.AppendLine("      <th>&nbsp;</th>");
-                sb.AppendLine("      <th colspan='4' style='text-align:left'>" + GetFileName(labelSubtitle2.Text) + "</th>");
-                sb.AppendLine("    </tr>");
-                for (var i = 0; i < subtitleListView1.Items.Count; i++)
-                {
-                    if (subtitleListView1.Items[i].Tag is Paragraph itemLeft &&
-                        subtitleListView2.Items.Count > i &&
-                        subtitleListView2.Items[i].Tag is Paragraph itemRight)
-                    {
-                        sb.AppendLine("    <tr>");
-                        sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView1.Items[i].SubItems[0]) + ">" + GetHtmlText(itemLeft, itemLeft.Number.ToString()) + "</td>");
-                        sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView1.Items[i].SubItems[1]) + ">" + GetHtmlText(itemLeft, itemLeft.StartTime.ToDisplayString()) + "</td>");
-                        if (subtitleListView1.ColumnIndexEnd >= 0)
-                        {
-                            sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView1.Items[i].SubItems[subtitleListView1.ColumnIndexEnd]) + ">" + GetHtmlText(itemLeft, itemLeft.EndTime.ToDisplayString()) + "</td>");
-                        }
-                        sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView1.Items[i].SubItems[subtitleListView1.ColumnIndexText]) + ">" + GetHtmlText(itemLeft, itemLeft.Text) + "</td>");
-                        sb.AppendLine("      <td class='separator'>&nbsp;</td>");
-                        sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView2.Items[i].SubItems[0]) + ">" + GetHtmlText(itemRight, itemRight.Number.ToString()) + "</td>");
-                        sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView2.Items[i].SubItems[1]) + ">" + GetHtmlText(itemRight, itemRight.StartTime.ToDisplayString()) + "</td>");
-                        if (subtitleListView2.ColumnIndexEnd >= 0)
-                        {
-                            sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView2.Items[i].SubItems[subtitleListView1.ColumnIndexEnd]) + ">" + GetHtmlText(itemRight, itemRight.EndTime.ToDisplayString()) + "</td>");
-                        }
-                        sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView2.Items[i].SubItems[subtitleListView1.ColumnIndexText]) + ">" + GetHtmlText(itemRight, itemRight.Text) + "</td>");
-                        sb.AppendLine("    </tr>");
-                    }
-                }
-                sb.AppendLine("    <tr>");
-                sb.AppendLine("      <td colspan='9' style='text-align:left'><br />" + labelStatus.Text + "</td>");
-                sb.AppendLine("    </tr>");
-                sb.AppendLine("    </table>");
-                sb.AppendLine("  </body>");
-                sb.AppendLine("</html>");
-                File.WriteAllText(fileName, sb.ToString());
+                File.WriteAllText(saveFile.FileName, BuildClassicComparisonHtml(), Encoding.UTF8);
             }
+        }
+
+        private string BuildClassicComparisonHtml()
+        {
+            var sb = new StringBuilder();
+            var gridColor = "rgba(" + ForeColor.R + "," + ForeColor.G + "," + ForeColor.B + ",0.25)";
+            sb.AppendLine("<!DOCTYPE html>");
+            sb.AppendLine("<html>");
+            sb.AppendLine("  <head><meta charset=\"utf-8\">");
+            sb.AppendLine("    <title>Subtitle Edit compare</title>");
+            sb.AppendLine("  <style>");
+            sb.AppendLine("    body { background-color: " + ColorTranslator.ToHtml(BackColor) + "; color: " + ColorTranslator.ToHtml(ForeColor) + "; }");
+            sb.AppendLine("    table { border-collapse: collapse; }");
+            sb.AppendLine("    td { background-color: " + ColorTranslator.ToHtml(subtitleListView1.BackColor) + "; border: 1px solid " + gridColor + "; color: " + ColorTranslator.ToHtml(subtitleListView1.ForeColor) + "; font-family: Tahoma, Verdana, 'Noto Sans', Ubuntu; padding: 8px; }");
+            sb.AppendLine("    td.separator { border: 0; background-color: " + ColorTranslator.ToHtml(BackColor) + "; }");
+            sb.AppendLine("  </style>");
+            sb.AppendLine("  </head>");
+            sb.AppendLine("  <body>");
+            sb.AppendLine("    <h1>Subtitle Edit compare</h1>");
+            sb.AppendLine("    <table>");
+            sb.AppendLine("    <tr>");
+            sb.AppendLine("      <th colspan='4' style='text-align:left'>" + HtmlUtil.EncodeNamed(GetFileName(labelSubtitle1.Text)) + "</th>");
+            sb.AppendLine("      <th>&nbsp;</th>");
+            sb.AppendLine("      <th colspan='4' style='text-align:left'>" + HtmlUtil.EncodeNamed(GetFileName(labelSubtitle2.Text)) + "</th>");
+            sb.AppendLine("    </tr>");
+            for (var i = 0; i < subtitleListView1.Items.Count; i++)
+            {
+                if (subtitleListView1.Items[i].Tag is ClassicComparePair pair && subtitleListView2.Items.Count > i)
+                {
+                    var itemLeft = _subtitle1.GetParagraphOrDefault(pair.Left) ?? new Paragraph();
+                    var itemRight = _subtitle2.GetParagraphOrDefault(pair.Right) ?? new Paragraph();
+                    sb.AppendLine("    <tr>");
+                    sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView1.Items[i].SubItems[0]) + ">" + GetHtmlText(itemLeft, subtitleListView1.Items[i].SubItems[0].Text) + "</td>");
+                    sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView1.Items[i].SubItems[1]) + ">" + GetHtmlText(itemLeft, itemLeft.StartTime.ToDisplayString()) + "</td>");
+                    if (subtitleListView1.ColumnIndexEnd >= 0)
+                    {
+                        sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView1.Items[i].SubItems[subtitleListView1.ColumnIndexEnd]) + ">" + GetHtmlText(itemLeft, itemLeft.EndTime.ToDisplayString()) + "</td>");
+                    }
+                    sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView1.Items[i].SubItems[subtitleListView1.ColumnIndexText]) + ">" + GetHtmlText(itemLeft, itemLeft.Text) + "</td>");
+                    sb.AppendLine("      <td class='separator'>&nbsp;</td>");
+                    sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView2.Items[i].SubItems[0]) + ">" + GetHtmlText(itemRight, subtitleListView2.Items[i].SubItems[0].Text) + "</td>");
+                    sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView2.Items[i].SubItems[1]) + ">" + GetHtmlText(itemRight, itemRight.StartTime.ToDisplayString()) + "</td>");
+                    if (subtitleListView2.ColumnIndexEnd >= 0)
+                    {
+                        sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView2.Items[i].SubItems[subtitleListView1.ColumnIndexEnd]) + ">" + GetHtmlText(itemRight, itemRight.EndTime.ToDisplayString()) + "</td>");
+                    }
+                    sb.AppendLine("      <td" + GetHtmlBackgroundColor(subtitleListView2.Items[i].SubItems[subtitleListView1.ColumnIndexText]) + ">" + GetHtmlText(itemRight, itemRight.Text) + "</td>");
+                    sb.AppendLine("    </tr>");
+                }
+            }
+            sb.AppendLine("    <tr>");
+            sb.AppendLine("      <td colspan='9' style='text-align:left'><br />" + HtmlUtil.EncodeNamed(labelStatus.Text) + "</td>");
+            sb.AppendLine("    </tr>");
+            sb.AppendLine("    </table>");
+            sb.AppendLine("  </body>");
+            sb.AppendLine("</html>");
+            return sb.ToString();
         }
 
         private static string GetFileName(string fileName)
@@ -1451,7 +1235,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private static string GetHtmlText(Paragraph p, string text)
         {
-            return p.IsDefault ? string.Empty : HtmlUtil.EncodeNamed(text);
+            return p.IsDefault ? string.Empty : HtmlUtil.EncodeNamed(text).Replace(Environment.NewLine, "<br>");
         }
 
         private static string GetHtmlBackgroundColor(ListViewItem.ListViewSubItem item)

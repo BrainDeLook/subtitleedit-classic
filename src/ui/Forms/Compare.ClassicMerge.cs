@@ -41,6 +41,7 @@ namespace Nikse.SubtitleEdit.Forms
             _classicDelta = new Label { Left = 9, Top = bar.Bottom + 2, Height = 22, Width = ClientSize.Width - 18, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, AutoEllipsis = true };
             Controls.Add(bar); Controls.Add(_classicDelta);
             InitializeClassicSyncBar();
+            InitializeClassicComplete(bar);
             buttonOK.Text = C("Закрыть", "Close");
             toolTip1.SetToolTip(buttonOK, C("Неприменённые правки будут отброшены", "Unapplied edits will be discarded"));
             subtitleListView1.Top = subtitleListView2.Top = _classicDelta.Bottom + 2;
@@ -59,12 +60,13 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void BeginClassicMerge(Subtitle source)
         {
-            _classicBaseline = new Subtitle(source, false); _subtitle1 = new Subtitle(source, false);
+            _classicBaseline = new Subtitle(source, false); _subtitle1 = new Subtitle(source, false); _subtitle2 = new Subtitle();
             _classicEditable = true; _classicHistory.Clear(); ClearClassicSyncState(); RefreshClassicMerge();
         }
 
         private void DisableClassicMerge()
         {
+            CancelClassicInlineEdit();
             _classicEditable = false; _classicHistory.Clear(); ClearClassicSyncState(); RefreshClassicMerge();
         }
 
@@ -100,6 +102,7 @@ namespace Nikse.SubtitleEdit.Forms
             _classicUndo.Enabled = _classicHistory.Count > 0;
             _classicApply.Enabled = _classicEditable && _classicHistory.Count > 0 && ApplyComparedSubtitle != null;
             RefreshClassicSyncBar();
+            RefreshClassicComplete();
             _classicDelta.Text = !_classicEditable ? C("Оба файла только для чтения: слева открыт другой файл.", "Both files are read-only: a different file was opened on the left.") : left != null && right != null
                 ? C("Разница справа относительно слева: начало ", "Reference minus current: start ") + Delta(right.StartTime.TotalMilliseconds - left.StartTime.TotalMilliseconds) + C(" · конец ", " · end ") + Delta(right.EndTime.TotalMilliseconds - left.EndTime.TotalMilliseconds)
                 : right != null ? C("Реплика есть только справа. «Текст и время» вставит её слева.", "Reference-only cue. Text and timing inserts it on the left.") : C("Слева — рабочая копия. Применить сохраняет правки в редактор; закрытие отбрасывает неприменённые правки.", "Left is a working copy. Apply saves edits to the editor; closing discards unapplied edits.");
@@ -107,6 +110,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            if (HandleClassicCompleteKey(ref msg, keyData)) return true;
+            if (ClassicInlineEditing) return base.ProcessCmdKey(ref msg, keyData);
             if (keyData == Keys.Escape && HasClassicPendingSync) { CancelClassicSync(); return true; }
             if (keyData == Keys.F8) { ButtonNextDifferenceClick(null, EventArgs.Empty); return true; }
             if (keyData == (Keys.Shift | Keys.F8)) { ButtonPreviousDifferenceClick(null, EventArgs.Empty); return true; }
@@ -171,7 +176,7 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 SeMsgBox.MessageBox.Show(C("Субтитры в редакторе изменились. Откройте сравнение заново, чтобы не затереть изменения.", "The editor subtitles have changed. Reopen Compare to avoid overwriting changes.")); return;
             }
-            _classicBaseline = new Subtitle(_subtitle1, false); _classicHistory.Clear(); RefreshClassicMerge();
+            _classicBaseline = new Subtitle(_subtitle1, false); _classicHistory.Clear(); RecompareClassicMerge();
         }
     }
 }

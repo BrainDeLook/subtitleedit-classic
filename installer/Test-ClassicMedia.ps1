@@ -43,6 +43,7 @@ $tests=@{
     TestClassic53Ocr='video-ocr-tests/TestClassic53Ocr.cs'
     TestClassicTiming='TestClassicTiming.cs'
     TestClassicTimingProfiles='TestClassicTimingProfiles.cs'
+    TestClassicCompareComplete='TestClassicCompareComplete.cs'
     TestClassicCompareSync='TestClassicCompareSync.cs'
     TestClassicCompare='TestClassicCompare.cs'
     TestClassicBeautifyPreview='TestClassicBeautifyPreview.cs'
@@ -175,6 +176,8 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Advanced translation, batch file output, cancellation and classic layout regression failed." }
     & "$OutputDirectory/TestClassicCommandPalette.exe" (Join-Path $OutputDirectory "classic-command-palette")
     if($LASTEXITCODE -ne 0){throw "Classic command palette regression failed"}
+    & "$OutputDirectory/TestClassicCompareComplete.exe" (Join-Path $OutputDirectory "classic-compare-complete")
+    if($LASTEXITCODE -ne 0){throw "Complete classic comparison workflow regression failed"}
     & "$OutputDirectory/TestClassicCompareSync.exe" (Join-Path $OutputDirectory "classic-compare-sync")
     if($LASTEXITCODE -ne 0){throw "Classic comparison sync and alignment regression failed"}
     & "$OutputDirectory/TestClassicCompare.exe" (Join-Path $OutputDirectory "classic-compare")
