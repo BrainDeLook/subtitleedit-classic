@@ -1,5 +1,9 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.41
+
+- Moved File → Save forced lines as directly below Save as, alongside the other save commands.
+
 ## Unreleased — local 4.0.25.40
 
 - Adapted the complete stable 5.3 forced-narrative workflow: Edit and grid context-menu Toggle forced, a persistent optional Forced column, and File → Save forced lines as. A mixed selection is marked uniformly; an entirely marked selection is cleared. Only selected working cues change, in one ordinary Undo step. Marking makes the column visible; its visibility and the grid-formatting mode are saved without resetting each other.

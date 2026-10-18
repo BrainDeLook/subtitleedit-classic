@@ -24,7 +24,7 @@ namespace Nikse.SubtitleEdit.Forms
                 _classicForcedColumn = new ToolStripMenuItem { Name="classicShowForcedColumn" };
                 editToolStripMenuItem.DropDownItems.Add(_classicForcedToggle);
                 contextMenuStripListView.Items.Insert(0,_classicForcedContext);
-                fileToolStripMenuItem.DropDownItems.Add(_classicForcedExport);
+                fileToolStripMenuItem.DropDownItems.Insert(fileToolStripMenuItem.DropDownItems.IndexOf(saveAsToolStripMenuItem) + 1, _classicForcedExport);
                 optionsToolStripMenuItem.DropDownItems.Add(_classicForcedColumn);
                 _classicForcedToggle.Click += (s,e)=>ToggleClassicForcedLines();
                 _classicForcedContext.Click += (s,e)=>ToggleClassicForcedLines();
