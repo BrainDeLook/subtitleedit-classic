@@ -50,6 +50,7 @@ $tests=@{
     TestClassicErrorList='TestClassicErrorList.cs'
     TestClassicStatistics='TestClassicStatistics.cs'
     TestClassicGridFormatting='TestClassicGridFormatting.cs'
+    TestClassicForcedLines='TestClassicForcedLines.cs'
     TestClassicCompareSync='TestClassicCompareSync.cs'
     TestClassicCompare='TestClassicCompare.cs'
     TestClassicBeautifyPreview='TestClassicBeautifyPreview.cs'
@@ -190,6 +191,8 @@ if ($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw "Classic statistics dashboard, metrics, histogram, layouts and export regression failed"}
     & "$OutputDirectory/TestClassicGridFormatting.exe" (Join-Path $OutputDirectory "classic-grid-formatting")
     if($LASTEXITCODE -ne 0){throw "Classic subtitle grid formatting, source retention, rendering and settings regression failed"}
+    & "$OutputDirectory/TestClassicForcedLines.exe" (Join-Path $OutputDirectory "classic-forced-lines")
+    if($LASTEXITCODE -ne 0){throw "Classic forced marks, persistence, undo, grid and subset export regression failed"}
     & "$OutputDirectory/TestClassicErrorList.exe" (Join-Path $OutputDirectory "classic-error-list")
     if($LASTEXITCODE -ne 0){throw "Classic error categories, exports, navigation and batch reports regression failed"}
     & "$OutputDirectory/TestClassicTextTools.exe" (Join-Path $OutputDirectory "classic-text-tools")

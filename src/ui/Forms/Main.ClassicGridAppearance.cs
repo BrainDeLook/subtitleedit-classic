@@ -36,7 +36,7 @@ namespace Nikse.SubtitleEdit.Forms
         }
         private void SetClassicGridAppearance(ClassicGridFormattingMode mode)
         {
-            try { new ClassicGridAppearance { Formatting = mode }.Save(ClassicGridAppearancePath); }
+            try { var settings = ClassicGridAppearance.Load(ClassicGridAppearancePath); settings.Formatting = mode; settings.Save(ClassicGridAppearancePath); }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
                 MessageBox.Show(this, ex.Message, _classicGridAppearanceMenu.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);

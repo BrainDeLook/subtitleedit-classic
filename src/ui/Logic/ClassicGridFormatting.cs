@@ -15,6 +15,7 @@ namespace Nikse.SubtitleEdit.Logic
     public sealed class ClassicGridAppearance
     {
         public ClassicGridFormattingMode Formatting { get; set; }
+        public bool ShowForcedColumn { get; set; }
         public static ClassicGridAppearance Load(string path)
         {
             try

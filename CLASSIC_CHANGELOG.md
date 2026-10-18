@@ -1,5 +1,13 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.40
+
+- Adapted the complete stable 5.3 forced-narrative workflow: Edit and grid context-menu Toggle forced, a persistent optional Forced column, and File → Save forced lines as. A mixed selection is marked uniformly; an entirely marked selection is cleared. Only selected working cues change, in one ordinary Undo step. Marking makes the column visible; its visibility and the grid-formatting mode are saved without resetting each other.
+- Adapted the stable `.SE.bookmarks` sidecar schema for both bookmarks and forced marks, including time-key matching, frame-rounding tolerance, duplicate start times and legacy index-only bookmarks. Existing bookmark editing and saving now retain forced marks. Undo/Redo updates the sidecar, and forced-only edits participate in the editor's unsaved-change hash. Untitled documents never create a relative sidecar. Sidecar writes are atomic and preserve the old file on failure.
+- Forced-only export works from copied cues with their header, styling, actor/layer metadata and timing, uses the classic output encoding/video offset, and renumbers only the export. Text formats and EBU STL use the existing format writers. Export cannot overwrite either open subtitle, leaves the current file/history intact and writes no file for an empty result. A companion marks file retains the Forced flag in formats such as SRT/ASS that do not carry it themselves; keep it next to the subtitle when moving files. The output subtitle still contains only the forced cues without that companion.
+- Source-view reparsing retains Forced marks by start time, including active video offsets and edited dialogue, without falling back to the next row when a marked cue is deleted. Russian/English checks cover selected and mixed toggles, column insertion/hiding/refill, persistence and normal File Open/Save, source-view edits, bookmark coexistence, undo/redo, unsaved-change detection, locked sidecars, source isolation and SRT/ASS export/reopening. This increment remains local; no paid APIs are used.
+- Validation: 86 forced-workflow checks and 1,823 combined regression checks passed. The local EXE was installed with a rollback copy and Settings.xml unchanged.
+
 ## Unreleased — local 4.0.25.39
 
 - Fixed clipped italic glyphs in the formatted subtitle grid. Styled fragments retain their text advance while drawing with glyph overhang; clipping is enforced at the cell boundary instead of at each fragment boundary. A small DPI-scaled leading inset protects the first glyph. Source text, selection colors and existing formatting modes are unchanged.

@@ -1747,6 +1747,7 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicAssistedEditing();
             InitializeClassicTextTools();
             InitializeClassicGridAppearance();
+            InitializeClassicForcedLines();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -3949,7 +3950,7 @@ namespace Nikse.SubtitleEdit.Forms
                     SubtitleListview1.ShowExtraColumn(_languageGeneral.Style);
                 }
 
-                new BookmarkPersistence(newSubtitle, fileName).Load();
+                new ClassicSubtitleMarksPersistence(newSubtitle, fileName).Load();
 
                 if (Configuration.Settings.General.RemoveBlankLinesWhenOpening)
                 {
@@ -5418,7 +5419,7 @@ namespace Nikse.SubtitleEdit.Forms
 
                 Configuration.Settings.RecentFiles.Add(_fileName, FirstVisibleIndex, FirstSelectedIndex, _videoFileName, VideoAudioTrackNumber, _subtitleOriginalFileName, Configuration.Settings.General.CurrentVideoOffsetInMs, Configuration.Settings.General.CurrentVideoIsSmpte);
                 Configuration.Settings.Save();
-                new BookmarkPersistence(_subtitle, _fileName).Save();
+                new ClassicSubtitleMarksPersistence(_subtitle, _fileName).Save();
                 _fileDateTime = File.GetLastWriteTime(_fileName);
                 _oldSubtitleFormat = format;
                 _formatManuallyChanged = false;
@@ -7631,6 +7632,8 @@ namespace Nikse.SubtitleEdit.Forms
                         }
                     }
 
+                    new ClassicSubtitleMarksPersistence(_subtitle, null).RestoreForcedFrom(oldSubtitle, Configuration.Settings.General.CurrentVideoOffsetInMs);
+
                     if (Configuration.Settings.General.CurrentVideoOffsetInMs != 0)
                     {
                         _subtitle.AddTimeToAllParagraphs(TimeSpan.FromMilliseconds(-Configuration.Settings.General.CurrentVideoOffsetInMs));
@@ -7752,6 +7755,8 @@ namespace Nikse.SubtitleEdit.Forms
                     }
                 }
             }
+
+            new ClassicSubtitleMarksPersistence(_subtitle, null).RestoreForcedFrom(oldSubtitle);
 
             _subtitleListViewIndex = -1;
             SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
@@ -8500,6 +8505,8 @@ namespace Nikse.SubtitleEdit.Forms
 
                     UpdateSourceView();
                     SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
+
+                    SaveClassicSubtitleMarks();
 
                     if (undoLineIndex >= 0 && undoLineIndex < _subtitle.Paragraphs.Count)
                     {
@@ -20758,7 +20765,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             SetListViewStateImages();
-            new BookmarkPersistence(_subtitle, _fileName).Save();
+            new ClassicSubtitleMarksPersistence(_subtitle, _fileName).Save();
         }
 
         private void SetListViewStateImages()
@@ -20814,7 +20821,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             SetListViewStateImages();
-            new BookmarkPersistence(_subtitle, _fileName).Save();
+            new ClassicSubtitleMarksPersistence(_subtitle, _fileName).Save();
         }
 
         private void MoveTextFromCursorToNext(SETextBox tb)
@@ -35139,7 +35146,7 @@ namespace Nikse.SubtitleEdit.Forms
                 SubtitleListview1.ShowState(_subtitleListViewIndex, p);
                 ShowHideBookmark(p);
                 SetListViewStateImages();
-                new BookmarkPersistence(_subtitle, _fileName).Save();
+                new ClassicSubtitleMarksPersistence(_subtitle, _fileName).Save();
             }
         }
 
@@ -35163,7 +35170,7 @@ namespace Nikse.SubtitleEdit.Forms
                         SubtitleListview1.ShowState(_subtitleListViewIndex, p);
                         ShowHideBookmark(p);
                         SetListViewStateImages();
-                        new BookmarkPersistence(_subtitle, _fileName).Save();
+                        new ClassicSubtitleMarksPersistence(_subtitle, _fileName).Save();
                     }
                 }
             }
@@ -35852,7 +35859,12 @@ namespace Nikse.SubtitleEdit.Forms
 
         private int GetFastSubtitleHash()
         {
-            return _subtitle.GetFastHashCode(_fileName + UiUtil.GetTextEncodingComboBoxCurrentEncoding(comboBoxEncoding.ComboBox).DisplayName);
+            unchecked
+            {
+                var hash = _subtitle.GetFastHashCode(_fileName + UiUtil.GetTextEncodingComboBoxCurrentEncoding(comboBoxEncoding.ComboBox).DisplayName);
+                foreach (var paragraph in _subtitle.Paragraphs) hash = hash * 23 + (paragraph.Forced ? 1 : 0);
+                return hash;
+            }
         }
 
         private int GetFastSubtitleOriginalHash()

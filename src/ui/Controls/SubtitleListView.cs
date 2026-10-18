@@ -27,7 +27,8 @@ namespace Nikse.SubtitleEdit.Controls
             Text,
             TextOriginal,
             Extra,
-            Network
+            Network,
+            Forced
         }
 
         private List<SubtitleColumn> SubtitleColumns { get; }
@@ -53,6 +54,7 @@ namespace Nikse.SubtitleEdit.Controls
         public int ColumnIndexTextOriginal { get; private set; }
         public int ColumnIndexExtra { get; private set; }
         public int ColumnIndexNetwork { get; private set; }
+        public int ColumnIndexForced { get; private set; }
 
         public bool IsOriginalTextColumnVisible => ColumnIndexTextOriginal >= 0;
         private string _lineSeparatorString = " || ";
@@ -433,6 +435,7 @@ namespace Nikse.SubtitleEdit.Controls
             ColumnIndexTextOriginal = GetColumnIndex(SubtitleColumn.TextOriginal);
             ColumnIndexExtra = GetColumnIndex(SubtitleColumn.Extra);
             ColumnIndexNetwork = GetColumnIndex(SubtitleColumn.Network);
+            ColumnIndexForced = GetColumnIndex(SubtitleColumn.Forced);
         }
 
         private static void SubtitleListView_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
@@ -1034,6 +1037,24 @@ namespace Nikse.SubtitleEdit.Controls
             {
                 Columns[ColumnIndexTextOriginal].Text = title;
             }
+        }
+
+        public void ShowForcedColumn(string title)
+        {
+            if (ColumnIndexForced >= 0) { Columns[ColumnIndexForced].Text = title; return; }
+            var index = ColumnIndexText >= 0 ? ColumnIndexText : SubtitleColumns.Count;
+            SubtitleColumns.Insert(index, SubtitleColumn.Forced);
+            Columns.Insert(index, new ColumnHeader { Text = title, Width = 65 });
+            UpdateColumnIndexes();
+            foreach (ListViewItem item in Items)
+                item.SubItems.Insert(index, new ListViewItem.ListViewSubItem(item, item.Tag is Paragraph p && p.Forced ? "✓" : string.Empty));
+            AutoSizeAllColumns(null);
+        }
+
+        public void SetForced(int index, bool forced)
+        {
+            if (ColumnIndexForced >= 0 && IsValidIndex(index))
+                Items[index].SubItems[ColumnIndexForced].Text = forced ? "✓" : string.Empty;
         }
 
         public void ShowExtraColumn(string title)
@@ -1738,6 +1759,9 @@ namespace Nikse.SubtitleEdit.Controls
                     case SubtitleColumn.Network:
                         item.SubItems.Add(string.Empty);
                         break;
+                    case SubtitleColumn.Forced:
+                        item.SubItems.Add(paragraph.Forced ? "✓" : string.Empty);
+                        break;
                 }
             }
 
@@ -1975,6 +1999,8 @@ namespace Nikse.SubtitleEdit.Controls
                 {
                     item.SubItems[ColumnIndexText].Text = paragraph.Text.Replace(Environment.NewLine, _lineSeparatorString);
                 }
+
+                SetForced(index, paragraph.Forced);
 
                 UpdateCpsAndWpm(item, paragraph);
             }
