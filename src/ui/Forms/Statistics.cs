@@ -1,10 +1,11 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Logic;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
@@ -54,7 +55,7 @@ https://github.com/SubtitleEdit/subtitleedit
 {2}";
         private readonly string _fileName;
 
-        private static readonly char[] ExpectedChars = { '♪', '♫', '"', '(', ')', '[', ']', ' ', ',', '!', '?', '.', ':', ';', '-', '_', '@', '<', '>', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '،', '؟', '؛' };
+        private static readonly char[] ExpectedChars = { '\r', '\n', '\t', '♪', '♫', '"', '(', ')', '[', ']', ' ', ',', '!', '?', '.', ':', ';', '-', '_', '@', '<', '>', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '،', '؟', '؛' };
 
         public Statistics(Subtitle subtitle, string fileName, SubtitleFormat format)
         {
@@ -62,7 +63,8 @@ https://github.com/SubtitleEdit/subtitleedit
             InitializeComponent();
             UiUtil.FixFonts(this);
 
-            _subtitle = subtitle;
+            _subtitle = new Subtitle(subtitle,false);
+            foreach(var p in _subtitle.Paragraphs)if(p.Text==null)p.Text=string.Empty;
             _format = format;
             _fileName = fileName;
 
@@ -86,13 +88,15 @@ https://github.com/SubtitleEdit/subtitleedit
 
             CalculateMostUsedLines();
             textBoxMostUsedLines.Text = _mostUsedLines;
+            InitializeClassicStatistics();
         }
 
         private void CalculateGeneralStatistics()
         {
             if (_subtitle == null || _subtitle.Paragraphs.Count == 0)
             {
-                textBoxGeneral.Text = _l.NothingFound;
+                _general = _l.NothingFound;
+                textBoxGeneral.Text = _general;
                 return;
             }
 
@@ -117,7 +121,7 @@ https://github.com/SubtitleEdit/subtitleedit
             double maximumWpm = 0;
             double totalWpm = 0;
             var gapMinimum = double.MaxValue;
-            var gapMaximum = 0d;
+            var gapMaximum = double.MinValue;
             var gapTotal = 0d;
 
             var aboveOptimalCpsCount = 0;
@@ -129,9 +133,10 @@ https://github.com/SubtitleEdit/subtitleedit
             var aboveMaximumLineWidthCount = 0;
             var belowMinimumGapCount = 0;
 
-            foreach (var p in _subtitle.Paragraphs)
+            for(int paragraphIndex=0;paragraphIndex<_subtitle.Paragraphs.Count;paragraphIndex++)
             {
-                allText.Append(p.Text);
+                var p=_subtitle.Paragraphs[paragraphIndex];
+                allText.AppendLine(p.Text);
 
                 var len = GetLineLength(p);
                 minimumLineLength = Math.Min(minimumLineLength, len);
@@ -153,7 +158,7 @@ https://github.com/SubtitleEdit/subtitleedit
                 maximumWpm = Math.Max(wpm, maximumWpm);
                 totalWpm += wpm;
 
-                var next = _subtitle.GetParagraphOrDefault(_subtitle.GetIndex(p) + 1);
+                var next = _subtitle.GetParagraphOrDefault(paragraphIndex + 1);
                 if (next != null)
                 {
                     var gap = next.StartTime.TotalMilliseconds - p.EndTime.TotalMilliseconds;
@@ -236,7 +241,7 @@ https://github.com/SubtitleEdit/subtitleedit
             sb.AppendLine(string.Format(_l.LengthInFormatXinCharactersY, _format.FriendlyName, sourceLength));
             sb.AppendLine(string.Format(_l.NumberOfCharactersInTextOnly, allText.ToString().CountCharacters(false)));
             sb.AppendLine(string.Format(_l.TotalDuration, new TimeCode(totalDuration).ToDisplayString()));
-            sb.AppendLine(string.Format(_l.TotalCharsPerSecond, (double)allText.ToString().CountCharacters(true) / (totalDuration / TimeCode.BaseUnit)));
+            sb.AppendLine(string.Format(_l.TotalCharsPerSecond, totalDuration>0?(double)allText.ToString().CountCharacters(true) / (totalDuration / TimeCode.BaseUnit):0));
             sb.AppendLine(string.Format(_l.TotalWords, _totalWords));
             sb.AppendLine(string.Format(_l.NumberOfItalicTags, Utilities.CountTagInText(allTextToLower, "<i>")));
             sb.AppendLine(string.Format(_l.NumberOfBoldTags, Utilities.CountTagInText(allTextToLower, "<b>")));
@@ -252,18 +257,18 @@ https://github.com/SubtitleEdit/subtitleedit
             sb.AppendLine();
             sb.AppendLine(string.Format(_l.SingleLineLengthMinimum, minimumSingleLineLength) + " (" + GetIndicesWithSingleLineLength(minimumSingleLineLength) + ")");
             sb.AppendLine(string.Format(_l.SingleLineLengthMaximum, maximumSingleLineLength) + " (" + GetIndicesWithSingleLineLength(maximumSingleLineLength) + ")");
-            sb.AppendLine(string.Format(_l.SingleLineLengthAverage, (double)totalSingleLineLength / totalSingleLines));
+            sb.AppendLine(string.Format(_l.SingleLineLengthAverage, (double)totalSingleLineLength / Math.Max(1,totalSingleLines)));
             sb.AppendLine();
-            sb.AppendLine(string.Format(_l.SingleLineLengthExceedingMaximum, Configuration.Settings.General.SubtitleLineMaximumLength, aboveMaximumLineLengthCount, ((double)aboveMaximumLineLengthCount / _subtitle.Paragraphs.Count) * 100.0));
+            sb.AppendLine(string.Format(_l.SingleLineLengthExceedingMaximum, Configuration.Settings.General.SubtitleLineMaximumLength, aboveMaximumLineLengthCount, ((double)aboveMaximumLineLengthCount / Math.Max(1,totalSingleLines)) * 100.0));
             sb.AppendLine();
 
             if (Configuration.Settings.Tools.ListViewSyntaxColorWideLines)
             {
                 sb.AppendLine(string.Format(_l.SingleLineWidthMinimum, minimumSingleLineWidth) + " (" + GetIndicesWithSingleLineWidth(minimumSingleLineWidth) + ")");
                 sb.AppendLine(string.Format(_l.SingleLineWidthMaximum, maximumSingleLineWidth) + " (" + GetIndicesWithSingleLineWidth(maximumSingleLineWidth) + ")");
-                sb.AppendLine(string.Format(_l.SingleLineWidthAverage, (double)totalSingleLineWidth / totalSingleLines));
+                sb.AppendLine(string.Format(_l.SingleLineWidthAverage, (double)totalSingleLineWidth / Math.Max(1,totalSingleLines)));
                 sb.AppendLine();
-                sb.AppendLine(string.Format(_l.SingleLineWidthExceedingMaximum, Configuration.Settings.General.SubtitleLineMaximumPixelWidth, aboveMaximumLineWidthCount, ((double)aboveMaximumLineWidthCount / _subtitle.Paragraphs.Count) * 100.0));
+                sb.AppendLine(string.Format(_l.SingleLineWidthExceedingMaximum, Configuration.Settings.General.SubtitleLineMaximumPixelWidth, aboveMaximumLineWidthCount, ((double)aboveMaximumLineWidthCount / Math.Max(1,totalSingleLines)) * 100.0));
                 sb.AppendLine();
             }
 
@@ -292,9 +297,9 @@ https://github.com/SubtitleEdit/subtitleedit
             {
                 sb.AppendLine(string.Format(_l.GapMinimum, gapMinimum) + " (" + GetIndicesWithGap(gapMinimum) + ")");
                 sb.AppendLine(string.Format(_l.GapMaximum, gapMaximum) + " (" + GetIndicesWithGap(gapMaximum) + ")");
-                sb.AppendLine(string.Format(_l.GapAverage, gapTotal / _subtitle.Paragraphs.Count - 1));
+                sb.AppendLine(string.Format(_l.GapAverage, gapTotal / (_subtitle.Paragraphs.Count - 1)));
                 sb.AppendLine();
-                sb.AppendLine(string.Format(_l.GapExceedingMinimum, Configuration.Settings.General.MinimumMillisecondsBetweenLines, belowMinimumGapCount, ((double)belowMinimumGapCount / _subtitle.Paragraphs.Count) * 100.0));
+                sb.AppendLine(string.Format(_l.GapExceedingMinimum, Configuration.Settings.General.MinimumMillisecondsBetweenLines, belowMinimumGapCount, ((double)belowMinimumGapCount / Math.Max(1,_subtitle.Paragraphs.Count-1)) * 100.0));
                 sb.AppendLine();
             }
 
@@ -470,9 +475,14 @@ https://github.com/SubtitleEdit/subtitleedit
             {
                 DialogResult = DialogResult.Cancel;
             }
+            else if (e.KeyData == UiUtil.HelpKeys)
+            {
+                UiUtil.ShowHelp("#statistics");
+                e.SuppressKeyPress=true;
+            }
             else if (e.KeyData == (Keys.Control | Keys.C))
             {
-                Clipboard.SetText(string.Format(WriteFormat, _general, _mostUsedWords, _mostUsedLines), TextDataFormat.UnicodeText);
+                Clipboard.SetText(BuildFullStatisticsReport(), TextDataFormat.UnicodeText);
             }
         }
 
@@ -573,6 +583,7 @@ https://github.com/SubtitleEdit/subtitleedit
         {
             var hashtable = new Dictionary<string, int>(new StingOrdinalComparer());
 
+            _totalWords=0;
             foreach (Paragraph p in _subtitle.Paragraphs)
             {
                 MostUsedWordsAdd(hashtable, p.Text);
@@ -591,12 +602,7 @@ https://github.com/SubtitleEdit/subtitleedit
             var sb = new StringBuilder();
             if (sortedTable.Count > 0)
             {
-                var temp = string.Empty;
-                foreach (KeyValuePair<string, string> item in sortedTable)
-                {
-                    temp = item.Value + Environment.NewLine + temp;
-                }
-                sb.AppendLine(temp);
+                foreach(var item in hashtable.Where(kv=>kv.Value>1).OrderByDescending(kv=>kv.Value).ThenBy(kv=>kv.Key,StringComparer.Ordinal))sb.AppendLine(item.Value+": "+item.Key);
             }
             else
             {
@@ -626,12 +632,7 @@ https://github.com/SubtitleEdit/subtitleedit
             var sb = new StringBuilder();
             if (sortedTable.Count > 0)
             {
-                var temp = string.Empty;
-                foreach (KeyValuePair<string, string> item in sortedTable)
-                {
-                    temp = item.Value + Environment.NewLine + temp;
-                }
-                sb.AppendLine(temp);
+                foreach(var item in hashtable.Where(kv=>kv.Value>1).OrderByDescending(kv=>kv.Value).ThenBy(kv=>kv.Key,StringComparer.Ordinal))sb.AppendLine(item.Value+": "+item.Key);
             }
             else
             {
@@ -647,14 +648,14 @@ https://github.com/SubtitleEdit/subtitleedit
 
         private void buttonExport_Click(object sender, EventArgs e)
         {
-            string preViewFileName = Path.GetFileNameWithoutExtension(_fileName) + ".Stats";
+            string preViewFileName = Path.GetFileNameWithoutExtension(_fileName) + "_statistics.txt";
             using (var saveDialog = new SaveFileDialog { FileName = preViewFileName, Filter = LanguageSettings.Current.Main.TextFiles + " (*.txt)|*.txt|NFO files (*.nfo)|*.nfo" })
             {
                 if (saveDialog.ShowDialog(this) == DialogResult.OK)
                 {
                     string fileName = saveDialog.FileName;
-                    var statistic = string.Format(WriteFormat, _general, _mostUsedWords, _mostUsedLines);
-                    File.WriteAllText(fileName, statistic);
+                    SaveStatisticsReport(fileName);
+                    MessageBox.Show(this, StatL("Файл сохранён", "File saved")+Environment.NewLine+fileName, Text);
                 }
             }
         }

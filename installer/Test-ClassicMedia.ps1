@@ -48,6 +48,7 @@ $tests=@{
     TestClassicAssistedEditing='TestClassicAssistedEditing.cs'
     TestClassicTextTools='TestClassicTextTools.cs'
     TestClassicErrorList='TestClassicErrorList.cs'
+    TestClassicStatistics='TestClassicStatistics.cs'
     TestClassicCompareSync='TestClassicCompareSync.cs'
     TestClassicCompare='TestClassicCompare.cs'
     TestClassicBeautifyPreview='TestClassicBeautifyPreview.cs'
@@ -184,6 +185,8 @@ if ($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw "Complete classic comparison workflow regression failed"}
     & "$OutputDirectory/TestClassicSynchronization.exe" (Join-Path $OutputDirectory "classic-synchronization") $FFmpegLocation
     if($LASTEXITCODE -ne 0){throw "Classic visual, point and reference synchronization regression failed"}
+    & "$OutputDirectory/TestClassicStatistics.exe" (Join-Path $OutputDirectory "classic-statistics")
+    if($LASTEXITCODE -ne 0){throw "Classic statistics dashboard, metrics, histogram, layouts and export regression failed"}
     & "$OutputDirectory/TestClassicErrorList.exe" (Join-Path $OutputDirectory "classic-error-list")
     if($LASTEXITCODE -ne 0){throw "Classic error categories, exports, navigation and batch reports regression failed"}
     & "$OutputDirectory/TestClassicTextTools.exe" (Join-Path $OutputDirectory "classic-text-tools")
