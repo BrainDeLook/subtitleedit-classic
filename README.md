@@ -8,6 +8,8 @@ English · [Русский](README.ru.md)
 
 ## Classic 4.0.25
 
+Local development adds named **Beautify time codes** profiles to the classic profile editor. Save, load and delete custom rule sets alongside the built-in presets; cancelling profile edits preserves active settings, while explicitly saved library entries remain available. These changes are not yet in the published installer.
+
 Local development also routes the built-in update checker to this fork's stable releases, including a public fallback for GitHub API rate limits. nOCR training gains a font preview, multiple sizes and incremental training from an existing database, with background execution and cancellable work. These changes are not yet in the published installer.
 
 Local development also extends AI review with category/warning filters, editable suggestions, unchecked large rewrites, separate apply/undo passes, selected-line review, preview playback, server start/stop and request pacing. These additions retain the classic interface and are not yet included in the published installer.

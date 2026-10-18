@@ -115,12 +115,15 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
             buttonCancel.Text = LanguageSettings.Current.General.Cancel;
             UiUtil.FixLargeFonts(this, buttonOK);
 
+            InitializeClassicProfiles();
             LoadSettings();
         }
 
         private void LoadSettings()
         {
-            var settings = Configuration.Settings.BeautifyTimeCodes.Profile;
+            _loadingClassicProfile = true;
+            ResetZoneMinimums();
+            var settings = _workingProfile;
 
             numericUpDownGap.Value = settings.Gap;
 
@@ -167,11 +170,14 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
             numericUpDownChainingOutCueOnShotRightGreenZone.Value = settings.ChainingOutCueOnShotRightGreenZone;
             checkBoxChainingOutCueOnShotCheckGeneral.Checked = settings.ChainingOutCueOnShotCheckGeneral;
 
+            _loadingClassicProfile = false;
+            ValidateZones();
             RefreshControls();
         }
 
         private void RefreshControls()
         {
+            if (_loadingClassicProfile) return;
             // Radio button toggling
             numericUpDownChainingGeneralMaxGap.Enabled = radioButtonChainingGeneralMaxGap.Checked;
             labelChainingGeneralMaxGapSuffix.Enabled = radioButtonChainingGeneralMaxGap.Checked;
@@ -238,67 +244,73 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
 
         private void buttonOK_Click(object sender, EventArgs e)
         {
+            SaveControlsTo(_workingProfile);
+            Configuration.Settings.BeautifyTimeCodes.Profile = ClassicBeautifyProfiles.Clone(_workingProfile);
+            DialogResult = DialogResult.OK;
+        }
+
+        private void SaveControlsTo(BeautifyTimeCodesSettings.BeautifyTimeCodesProfile target)
+        {
             // Remember value for check later on
-            var previousGeneralShotChangeBehavior = Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralShotChangeBehavior;
+            var previousGeneralShotChangeBehavior = target.ChainingGeneralShotChangeBehavior;
 
             // Save settings
-            Configuration.Settings.BeautifyTimeCodes.Profile.Gap = Convert.ToInt32(numericUpDownGap.Value);
+            target.Gap = Convert.ToInt32(numericUpDownGap.Value);
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesGap = Convert.ToInt32(numericUpDownInCuesGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesLeftGreenZone = Convert.ToInt32(numericUpDownInCuesLeftGreenZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesLeftRedZone = Convert.ToInt32(numericUpDownInCuesLeftRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesRightRedZone = Convert.ToInt32(numericUpDownInCuesRightRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesRightGreenZone = Convert.ToInt32(numericUpDownInCuesRightGreenZone.Value);
+            target.InCuesGap = Convert.ToInt32(numericUpDownInCuesGap.Value);
+            target.InCuesLeftGreenZone = Convert.ToInt32(numericUpDownInCuesLeftGreenZone.Value);
+            target.InCuesLeftRedZone = Convert.ToInt32(numericUpDownInCuesLeftRedZone.Value);
+            target.InCuesRightRedZone = Convert.ToInt32(numericUpDownInCuesRightRedZone.Value);
+            target.InCuesRightGreenZone = Convert.ToInt32(numericUpDownInCuesRightGreenZone.Value);
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesGap = Convert.ToInt32(numericUpDownOutCuesGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesLeftGreenZone = Convert.ToInt32(numericUpDownOutCuesLeftGreenZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesLeftRedZone = Convert.ToInt32(numericUpDownOutCuesLeftRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesRightRedZone = Convert.ToInt32(numericUpDownOutCuesRightRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesRightGreenZone = Convert.ToInt32(numericUpDownOutCuesRightGreenZone.Value);
+            target.OutCuesGap = Convert.ToInt32(numericUpDownOutCuesGap.Value);
+            target.OutCuesLeftGreenZone = Convert.ToInt32(numericUpDownOutCuesLeftGreenZone.Value);
+            target.OutCuesLeftRedZone = Convert.ToInt32(numericUpDownOutCuesLeftRedZone.Value);
+            target.OutCuesRightRedZone = Convert.ToInt32(numericUpDownOutCuesRightRedZone.Value);
+            target.OutCuesRightGreenZone = Convert.ToInt32(numericUpDownOutCuesRightGreenZone.Value);
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesInCueClosestLeftGap = Convert.ToInt32(numericUpDownConnectedSubtitlesInCueClosestLeftGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesInCueClosestRightGap = Convert.ToInt32(numericUpDownConnectedSubtitlesInCueClosestRightGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesOutCueClosestLeftGap = Convert.ToInt32(numericUpDownConnectedSubtitlesOutCueClosestLeftGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesOutCueClosestRightGap = Convert.ToInt32(numericUpDownConnectedSubtitlesOutCueClosestRightGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesLeftGreenZone = Convert.ToInt32(numericUpDownConnectedSubtitlesLeftGreenZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesLeftRedZone = Convert.ToInt32(numericUpDownConnectedSubtitlesLeftRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesRightRedZone = Convert.ToInt32(numericUpDownConnectedSubtitlesRightRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesRightGreenZone = Convert.ToInt32(numericUpDownConnectedSubtitlesRightGreenZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesTreatConnected = Convert.ToInt32(numericUpDownConnectedSubtitlesTreatConnected.Value);
+            target.ConnectedSubtitlesInCueClosestLeftGap = Convert.ToInt32(numericUpDownConnectedSubtitlesInCueClosestLeftGap.Value);
+            target.ConnectedSubtitlesInCueClosestRightGap = Convert.ToInt32(numericUpDownConnectedSubtitlesInCueClosestRightGap.Value);
+            target.ConnectedSubtitlesOutCueClosestLeftGap = Convert.ToInt32(numericUpDownConnectedSubtitlesOutCueClosestLeftGap.Value);
+            target.ConnectedSubtitlesOutCueClosestRightGap = Convert.ToInt32(numericUpDownConnectedSubtitlesOutCueClosestRightGap.Value);
+            target.ConnectedSubtitlesLeftGreenZone = Convert.ToInt32(numericUpDownConnectedSubtitlesLeftGreenZone.Value);
+            target.ConnectedSubtitlesLeftRedZone = Convert.ToInt32(numericUpDownConnectedSubtitlesLeftRedZone.Value);
+            target.ConnectedSubtitlesRightRedZone = Convert.ToInt32(numericUpDownConnectedSubtitlesRightRedZone.Value);
+            target.ConnectedSubtitlesRightGreenZone = Convert.ToInt32(numericUpDownConnectedSubtitlesRightGreenZone.Value);
+            target.ConnectedSubtitlesTreatConnected = Convert.ToInt32(numericUpDownConnectedSubtitlesTreatConnected.Value);
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralUseZones = radioButtonChainingGeneralZones.Checked;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralMaxGap = Convert.ToInt32(numericUpDownChainingGeneralMaxGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralLeftGreenZone = Convert.ToInt32(numericUpDownChainingGeneralLeftGreenZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralLeftRedZone = Convert.ToInt32(numericUpDownChainingGeneralLeftRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralShotChangeBehavior = (BeautifyTimeCodesSettings.BeautifyTimeCodesProfile.ChainingShotChangeBehaviorEnum)comboBoxChainingGeneralShotChangeBehavior.SelectedIndex;
+            target.ChainingGeneralUseZones = radioButtonChainingGeneralZones.Checked;
+            target.ChainingGeneralMaxGap = Convert.ToInt32(numericUpDownChainingGeneralMaxGap.Value);
+            target.ChainingGeneralLeftGreenZone = Convert.ToInt32(numericUpDownChainingGeneralLeftGreenZone.Value);
+            target.ChainingGeneralLeftRedZone = Convert.ToInt32(numericUpDownChainingGeneralLeftRedZone.Value);
+            target.ChainingGeneralShotChangeBehavior = (BeautifyTimeCodesSettings.BeautifyTimeCodesProfile.ChainingShotChangeBehaviorEnum)comboBoxChainingGeneralShotChangeBehavior.SelectedIndex;
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotUseZones = radioButtonChainingInCueOnShotZones.Checked;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotMaxGap = Convert.ToInt32(numericUpDownChainingInCueOnShotMaxGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotLeftGreenZone = Convert.ToInt32(numericUpDownChainingInCueOnShotLeftGreenZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotLeftRedZone = Convert.ToInt32(numericUpDownChainingInCueOnShotLeftRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotCheckGeneral = checkBoxChainingInCueOnShotCheckGeneral.Checked;
+            target.ChainingInCueOnShotUseZones = radioButtonChainingInCueOnShotZones.Checked;
+            target.ChainingInCueOnShotMaxGap = Convert.ToInt32(numericUpDownChainingInCueOnShotMaxGap.Value);
+            target.ChainingInCueOnShotLeftGreenZone = Convert.ToInt32(numericUpDownChainingInCueOnShotLeftGreenZone.Value);
+            target.ChainingInCueOnShotLeftRedZone = Convert.ToInt32(numericUpDownChainingInCueOnShotLeftRedZone.Value);
+            target.ChainingInCueOnShotCheckGeneral = checkBoxChainingInCueOnShotCheckGeneral.Checked;
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotUseZones = radioButtonChainingOutCueOnShotZones.Checked;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotMaxGap = Convert.ToInt32(numericUpDownChainingOutCueOnShotMaxGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotRightRedZone = Convert.ToInt32(numericUpDownChainingOutCueOnShotRightRedZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotRightGreenZone = Convert.ToInt32(numericUpDownChainingOutCueOnShotRightGreenZone.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotCheckGeneral = checkBoxChainingOutCueOnShotCheckGeneral.Checked;
+            target.ChainingOutCueOnShotUseZones = radioButtonChainingOutCueOnShotZones.Checked;
+            target.ChainingOutCueOnShotMaxGap = Convert.ToInt32(numericUpDownChainingOutCueOnShotMaxGap.Value);
+            target.ChainingOutCueOnShotRightRedZone = Convert.ToInt32(numericUpDownChainingOutCueOnShotRightRedZone.Value);
+            target.ChainingOutCueOnShotRightGreenZone = Convert.ToInt32(numericUpDownChainingOutCueOnShotRightGreenZone.Value);
+            target.ChainingOutCueOnShotCheckGeneral = checkBoxChainingOutCueOnShotCheckGeneral.Checked;
 
             // Update hidden shot change behavior settings if value for general bahavior has changed
-            if (previousGeneralShotChangeBehavior != Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralShotChangeBehavior)
+            if (previousGeneralShotChangeBehavior != target.ChainingGeneralShotChangeBehavior)
             {
-                Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotShotChangeBehavior = Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralShotChangeBehavior;
-                Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotShotChangeBehavior = Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralShotChangeBehavior;
+                target.ChainingInCueOnShotShotChangeBehavior = target.ChainingGeneralShotChangeBehavior;
+                target.ChainingOutCueOnShotShotChangeBehavior = target.ChainingGeneralShotChangeBehavior;
             }
 
-            DialogResult = DialogResult.OK;
         }
 
         private void ResetSettings(BeautifyTimeCodesSettings.BeautifyTimeCodesProfile.Preset preset)
         {
             if (MessageBox.Show(this, LanguageSettings.Current.BeautifyTimeCodesProfile.ResetWarning, LanguageSettings.Current.General.Warning, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
-                Configuration.Settings.BeautifyTimeCodes.Profile = new BeautifyTimeCodesSettings.BeautifyTimeCodesProfile(preset);
+                _workingProfile = new BeautifyTimeCodesSettings.BeautifyTimeCodesProfile(preset);
                 LoadSettings();
             }
         }
@@ -315,6 +327,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
 
         private void numericUpDown_ValueChanged(object sender, EventArgs e)
         {
+            if (_loadingClassicProfile) return;
             ValidateZones();
             RefreshControls();
         }
@@ -326,6 +339,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
 
         private void numericUpDownGap_ValueChanged(object sender, EventArgs e)
         {
+            if (_loadingClassicProfile) return;
             if (numericUpDownOutCuesGap.Value > 0)
             {
                 numericUpDownOutCuesGap.Value = numericUpDownGap.Value;
@@ -369,10 +383,11 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
 
         private void buttonCreateSimple_Click(object sender, EventArgs e)
         {
-            using (var form = new BeautifyTimeCodesProfileSimple(_frameRate))
+            using (var form = new BeautifyTimeCodesProfileSimple(_frameRate, ClassicBeautifyProfiles.Clone(_workingProfile)))
             {
-                if (form.ShowDialog() == DialogResult.OK)
+                if (form.ShowDialog(this) == DialogResult.OK)
                 {
+                    _workingProfile = form.ResultProfile;
                     LoadSettings();
                 }
             }

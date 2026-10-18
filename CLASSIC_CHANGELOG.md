@@ -1,5 +1,11 @@
 ﻿# Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.27
+
+- Adapted stable 5.3 custom Beautify time codes profiles to the classic profile editor: Save as profile, load named entries alongside Default/Netflix/SDI, and delete individual custom profiles. Overwrite and deletion require confirmation. The separate, atomically written Classic profile library retains all timing fields, including hidden per-section shot-change behaviors, without changing the legacy Settings.xml schema. Explicitly saved library entries survive cancelling the current editor, matching stable 5.3.
+- Profile editing now uses a working copy: presets, named profiles and Simple mode do not change the active engine profile until the parent editor's OK. Loading suppresses general-gap propagation and resets zone constraints before restoring values, preventing one profile from clamping another's smaller zones or overwriting independent gaps.
+- Validation: full-value JSON round trips, Unicode/case-insensitive names, overwrite/deletion, backup files, corrupt-library preservation, named entries in the actual Russian/English classic windows, wide/narrow zone switching, hidden behaviors, cancellation and Simple-mode isolation. A synthetic subtitle verifies actual timing changes with its text and original source retained. This increment remains local; paid services are not used.
+
 ## Unreleased — local 4.0.25.26
 
 - Routed both startup and Help-menu update checks to stable releases of BrainDeLook/subtitleedit-classic. Download opens the matching Classic release; version normalization avoids offering an older published installer over a newer local build. Drafts, prereleases and invalid version tags are rejected. GitHub API rate limits use the same fork's public latest-stable redirect, validated before use; there is no upstream application-release fallback. Proxy settings are retained. Rate-limited checks show a release-notes link rather than API release-body text.

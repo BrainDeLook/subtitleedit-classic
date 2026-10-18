@@ -12,9 +12,12 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
     {
         private readonly double _frameRate;
 
-        public BeautifyTimeCodesProfileSimple(double frameRate)
+        public BeautifyTimeCodesSettings.BeautifyTimeCodesProfile ResultProfile { get; }
+
+        public BeautifyTimeCodesProfileSimple(double frameRate, BeautifyTimeCodesSettings.BeautifyTimeCodesProfile profile)
         {
             _frameRate = frameRate;
+            ResultProfile = profile;
 
             UiUtil.PreInitialize(this);
             InitializeComponent();
@@ -125,28 +128,28 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
             }
 
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.Gap = gap;
+            ResultProfile.Gap = gap;
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesGap = inCuesGap;
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesLeftGreenZone = greenZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesLeftRedZone = redZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesRightRedZone = redZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.InCuesRightGreenZone = greenZone;
+            ResultProfile.InCuesGap = inCuesGap;
+            ResultProfile.InCuesLeftGreenZone = greenZone;
+            ResultProfile.InCuesLeftRedZone = redZone;
+            ResultProfile.InCuesRightRedZone = redZone;
+            ResultProfile.InCuesRightGreenZone = greenZone;
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesGap = outCuesGap;
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesLeftGreenZone = greenZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesLeftRedZone = redZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesRightRedZone = redZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.OutCuesRightGreenZone = greenZone;
+            ResultProfile.OutCuesGap = outCuesGap;
+            ResultProfile.OutCuesLeftGreenZone = greenZone;
+            ResultProfile.OutCuesLeftRedZone = redZone;
+            ResultProfile.OutCuesRightRedZone = redZone;
+            ResultProfile.OutCuesRightGreenZone = greenZone;
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesInCueClosestLeftGap = Math.Max(gap, outCuesGap);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesInCueClosestRightGap = inCuesGap;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesOutCueClosestLeftGap = checkBoxSnapClosestCue.Checked ? inCuesGap : Math.Max(gap, outCuesGap);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesOutCueClosestRightGap = checkBoxSnapClosestCue.Checked ? Math.Max(gap, outCuesGap) : inCuesGap;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesLeftGreenZone = greenZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesLeftRedZone = redZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesRightRedZone = redZone;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesRightGreenZone = greenZone;
+            ResultProfile.ConnectedSubtitlesInCueClosestLeftGap = Math.Max(gap, outCuesGap);
+            ResultProfile.ConnectedSubtitlesInCueClosestRightGap = inCuesGap;
+            ResultProfile.ConnectedSubtitlesOutCueClosestLeftGap = checkBoxSnapClosestCue.Checked ? inCuesGap : Math.Max(gap, outCuesGap);
+            ResultProfile.ConnectedSubtitlesOutCueClosestRightGap = checkBoxSnapClosestCue.Checked ? Math.Max(gap, outCuesGap) : inCuesGap;
+            ResultProfile.ConnectedSubtitlesLeftGreenZone = greenZone;
+            ResultProfile.ConnectedSubtitlesLeftRedZone = redZone;
+            ResultProfile.ConnectedSubtitlesRightRedZone = redZone;
+            ResultProfile.ConnectedSubtitlesRightGreenZone = greenZone;
 
 
             double treadConnectedMs = 0;
@@ -165,32 +168,32 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
 
             try
             {
-                Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesTreatConnected = Convert.ToInt32(treadConnectedMs);
+                ResultProfile.ConnectedSubtitlesTreatConnected = Convert.ToInt32(treadConnectedMs);
             }
             catch (Exception exception)
             {
-                SeLogger.Error(exception, "Error when executing: Configuration.Settings.BeautifyTimeCodes.Profile.ConnectedSubtitlesTreatConnected = Convert.ToInt32(treadConnectedMs);");
+                SeLogger.Error(exception, "Error when executing: ResultProfile.ConnectedSubtitlesTreatConnected = Convert.ToInt32(treadConnectedMs);");
                 SeLogger.Error("BeautifyTimeCodesProfileSimple.buttonOK_Click: Gap is " + gap);
                 SeLogger.Error("BeautifyTimeCodesProfileSimple.buttonOK_Click: FrameRate is " + _frameRate);
                 SeLogger.Error("BeautifyTimeCodesProfileSimple.buttonOK_Click: treadConnectedMs is " + treadConnectedMs);
                 throw new Exception($"Unable to set ConnectedSubtitlesTreatConnected from treadConnectedMs '{treadConnectedMs}'", exception);
             }
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralUseZones = false;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralMaxGap = Convert.ToInt32(numericUpDownChainingGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralLeftGreenZone = GetChainingZoneFrames(Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralMaxGap);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralLeftRedZone = GetChainingZoneFrames(Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralMaxGap) - 1;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingGeneralShotChangeBehavior = BeautifyTimeCodesSettings.BeautifyTimeCodesProfile.ChainingShotChangeBehaviorEnum.ExtendUntilShotChange;
+            ResultProfile.ChainingGeneralUseZones = false;
+            ResultProfile.ChainingGeneralMaxGap = Convert.ToInt32(numericUpDownChainingGap.Value);
+            ResultProfile.ChainingGeneralLeftGreenZone = GetChainingZoneFrames(ResultProfile.ChainingGeneralMaxGap);
+            ResultProfile.ChainingGeneralLeftRedZone = GetChainingZoneFrames(ResultProfile.ChainingGeneralMaxGap) - 1;
+            ResultProfile.ChainingGeneralShotChangeBehavior = BeautifyTimeCodesSettings.BeautifyTimeCodesProfile.ChainingShotChangeBehaviorEnum.ExtendUntilShotChange;
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotUseZones = false;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotMaxGap = Convert.ToInt32(numericUpDownChainingGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotLeftGreenZone = GetChainingZoneFrames(Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotMaxGap);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotLeftRedZone = GetChainingZoneFrames(Configuration.Settings.BeautifyTimeCodes.Profile.ChainingInCueOnShotMaxGap) - 1;
+            ResultProfile.ChainingInCueOnShotUseZones = false;
+            ResultProfile.ChainingInCueOnShotMaxGap = Convert.ToInt32(numericUpDownChainingGap.Value);
+            ResultProfile.ChainingInCueOnShotLeftGreenZone = GetChainingZoneFrames(ResultProfile.ChainingInCueOnShotMaxGap);
+            ResultProfile.ChainingInCueOnShotLeftRedZone = GetChainingZoneFrames(ResultProfile.ChainingInCueOnShotMaxGap) - 1;
 
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotUseZones = false;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotMaxGap = checkBoxChainingGapAfterShotChanges.Checked ? Convert.ToInt32(numericUpDownChainingGapAfterShotChanges.Value) : Convert.ToInt32(numericUpDownChainingGap.Value);
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotRightRedZone = GetChainingZoneFrames(Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotMaxGap) - 1;
-            Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotRightGreenZone = GetChainingZoneFrames(Configuration.Settings.BeautifyTimeCodes.Profile.ChainingOutCueOnShotMaxGap);
+            ResultProfile.ChainingOutCueOnShotUseZones = false;
+            ResultProfile.ChainingOutCueOnShotMaxGap = checkBoxChainingGapAfterShotChanges.Checked ? Convert.ToInt32(numericUpDownChainingGapAfterShotChanges.Value) : Convert.ToInt32(numericUpDownChainingGap.Value);
+            ResultProfile.ChainingOutCueOnShotRightRedZone = GetChainingZoneFrames(ResultProfile.ChainingOutCueOnShotMaxGap) - 1;
+            ResultProfile.ChainingOutCueOnShotRightGreenZone = GetChainingZoneFrames(ResultProfile.ChainingOutCueOnShotMaxGap);
 
             DialogResult = DialogResult.OK;
         }

@@ -42,6 +42,7 @@ $tests=@{
     TestClassic53Tts='tts-tests/TestClassic53Tts.cs'
     TestClassic53Ocr='video-ocr-tests/TestClassic53Ocr.cs'
     TestClassicTiming='TestClassicTiming.cs'
+    TestClassicTimingProfiles='TestClassicTimingProfiles.cs'
     TestClassicNOcr='video-ocr-tests/TestClassicNOcr.cs'
     TestClassicActors='tts-tests/TestClassicActors.cs'
     TestClassicCastFeatures='tts-tests/TestClassicCastFeatures.cs'
@@ -168,6 +169,8 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Local AI, translation, context and ASR recovery regression failed." }
     & "$OutputDirectory/TestAdvancedBatchTranslation.exe" unit (Join-Path $OutputDirectory "advanced-batch-translation")
     if ($LASTEXITCODE -ne 0) { throw "Advanced translation, batch file output, cancellation and classic layout regression failed." }
+    & "$OutputDirectory/TestClassicTimingProfiles.exe" (Join-Path $OutputDirectory "classic-timing-profiles")
+    if($LASTEXITCODE -ne 0){throw "Classic named timing profiles regression failed"}
     & "$OutputDirectory/TestClassicUpdatesAndTraining.exe" unit (Join-Path $OutputDirectory "classic-updates-training")
     if($LASTEXITCODE -ne 0){throw "Classic updates and nOCR training failed"}
     & "$OutputDirectory/TestAiReviewPasses.exe" unit (Join-Path $OutputDirectory "ai-review-passes")
