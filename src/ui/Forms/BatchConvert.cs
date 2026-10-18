@@ -746,6 +746,7 @@ namespace Nikse.SubtitleEdit.Forms
             };
             _autoTranslatorEngines.AddRange(ClassicNewTranslator.Ids.Select(id=>new ClassicNewTranslator(id)));
             InitializeClassicBatchTranslation();
+            InitializeClassicBatchErrors();
             nikseComboBoxEngine.Items.Clear();
             nikseComboBoxEngine.Items.AddItems(_autoTranslatorEngines.Select(p => p.Name));
             nikseComboBoxEngine.SelectedIndex = 0;
@@ -1311,6 +1312,7 @@ namespace Nikse.SubtitleEdit.Forms
             _count = 0;
             _converted = 0;
             _errors = 0;
+            BeginClassicBatchErrors();
             _abort = false;
 
             listViewInputFiles.BeginUpdate();
@@ -1807,8 +1809,8 @@ namespace Nikse.SubtitleEdit.Forms
 
                                         var preExt = TsToBluRaySup.GetFileNameEnding(programMapTableParser, id);
                                         var dummy = 0;
-                                        CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, string.Empty, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt);
-                                        tsConvertedCount++;
+                                        var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, string.Empty, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt);
+                                        if(saved) { RecordClassicBatchErrors(parameter.Subtitle,GetCurrentSubtitleFormat(),fileName+preExt); tsConvertedCount++; }
                                     }
                                 }
                             }
@@ -1861,8 +1863,8 @@ namespace Nikse.SubtitleEdit.Forms
                                         binaryParagraphs);
                                     ApplyFixesStep2(parameter, Configuration.Settings.Tools.BatchConvertFixRtlMode);
 
-                                    CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, string.Empty, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt);
-                                    tsConvertedCount++;
+                                    var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, string.Empty, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt);
+                                    if(saved) { RecordClassicBatchErrors(parameter.Subtitle,GetCurrentSubtitleFormat(),fileName+preExt); tsConvertedCount++; }
                                 }
                             }
 
@@ -1996,6 +1998,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             _converting = false;
+            CompleteClassicBatchErrors();
             labelStatus.Text = string.Empty;
             progressBar1.Visible = false;
             TaskbarList.SetProgressState(Handle, TaskbarButtonProgressFlags.NoProgress);
@@ -3104,6 +3107,7 @@ namespace Nikse.SubtitleEdit.Forms
                     var success = CommandLineConverter.BatchConvertSave(targetFormat, TimeSpan.Zero, GetCurrentEncoding(p.FileName), dir, p.TargetFileName, _count, ref _converted, ref _errors, _allFormats, p.FileName, p.Subtitle, p.SourceFormat, binaryParagraphs, overwrite, -1, null, null, null, null, false, progressCallback, null, null, null, null, null, null, _preprocessingSettings, _cancellationTokenSource.Token);
                     if (success)
                     {
+                        RecordClassicBatchErrors(p.Subtitle,p.Format,string.IsNullOrWhiteSpace(p.TargetFileName)?p.FileName:p.TargetFileName);
                         p.Item.SubItems[3].Text = LanguageSettings.Current.BatchConvert.Converted;
                     }
                     else

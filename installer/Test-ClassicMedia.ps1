@@ -29,7 +29,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $OutputDirectory 'libmpv-2.dll'))) {
 $sdk=Get-ChildItem 'C:/Program Files/dotnet/sdk' -Directory | Sort-Object { [version]$_.Name } | Select-Object -Last 1
 $framework="$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319"
 $refs=@('/reference:"'+(Join-Path $OutputDirectory 'SubtitleEdit.exe')+'"')
-foreach($name in @('mscorlib','System','System.Core','System.Drawing','System.Windows.Forms','System.Data','System.Xml','System.Xml.Linq','System.Runtime.Serialization','System.Net.Http')) {
+foreach($name in @('mscorlib','System','System.Core','System.Drawing','System.Windows.Forms','System.Data','System.Xml','System.Xml.Linq','System.Runtime.Serialization','System.Net.Http','System.IO.Compression','System.IO.Compression.FileSystem')) {
  $refs+='/reference:"'+(Join-Path $framework "$name.dll")+'"'
 }
 foreach($dll in Get-ChildItem $OutputDirectory -Filter '*.dll') {
@@ -47,6 +47,7 @@ $tests=@{
     TestClassicSynchronization='TestClassicSynchronization.cs'
     TestClassicAssistedEditing='TestClassicAssistedEditing.cs'
     TestClassicTextTools='TestClassicTextTools.cs'
+    TestClassicErrorList='TestClassicErrorList.cs'
     TestClassicCompareSync='TestClassicCompareSync.cs'
     TestClassicCompare='TestClassicCompare.cs'
     TestClassicBeautifyPreview='TestClassicBeautifyPreview.cs'
@@ -183,6 +184,8 @@ if ($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw "Complete classic comparison workflow regression failed"}
     & "$OutputDirectory/TestClassicSynchronization.exe" (Join-Path $OutputDirectory "classic-synchronization") $FFmpegLocation
     if($LASTEXITCODE -ne 0){throw "Classic visual, point and reference synchronization regression failed"}
+    & "$OutputDirectory/TestClassicErrorList.exe" (Join-Path $OutputDirectory "classic-error-list")
+    if($LASTEXITCODE -ne 0){throw "Classic error categories, exports, navigation and batch reports regression failed"}
     & "$OutputDirectory/TestClassicTextTools.exe" (Join-Path $OutputDirectory "classic-text-tools")
     if($LASTEXITCODE -ne 0){throw "Classic Unicode, actor conversion and continuation merge regression failed"}
     & "$OutputDirectory/TestClassicAssistedEditing.exe" (Join-Path $OutputDirectory "classic-assisted-editing")

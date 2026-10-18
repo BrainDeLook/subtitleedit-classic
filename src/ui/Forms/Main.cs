@@ -22447,17 +22447,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ListSyntaxErrors()
         {
-            using (var form = new ErrorsGoTo(_subtitle))
-            {
-                if (form.ShowDialog(this) == DialogResult.OK)
-                {
-                    SelectListViewIndexAndEnsureVisible(form.ErrorIndex);
-                    if (mediaPlayer.VideoPlayer != null)
-                    {
-                        mediaPlayer.CurrentPosition = _subtitle.Paragraphs[form.ErrorIndex].StartTime.TotalSeconds;
-                    }
-                }
-            }
+            ShowClassicErrorList();
         }
 
         private void RestartHistory()
