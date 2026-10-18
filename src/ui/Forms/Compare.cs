@@ -143,6 +143,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
             else if (subtitleNumber == 2)
             {
+                ResetClassicReferenceSync();
                 _subtitle2 = LoadSubtitle(fileName);
                 subtitleListView2.Fill(_subtitle2);
             }
@@ -380,64 +381,26 @@ namespace Nikse.SubtitleEdit.Forms
             }
             buttonExport.Enabled = true;
             timer1.Stop();
-            var sub1 = new Subtitle(_subtitle1);
-            var sub2 = new Subtitle(_subtitle2);
-            var originalLeft = sub1.Paragraphs.Select((p, i) => new { p, i }).ToDictionary(x => x.p, x => x.i);
-            var originalRight = sub2.Paragraphs.Select((p, i) => new { p, i }).ToDictionary(x => x.p, x => x.i);
-
+            var sub1 = new Subtitle();
+            var sub2 = new Subtitle();
+            _classicRows.Clear(); _classicSelection = null;
+            foreach (var aligned in AlignClassicComparison())
+            {
+                _classicRows.Add(new ClassicComparePair { Left = aligned.Left, Right = aligned.Right });
+                sub1.Paragraphs.Add(aligned.Left < 0 ? new Paragraph() : new Paragraph(_subtitle1.Paragraphs[aligned.Left], false));
+                sub2.Paragraphs.Add(aligned.Right < 0 ? new Paragraph() : new Paragraph(_subtitle2.Paragraphs[aligned.Right], false));
+            }
+            subtitleListView1.Fill(sub1);
+            subtitleListView2.Fill(sub2);
+            for (var row = 0; row < _classicRows.Count; row++)
+            {
+                subtitleListView1.Items[row].Tag = _classicRows[row];
+                subtitleListView2.Items[row].Tag = _classicRows[row];
+            }
             var index = 0;
             var p1 = sub1.GetParagraphOrDefault(index);
             var p2 = sub2.GetParagraphOrDefault(index);
             var max = Math.Max(sub1.Paragraphs.Count, sub2.Paragraphs.Count);
-            while (index < max)
-            {
-                if (p1 != null && p2 != null && GetColumnsEqualExceptNumberAndDuration(p1, p2) == 0)
-                {
-                    for (var i = index + 1; i < max; i++)
-                    {
-                        // Try to find at least two matching properties
-                        if (GetColumnsEqualExceptNumber(sub1.GetParagraphOrDefault(i), p2) > 1)
-                        {
-                            for (var j = index; j < i; j++)
-                            {
-                                sub2.Paragraphs.Insert(index++, new Paragraph());
-                            }
-                            break;
-                        }
-
-                        if (GetColumnsEqualExceptNumber(p1, sub2.GetParagraphOrDefault(i)) > 1)
-                        {
-                            for (var j = index; j < i; j++)
-                            {
-                                sub1.Paragraphs.Insert(index++, new Paragraph());
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                index++;
-                p1 = sub1.GetParagraphOrDefault(index);
-                p2 = sub2.GetParagraphOrDefault(index);
-            }
-
-            max = Math.Max(sub1.Paragraphs.Count, sub2.Paragraphs.Count);
-            var minSub = sub1.Paragraphs.Count < sub2.Paragraphs.Count ? sub1 : sub2;
-            for (var idx = minSub.Paragraphs.Count; idx < max; idx++)
-            {
-                minSub.Paragraphs.Insert(idx, new Paragraph());
-            }
-
-            _classicRows.Clear(); _classicSelection = null;
-            subtitleListView1.Fill(sub1);
-            subtitleListView2.Fill(sub2);
-            for (var row = 0; row < Math.Max(sub1.Paragraphs.Count, sub2.Paragraphs.Count); row++)
-            {
-                var pair = new ClassicComparePair { Left = sub1.GetParagraphOrDefault(row) is Paragraph l && originalLeft.TryGetValue(l, out var li) ? li : -1, Right = sub2.GetParagraphOrDefault(row) is Paragraph r && originalRight.TryGetValue(r, out var ri) ? ri : -1 };
-                _classicRows.Add(pair);
-                if (row < subtitleListView1.Items.Count) subtitleListView1.Items[row].Tag = pair;
-                if (row < subtitleListView2.Items.Count) subtitleListView2.Items[row].Tag = pair;
-            }
 
             // coloring + differences index list
             _differences = new List<int>();
@@ -638,6 +601,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             subtitleListView1.SelectIndexAndEnsureVisible(selectedIndex);
             SelectLinesInBothListViews('L');
+            MarkClassicSyncPoints();
             RefreshClassicMerge();
         }
 
@@ -645,31 +609,16 @@ namespace Nikse.SubtitleEdit.Forms
 
         private bool IsTextDifferent(Paragraph p1, Paragraph p2)
         {
-            var t1 = p1.Text;
-            var t2 = p2.Text;
+            return NormalizeClassicCompareText(p1.Text) != NormalizeClassicCompareText(p2.Text);
+        }
 
-            if (checkBoxIgnoreFormatting.Checked)
-            {
-                t1 = HtmlUtil.RemoveHtmlTags(t1, true);
-                t2 = HtmlUtil.RemoveHtmlTags(t2, true);
-            }
-
-            if (checkBoxIgnoreWhitespace.Checked)
-            {
-                t1 = RemoveWhitespace(t1);
-                t2 = RemoveWhitespace(t2);
-            }
-
-            if (checkBoxIgnoreLineBreaks.Checked)
-            {
-                t1 = t1.Replace(Environment.NewLine, " ");
-                t2 = t2.Replace(Environment.NewLine, " ");
-
-                t1 = RemoveDoubleSpace(t1);
-                t2 = RemoveDoubleSpace(t2);
-            }
-
-            return t1 != t2;
+        private string NormalizeClassicCompareText(string text)
+        {
+            var value = text ?? string.Empty;
+            if (checkBoxIgnoreFormatting.Checked) value = HtmlUtil.RemoveHtmlTags(value, true);
+            if (checkBoxIgnoreWhitespace.Checked) value = RemoveWhitespace(value);
+            if (checkBoxIgnoreLineBreaks.Checked) value = RemoveDoubleSpace(value.Replace(Environment.NewLine, " "));
+            return value;
         }
 
         private static string RemoveWhitespace(string s)
@@ -747,32 +696,6 @@ namespace Nikse.SubtitleEdit.Forms
 
             const double tolerance = 0.1;
             return Math.Abs(t1.TotalMilliseconds - t2.TotalMilliseconds) <= (double)(_classicTolerance?.Value ?? 0) + 0.000001 || Math.Abs(t1.TotalMilliseconds - t2.TotalMilliseconds) < tolerance;
-        }
-
-        private int GetColumnsEqualExceptNumberAndDuration(Paragraph p1, Paragraph p2)
-        {
-            if (p1 == null || p2 == null)
-            {
-                return 0;
-            }
-
-            var columnsEqual = 0;
-            if (IsTimeEqual(p1.StartTime, p2.StartTime))
-            {
-                columnsEqual++;
-            }
-
-            if (IsTimeEqual(p1.EndTime, p2.EndTime))
-            {
-                columnsEqual++;
-            }
-
-            if (!IsTextDifferent(p1, p2))
-            {
-                columnsEqual++;
-            }
-
-            return columnsEqual;
         }
 
         private void ButtonOkClick(object sender, EventArgs e)
@@ -1373,6 +1296,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
             else
             {
+                ResetClassicReferenceSync();
                 _subtitle2 = new Subtitle();
                 _subtitle2.LoadSubtitle(filePath, out _, null);
                 subtitleListView2.Fill(_subtitle2);
