@@ -1,4 +1,4 @@
-﻿# Subtitle Edit Classic
+# Subtitle Edit Classic
 
 A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/SubtitleEdit/subtitleedit/tree/se4-legacy), preserving the original Windows Forms interface.
 
@@ -7,6 +7,8 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 English · [Русский](README.ru.md)
 
 ## Classic 4.0.25
+
+The local build also adapts the stable 5.3 **Tools → Merge continuation lines**, **Convert actors**, and **Remove / replace Unicode characters** workflow. Merge offers checked candidates, gap/text limits and the complete output preview; overlapping cues and differing actor/style boundaries stay separate. Actor conversion supports broken bracket labels, two-speaker splits, inline/Actor directions, casing/colour, remembered options and selected cues. Unicode replacement lists characters above Latin-1, including emoji, with counts, editable remembered replacements and a result preview; uncheck alphabet letters you want to keep. These tools preserve cue metadata and use ordinary editor Undo. **Batch convert** has independent merge, actor-conversion and Unicode-control-removal actions with shared processing. General Unicode replacement is intentionally reviewed interactively. The changes remain local and are not in the published installer.
 
 The local preview adds stable 5.3 **Assisted split** and **Assisted move** to the subtitle grid context menu and Tools. Choose among ranked split points or sentence/word/balance moves, with exact text, timing and reading-speed previews; click the numbered title or press 1–5/1–6. Escape cancels. Split retains the first cue's identity and divides an editable original at its own language boundary; moves update both cue texts and their boundary timing together. Styles, actors and other cue metadata are retained, with one ordinary editor Undo. Read-only original references are unchanged. The dialogs scroll above a fixed footer and offer persistent conflict-checked shortcuts, unassigned by default. Candidate generation and application use copied snapshots, reject stale editor content, and preserve nested HTML/ASS formatting. These changes are not yet in the published installer.
 

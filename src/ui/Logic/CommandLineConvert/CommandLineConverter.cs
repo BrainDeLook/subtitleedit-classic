@@ -62,6 +62,8 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
             SortBy,
             BeautifyTimeCodes,
             AutoTranslate,
+            MergeContinuationLines, // Shared classic tools
+            ConvertActors,
         }
 
         internal static void ConvertOrReturn(string productIdentifier, string[] commandLineArguments)
@@ -2321,6 +2323,14 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                                     sub.Paragraphs.AddRange(mergedSameTextsSub.Paragraphs);
                                 }
 
+                                break;
+                            case BatchAction.MergeContinuationLines:
+                                var continuationSettings = ClassicTextToolSettings.Load();
+                                var continuationLanguage = LanguageAutoDetect.AutoDetectGoogleLanguage(sub);
+                                sub = ClassicTextTools.Merge(sub, new HashSet<int>(ClassicTextTools.DetectMerges(sub, continuationLanguage, continuationSettings.MaxGap, continuationSettings.MaxCharacters).Select(c => c.Index)), continuationLanguage);
+                                break;
+                            case BatchAction.ConvertActors:
+                                sub = ClassicTextTools.ConvertActors(sub, sub.OriginalFormat ?? new SubRip(), ClassicTextToolSettings.Load().Actors);
                                 break;
                             case BatchAction.MergeShortLines:
                                 var mergedShortLinesSub = MergeShortLinesUtils.MergeShortLinesInSubtitle(sub, Configuration.Settings.Tools.MergeShortLinesMaxGap, Configuration.Settings.Tools.MergeShortLinesMaxChars, Configuration.Settings.Tools.MergeShortLinesOnlyContinuous);

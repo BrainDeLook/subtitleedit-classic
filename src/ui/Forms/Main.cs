@@ -1745,6 +1745,7 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicAiMenu();
             InitializeClassicCommandPalette();
             InitializeClassicAssistedEditing();
+            InitializeClassicTextTools();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -37321,6 +37322,7 @@ namespace Nikse.SubtitleEdit.Forms
             ReloadFromSourceView();
             using (var form = new ConvertActor())
             {
+                form.SetSelectedIndices(SubtitleListview1.SelectedIndices.Cast<int>());
                 form.Initialize(_subtitle, GetCurrentSubtitleFormat());
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {

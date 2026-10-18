@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Controls;
+using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.BluRaySup;
 using Nikse.SubtitleEdit.Core.Common;
@@ -711,6 +711,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             groupBoxAutoTranslate.Visible = false;
 
+            InitializeClassicBatchTextTools(fixItems);
             foreach (var fixItem in fixItems)
             {
                 var listViewItem = new ListViewItem { Tag = fixItem };
@@ -1296,6 +1297,8 @@ namespace Nikse.SubtitleEdit.Forms
             UpdateChangeCasingSettings();
             UpdateRtlSettings();
             UpdateActionEnabledCache();
+            try { CaptureClassicBatchTextTools(); }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { MessageBox.Show(this, ex.Message, Text); return; }
             if(IsActionEnabled(CommandLineConverter.BatchAction.AutoTranslate) && !PrepareClassicBatchTranslation())return;
             _converting = true;
             progressBar1.Style = ProgressBarStyle.Blocks;
@@ -2229,6 +2232,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private Subtitle ApplyFixesStep1(Subtitle sub, List<BluRaySupParser.PcsData> bluRaySubtitles)
         {
+            sub = ApplyClassicBatchTextTools(sub);
             if (IsActionEnabled(CommandLineConverter.BatchAction.BridgeGaps))
             {
                 Core.Forms.DurationsBridgeGaps.BridgeGaps(sub, _bridgeGaps.MinMsBetweenLines, !_bridgeGaps.PreviousSubtitleTakesAllTime, Configuration.Settings.Tools.BridgeGapMilliseconds, null, null, false);
@@ -2715,7 +2719,10 @@ namespace Nikse.SubtitleEdit.Forms
                    !IsActionEnabled(CommandLineConverter.BatchAction.MergeSameTexts) &&
                    !IsActionEnabled(CommandLineConverter.BatchAction.MergeSameTimeCodes) &&
                    !IsActionEnabled(CommandLineConverter.BatchAction.MergeShortLines) &&
-                   !IsActionEnabled(CommandLineConverter.BatchAction.RemoveLineBreaks);
+                   !IsActionEnabled(CommandLineConverter.BatchAction.RemoveLineBreaks) &&
+                   !IsActionEnabled(CommandLineConverter.BatchAction.MergeContinuationLines) &&
+                   !IsActionEnabled(CommandLineConverter.BatchAction.ConvertActors) &&
+                   !IsActionEnabled(CommandLineConverter.BatchAction.RemoveUnicodeControlChars);
         }
 
         internal static List<VobSubMergedPack> LoadVobSubFromMatroska(MatroskaTrackInfo matroskaSubtitleInfo, MatroskaFile matroska, out Core.VobSub.Idx idx)

@@ -15,12 +15,18 @@ namespace Nikse.SubtitleEdit.Forms
         private SubtitleFormat _subtitleFormat;
         private bool _loading = true;
         private List<FixListItem> _fixItems;
+        private ClassicActorOptions _options;
+        private HashSet<int> _selectedIndices;
+        private CheckBox _onlySelected;
+        public ClassicActorOptions Options => ReadOptions();
+        public void SetSelectedIndices(IEnumerable<int> indices) { _selectedIndices = new HashSet<int>(indices); }
 
         public class FixListItem
         {
             public Paragraph Paragraph { get; set; }
             public bool Checked { get; set; }
             public bool IsNext { get; set; }
+            public Paragraph NextParagraph { get; set; }
         }
 
         public int NumberOfActorConversions { get; private set; }
@@ -99,6 +105,15 @@ namespace Nikse.SubtitleEdit.Forms
             nikseComboBoxCasing.Items.Add(LanguageSettings.Current.ChangeCasing.AllLowercase);
             nikseComboBoxCasing.Items.Add(LanguageSettings.Current.ChangeCasing.ProperCase);
             nikseComboBoxCasing.SelectedIndex = 0;
+            var settings = ClassicTextToolSettings.Load(); _options=settings.Actors;
+            if (System.IO.File.Exists(ClassicTextToolSettings.SettingsPath))
+            {
+                nikseComboBoxConvertFrom.SelectedIndex=_options.From; nikseComboBoxConvertTo.SelectedIndex=_options.To;
+                nikseComboBoxCasing.SelectedIndex=_options.Casing??0; checkBoxChangeCasing.Checked=_options.Casing.HasValue;
+                checkBoxOnlyNames.Checked=_options.OnlyNames; checkBoxColor.Checked=_options.UseColor; panelColor.BackColor=Color.FromArgb(_options.ColorArgb);
+            }
+            if (_onlySelected==null) { _onlySelected=new CheckBox { AutoSize=true, Left=18, Top=checkBoxOnlyNames.Top, Text=ClassicTextTools.L("Только выбранные реплики", "Selected subtitles only"), Enabled=_selectedIndices!=null && _selectedIndices.Count>0 }; Controls.Add(_onlySelected); _onlySelected.CheckedChanged+=(s,e)=>GeneratePreview(); }
+
         }
 
         private ListViewItem MakeListViewItem(Paragraph p, bool selected, int lineNumber, string newText, string oldText, bool isNext)
@@ -126,112 +141,31 @@ namespace Nikse.SubtitleEdit.Forms
             groupBoxLinesFound.Text = string.Format(LanguageSettings.Current.ConvertActor.NumberOfConversionsX, NumberOfActorConversions);
         }
 
+        private ClassicActorOptions ReadOptions() => new ClassicActorOptions { From=nikseComboBoxConvertFrom.SelectedIndex, To=nikseComboBoxConvertTo.SelectedIndex, Casing=checkBoxChangeCasing.Checked?(int?)nikseComboBoxCasing.SelectedIndex:null, OnlyNames=checkBoxOnlyNames.Checked, UseColor=checkBoxColor.Checked, ColorArgb=panelColor.BackColor.ToArgb() };
+
         public Subtitle ConvertActors(Subtitle subtitle, out int numberOfConversions, bool clearFixes)
         {
-            if (!_loading)
+            listViewFixes.ItemChecked -= listViewFixes_ItemChecked;
+            try
             {
-                listViewFixes.ItemChecked -= listViewFixes_ItemChecked;
+                listViewFixes.Items.Clear(); _fixItems.Clear(); var options=ReadOptions();
+                var converter=ClassicTextTools.ActorConverter(subtitle,_subtitleFormat,options);
+                for(int i=0;i<subtitle.Paragraphs.Count;i++)
+                {
+                    if (_onlySelected!=null && _onlySelected.Checked && !_selectedIndices.Contains(i)) continue;
+                    var old=subtitle.Paragraphs[i]; var fix=ClassicTextTools.ConvertActor(converter,old,options);
+                    if (fix==null || fix.Skip || (fix.Paragraph.Text==old.Text && fix.Paragraph.Actor==old.Actor && fix.NextParagraph==null)) continue;
+                    var selected=!options.OnlyNames || fix.Selected;
+                    _fixItems.Add(new FixListItem { Paragraph=fix.Paragraph, NextParagraph=fix.NextParagraph, Checked=selected });
+                    // A split is one atomic conversion: either keep both speakers or keep the source cue.
+                    var after=ActorPreview(fix.Paragraph)+(fix.NextParagraph==null?"":" | "+ActorPreview(fix.NextParagraph));
+                    var item=new ListViewItem("") { Checked=selected }; item.SubItems.Add((i+1).ToString()); item.SubItems.Add(UiUtil.GetListViewTextFromString(ActorPreview(old))); item.SubItems.Add(UiUtil.GetListViewTextFromString(after)); listViewFixes.Items.Add(item);
+                }
+                numberOfConversions=_fixItems.Count(p=>p.Checked); return ClassicTextTools.ConvertActors(subtitle,_subtitleFormat,options,new HashSet<int>(_fixItems.Where(f=>f.Checked).Select(f=>subtitle.Paragraphs.FindIndex(p=>p.Id==f.Paragraph.Id))));
             }
-
-            if (clearFixes)
-            {
-                listViewFixes.Items.Clear();
-                _fixItems = new List<FixListItem>();
-            }
-
-            numberOfConversions = 0;
-            var convertedSubtitle = new Subtitle();
-            Paragraph p = null;
-            var lineNumbers = new List<int>();
-            var listViewItems = new List<ListViewItem>();
-            var languageCode = LanguageAutoDetect.AutoDetectGoogleLanguage(subtitle);   
-
-            var converter = new ActorConverter(_subtitleFormat, languageCode);
-
-            var from = nikseComboBoxConvertFrom.SelectedText;
-            var to = nikseComboBoxConvertTo.SelectedText;
-            var fromSquare = from == string.Format(LanguageSettings.Current.ConvertActor.InlineActorViaX, "[]");
-            converter.ToSquare = to == string.Format(LanguageSettings.Current.ConvertActor.InlineActorViaX, "[]");
-            var fromParentheses = from == string.Format(LanguageSettings.Current.ConvertActor.InlineActorViaX, "()");
-            converter.ToParentheses = to == string.Format(LanguageSettings.Current.ConvertActor.InlineActorViaX, "()");
-            var fromColon = from == string.Format(LanguageSettings.Current.ConvertActor.InlineActorViaX, ":");
-            converter.ToColon = to == string.Format(LanguageSettings.Current.ConvertActor.InlineActorViaX, ":");
-            var fromActor = from == LanguageSettings.Current.General.Actor;
-            converter.ToActor = to == LanguageSettings.Current.General.Actor;
-            var changeCasing = checkBoxChangeCasing.Checked ? nikseComboBoxCasing.SelectedIndex : (int?)null;
-            var color = checkBoxColor.Checked ? panelColor.BackColor : (Color?)null;
-
-            for (var i = 0; i < subtitle.Paragraphs.Count; i++)
-            {
-                p = subtitle.Paragraphs[i];
-                var oldText = p.Text;
-
-                if (fromSquare && Contains(p.Text, '[', ']'))
-                {
-                    var result = converter.FixActors(p, '[', ']', changeCasing, color);
-                    if (result.Skip)
-                    {
-                        continue;
-                    }
-
-                    p.Text = result.Paragraph.Text;
-                    p.Actor = result.Paragraph.Actor;
-                    listViewItems.Add(MakeListViewItem(p, result.Selected, p.Number, p.Text, oldText, false));
-                    numberOfConversions++;
-
-                    if (converter.ToActor && result.NextParagraph != null)
-                    {
-                        listViewItems.Add(MakeListViewItem(result.NextParagraph, result.Selected, p.Number, result.NextParagraph.Text, oldText, true));
-                    }
-                }
-                else if (fromParentheses && Contains(p.Text, '(', ')'))
-                {
-                    var result = converter.FixActors(p, '(', ')', changeCasing, color);
-                    if (result.Skip)
-                    {
-                        continue;
-                    }
-
-                    p.Text = result.Paragraph.Text;
-                    p.Actor = result.Paragraph.Actor;
-                    listViewItems.Add(MakeListViewItem(p, result.Selected, p.Number, p.Text, oldText, false));
-                    numberOfConversions++;
-
-                    if (converter.ToActor && result.NextParagraph != null)
-                    {
-                        listViewItems.Add(MakeListViewItem(result.NextParagraph, result.Selected, p.Number, result.NextParagraph.Text, oldText, true));
-                    }
-                }
-                else if (fromColon && p.Text.Contains(':'))
-                {
-                    var result = converter.FixActorsFromBeforeColon(p, ':', changeCasing, color);
-                    p.Text = result;
-                    listViewItems.Add(MakeListViewItem(p, true, p.Number, p.Text, oldText, false));
-                    numberOfConversions++;
-                }
-                else if (fromActor && !string.IsNullOrEmpty(p.Actor))
-                {
-                    p.Text = converter.FixActorsFromActor(p, changeCasing, color);
-                    listViewItems.Add(MakeListViewItem(p, true, p.Number, p.Text, oldText, false));
-                    numberOfConversions++;
-                }
-                else
-                {
-                    continue;
-                }
-            }
-
-            listViewFixes.Items.AddRange(listViewItems.ToArray());
-
-            if (!_loading)
-            {
-                listViewFixes.ItemChecked += listViewFixes_ItemChecked;
-            }
-
-            convertedSubtitle.Renumber();
-            return convertedSubtitle;
+            finally { listViewFixes.ItemChecked += listViewFixes_ItemChecked; }
         }
-
+        private static string ActorPreview(Paragraph p) => (string.IsNullOrEmpty(p.Actor)?"":"["+p.Actor+"] ")+p.Text;
 
         private bool Contains(string text, char start, char end)
         {
@@ -257,31 +191,12 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ButtonOkClick(object sender, EventArgs e)
         {
-            foreach (var fixItem in _fixItems)
+            var settings=ClassicTextToolSettings.Load(); settings.Actors=ReadOptions();
+            try { settings.Save(); } catch(Exception ex) when(ex is System.IO.IOException || ex is UnauthorizedAccessException) { MessageBox.Show(this,ex.Message,Text); return; }
+            for(int i=Subtitle.Paragraphs.Count-1;i>=0;i--)
             {
-                if (!fixItem.Checked)
-                {
-                    continue;
-                }
-
-                if (fixItem.IsNext)
-                {
-                    Subtitle.InsertParagraphInCorrectTimeOrder(fixItem.Paragraph);
-                }
-                else
-                {
-                    foreach (var p in Subtitle.Paragraphs)
-                    {
-                        if (p.Id == fixItem.Paragraph.Id)
-                        {
-                            p.Text = fixItem.Paragraph.Text;
-                            p.Actor = fixItem.Paragraph.Actor;
-                            p.Style = fixItem.Paragraph.Style;
-                            p.Extra = fixItem.Paragraph.Extra;
-                            break;
-                        }
-                    }
-                }
+                var fix=_fixItems.FirstOrDefault(f=>f.Checked && f.Paragraph.Id==Subtitle.Paragraphs[i].Id); if(fix==null)continue;
+                Subtitle.Paragraphs[i]=new Paragraph(fix.Paragraph,false); if(fix.NextParagraph!=null)Subtitle.Paragraphs.Insert(i+1,new Paragraph(fix.NextParagraph,false));
             }
 
             Subtitle.Renumber();
@@ -301,7 +216,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             _fixItems[e.Item.Index].Checked = e.Item.Checked;
-            NumberOfActorConversions = 0;
+            NumberOfActorConversions = _fixItems.Count(p=>p.Checked);
             groupBoxLinesFound.Text = string.Format(LanguageSettings.Current.ConvertActor.NumberOfConversionsX, NumberOfActorConversions);
         }
 
@@ -327,7 +242,6 @@ namespace Nikse.SubtitleEdit.Forms
                 listViewFixes.Items[0].Selected = true;
             }
 
-            listViewFixes.ItemChecked += listViewFixes_ItemChecked;
         }
 
         private void checkBoxFixIncrementing_CheckedChanged(object sender, EventArgs e)
