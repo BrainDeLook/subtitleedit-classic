@@ -1,5 +1,12 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.38
+
+- Added a stable 5.3-style display-only formatting selector under Options → Subtitle grid formatting: Show tags (the existing default), Show formatting, Hide tags, and Show formatting and remaining tags. The working and original text columns render HTML/ASS bold, italic, underline, strikeout, primary color, font name and bounded font size. Nonvisual ASS commands, including complete transitions, remain visible in the last mode. Unsupported commands are not simulated as video effects.
+- Preserved source markup in ListView subitems and subtitle paragraphs, so selecting, editing, copying and saving continue to use the original text. Mode changes invalidate only the display, keep selection and timing intact, and persist separately from Settings.xml. Russian/English menu labels refresh without duplicate commands. Invalid settings fall back to the legacy tag view.
+- Kept classic error backgrounds and selection colors; low-contrast requested text colors fall back to the normal foreground. Drawing is clipped to each cell, fonts are disposed after drawing, and parsed display runs use a bounded cache. Nested HTML, ASS resets, transitions, entities, malformed tags, long override blocks, line separators and supplementary characters have dedicated checks. Real WinForms screenshots and persistence tests cover the working/original columns and light/dark backgrounds. No paid APIs are used; this increment remains local.
+- Validation: 56 feature checks and 1,730 checks across the combined regression run passed. The final audio-selection check used the retained eight-second Turkish/English source clip because the original desktop video was no longer available. The local EXE was installed with its previous version backed up and Settings.xml unchanged.
+
 ## Unreleased — local 4.0.25.37
 
 - Adapted the stable 5.3 statistics dashboard through the existing File → Statistics and selected-lines entry points. A new Overview tab shows subtitle/word/character totals and summed cue duration, minimum/average/maximum timing and pacing ranges with meters, profile-limit counters and a two-CPS histogram with optimal/maximum markers and a final 28+ overflow bin. Checks include too many physical lines, CPS/WPM, short/long duration, overlong/overwide physical lines and short gaps. Gap ranges retain signed overlaps; meter drawing alone clamps negative fractions.

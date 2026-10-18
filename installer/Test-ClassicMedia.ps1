@@ -49,6 +49,7 @@ $tests=@{
     TestClassicTextTools='TestClassicTextTools.cs'
     TestClassicErrorList='TestClassicErrorList.cs'
     TestClassicStatistics='TestClassicStatistics.cs'
+    TestClassicGridFormatting='TestClassicGridFormatting.cs'
     TestClassicCompareSync='TestClassicCompareSync.cs'
     TestClassicCompare='TestClassicCompare.cs'
     TestClassicBeautifyPreview='TestClassicBeautifyPreview.cs'
@@ -187,6 +188,8 @@ if ($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw "Classic visual, point and reference synchronization regression failed"}
     & "$OutputDirectory/TestClassicStatistics.exe" (Join-Path $OutputDirectory "classic-statistics")
     if($LASTEXITCODE -ne 0){throw "Classic statistics dashboard, metrics, histogram, layouts and export regression failed"}
+    & "$OutputDirectory/TestClassicGridFormatting.exe" (Join-Path $OutputDirectory "classic-grid-formatting")
+    if($LASTEXITCODE -ne 0){throw "Classic subtitle grid formatting, source retention, rendering and settings regression failed"}
     & "$OutputDirectory/TestClassicErrorList.exe" (Join-Path $OutputDirectory "classic-error-list")
     if($LASTEXITCODE -ne 0){throw "Classic error categories, exports, navigation and batch reports regression failed"}
     & "$OutputDirectory/TestClassicTextTools.exe" (Join-Path $OutputDirectory "classic-text-tools")

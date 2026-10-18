@@ -62,6 +62,19 @@ namespace Nikse.SubtitleEdit.Controls
         public int SubtitleFontSize { get; set; } = 8;
 
         public bool UseSyntaxColoring { get; set; }
+        private readonly ClassicGridPainter _gridPainter = new ClassicGridPainter();
+        private ClassicGridFormattingMode _gridFormattingMode;
+        public ClassicGridFormattingMode GridFormattingMode
+        {
+            get => _gridFormattingMode;
+            set
+            {
+                if (!Enum.IsDefined(typeof(ClassicGridFormattingMode), value)) throw new ArgumentOutOfRangeException(nameof(value));
+                _gridFormattingMode = value;
+                _gridPainter.Clear();
+                Invalidate();
+            }
+        }
         private Settings _settings;
         private bool _saveColumnWidthChanges;
         private readonly Timer _setLastColumnWidthTimer;
@@ -429,6 +442,12 @@ namespace Nikse.SubtitleEdit.Controls
 
         private void SubtitleListView_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
         {
+            if (GridFormattingMode != ClassicGridFormattingMode.ShowTags &&
+                (e.ColumnIndex == ColumnIndexText || e.ColumnIndex == ColumnIndexTextOriginal))
+            {
+                DrawFormattedSubtitleCell(e);
+                return;
+            }
             var rtl = Configuration.Settings?.General.RightToLeftMode == true;
             if (rtl)
             {
@@ -517,6 +536,26 @@ namespace Nikse.SubtitleEdit.Controls
             {
                 e.DrawDefault = true;
             }
+        }
+
+        private void DrawFormattedSubtitleCell(DrawListViewSubItemEventArgs e)
+        {
+            var background = e.SubItem.BackColor;
+            var foreground = e.SubItem.ForeColor;
+            if (foreground.IsEmpty) foreground = ForeColor;
+            if (background.IsEmpty) background = BackColor;
+            var customColor = background != BackColor;
+            if (e.Item.Selected)
+            {
+                if (customColor) background = GetCustomColor(background);
+                else if (Configuration.Settings?.General.UseDarkTheme == true) background = Color.FromArgb(24, 52, 75);
+                else background = Focused ? Color.FromArgb(0, 120, 215) : Color.FromArgb(204, 232, 255);
+                if (Focused && !customColor) foreground = Color.White;
+            }
+            using (var brush = new SolidBrush(background)) e.Graphics.FillRectangle(brush, e.Bounds);
+            var bounds = new Rectangle(e.Bounds.Left + 3, e.Bounds.Top + 2, Math.Max(0, e.Bounds.Width - 7), Math.Max(0, e.Bounds.Height - 3));
+            var rtl = RightToLeftLayout || RightToLeft == RightToLeft.Yes || Configuration.Settings?.General.RightToLeftMode == true;
+            _gridPainter.Draw(e.Graphics, bounds, e.SubItem.Text, e.SubItem.Font ?? Font, foreground, background, e.Item.Selected, rtl, GridFormattingMode, _lineSeparatorString);
         }
 
         internal static StringFormat CreateStringFormat(Control control)
