@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic;
 using System;
 using System.Collections.Generic;
@@ -63,14 +63,15 @@ namespace Nikse.SubtitleEdit.Forms
             subtitleListView2.AutoSizeAllColumns(this);
             UiUtil.FixLargeFonts(this, buttonOK);
             labelAdjustFactor.Text = string.Empty;
+            InitializeClassicPoints();
         }
 
         public void Initialize(Subtitle subtitle, string subtitleFileName, string videoFileName, int audioTrackNumber)
         {
             Text = LanguageSettings.Current.PointSync.Title;
             labelSubtitleFileName.Text = subtitleFileName;
-            _subtitle = new Subtitle(subtitle);
-            _originalSubtitle = subtitle;
+            _subtitle = new Subtitle(subtitle, false);
+            _originalSubtitle = new Subtitle(subtitle, false);
             _subtitleFileName = subtitleFileName;
             VideoFileName = videoFileName;
             _audioTrackNumber = audioTrackNumber;
@@ -109,9 +110,9 @@ namespace Nikse.SubtitleEdit.Forms
         {
             Text = LanguageSettings.Current.PointSync.TitleViaOtherSubtitle;
             labelSubtitleFileName.Text = subtitleFileName;
-            _subtitle = new Subtitle(subtitle);
-            _otherSubtitle = otherSubtitle;
-            _originalSubtitle = subtitle;
+            _subtitle = new Subtitle(subtitle, false);
+            _otherSubtitle = new Subtitle(otherSubtitle, false);
+            _originalSubtitle = new Subtitle(subtitle, false);
             _subtitleFileName = subtitleFileName;
             VideoFileName = videoFileName;
             _audioTrackNumber = audioTrackNumber;
@@ -134,13 +135,13 @@ namespace Nikse.SubtitleEdit.Forms
             labelOtherSubtitleFileName.Visible = true;
             subtitleListView2.Visible = true;
             buttonFindTextOther.Visible = true;
-            Width = subtitleListView2.Width * 2 + 250;
+            Width = Math.Min(1420, Screen.FromControl(this).WorkingArea.Width - 40);
             MinimumSize = new Size(Width - 50, MinimumSize.Height);
         }
 
         private void RefreshSynchronizationPointsUi()
         {
-            buttonApplySync.Enabled = _synchronizationPoints.Count > 0;
+            buttonOK.Enabled = buttonApplySync.Enabled = !_classicLoading && _synchronizationPoints.Count > 0;
             labelNoOfSyncPoints.Text = string.Format(LanguageSettings.Current.PointSync.SyncPointsX, _synchronizationPoints.Count);
 
             listBoxSyncPoints.Items.Clear();
@@ -155,7 +156,7 @@ namespace Nikse.SubtitleEdit.Forms
 
                     var item = new ListBoxSyncPoint { Index = i, Text = _subtitle.Paragraphs[i].Number + " - " + p.StartTime };
                     listBoxSyncPoints.Items.Add(item);
-                    subtitleListView1.SetNumber(_subtitle.Paragraphs[i].Number, "* * * *");
+                    subtitleListView1.SetNumber(i, "* * * *");
                 }
                 else
                 {
@@ -166,6 +167,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             SetViewColors(_otherSubtitle, subtitleListView2, _synchronizationPoints.Values.Select(v => v.OtherIndex), GetSelectedParagraph(_subtitle, subtitleListView1));
             SetViewColors(_subtitle, subtitleListView1, _synchronizationPoints.Keys, GetSelectedParagraph(_otherSubtitle, subtitleListView2));
+            UpdateClassicGaps();
         }
 
         private void buttonSetSyncPoint_Click(object sender, EventArgs e)
@@ -176,24 +178,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
             else
             {
-                if (subtitleListView1.SelectedItems.Count == 1 && _subtitle != null)
-                {
-                    using (var getTime = new SetSyncPoint())
-                    {
-                        var index = subtitleListView1.SelectedItems[0].Index;
-                        getTime.Initialize(_subtitle, _subtitleFileName, index, VideoFileName, _audioTrackNumber);
-                        if (getTime.ShowDialog(this) == DialogResult.OK)
-                        {
-                            _synchronizationPoints[index] = (getTime.SynchronizationPoint, SubtitleListView.InvalidIndex);
-
-                            RefreshSynchronizationPointsUi();
-                            VideoFileName = getTime.VideoFileName;
-                        }
-
-                        Activate();
-                        VideoFileName = getTime.VideoFileName;
-                    }
-                }
+                SetClassicVideoPoint(true);
             }
 
             SetSyncFactorLabel();
@@ -221,6 +206,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void buttonRemoveSyncPoint_Click(object sender, EventArgs e)
         {
+            if (listBoxSyncPoints.SelectedItem is ListBoxSyncPoint selectedPoint) { RemoveClassicPoint(); return; }
             if (subtitleListView1.SelectedItems.Count == 1 && _subtitle != null)
             {
                 var index = subtitleListView1.SelectedItems[0].Index;
@@ -237,6 +223,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void buttonOK_Click(object sender, EventArgs e)
         {
+            if (!buttonApplySync.Enabled || ClassicPointSync.Apply(_originalSubtitle, _synchronizationPoints) == null) return;
             if (buttonApplySync.Enabled)
             {
                 buttonSync_Click(null, null);
@@ -331,7 +318,7 @@ namespace Nikse.SubtitleEdit.Forms
                 var realDiff = endPos - startPos;
 
                 // speed factor
-                var factor = realDiff / subDiff;
+                var factor = Math.Abs(subDiff) < 0.001 ? 1 : realDiff / subDiff;
 
                 // adjust to starting position
                 var adjust = startPos - subStart * factor;
@@ -340,93 +327,18 @@ namespace Nikse.SubtitleEdit.Forms
             }
         }
 
-        private void Sync(int startIndex, int endIndex, int minIndex, int maxIndex, double startPos, double endPos)
-        {
-            if (endPos > startPos)
-            {
-                var subStart = _originalSubtitle.Paragraphs[startIndex].StartTime.TotalMilliseconds / TimeCode.BaseUnit;
-                var subEnd = _originalSubtitle.Paragraphs[endIndex].StartTime.TotalMilliseconds / TimeCode.BaseUnit;
-
-                var subDiff = subEnd - subStart;
-                var realDiff = endPos - startPos;
-
-                // speed factor
-                var factor = Math.Abs(subDiff) < 0.001 ? 1 : realDiff / subDiff;
-
-                // adjust to starting position
-                var adjust = startPos - subStart * factor;
-
-                for (var i = minIndex; i < _subtitle.Paragraphs.Count && i <= maxIndex; i++)
-                {
-                    var p = _subtitle.Paragraphs[i];
-                    p.StartTime.TotalMilliseconds = _originalSubtitle.Paragraphs[i].StartTime.TotalMilliseconds;
-                    p.EndTime.TotalMilliseconds = _originalSubtitle.Paragraphs[i].EndTime.TotalMilliseconds;
-                    p.Adjust(factor, adjust);
-                }
-            }
-        }
-
         private void buttonSync_Click(object sender, EventArgs e)
         {
-            if (_synchronizationPoints.Count == 1)
+            var result = ClassicPointSync.Apply(_originalSubtitle, _synchronizationPoints);
+            if (result == null)
             {
-                foreach (var kvp in _synchronizationPoints)
-                {
-                    AdjustViaShowEarlierLater(kvp.Key, kvp.Value.Time.TotalMilliseconds);
-                }
-
-                _synchronizationPoints = new SortedDictionary<int, (TimeSpan, int)>();
-                subtitleListView1.Fill(_subtitle);
-                RefreshSynchronizationPointsUi();
+                MessageBox.Show(this, SP("Проверь порядок точек и границы тайм-кодов. Изменения не применены.", "Check the order of the points and time-code bounds. No changes were applied."), Text);
                 return;
             }
-
-            var endIndex = -1;
-            var minIndex = 0;
-            var syncIndices = new List<int>();
-            foreach (var kvp in _synchronizationPoints)
-            {
-                syncIndices.Add(kvp.Key);
-            }
-
-            for (var i = 0; i < syncIndices.Count; i++)
-            {
-                if (i == 0)
-                {
-                    endIndex = syncIndices[i];
-                }
-                else
-                {
-                    var startIndex = endIndex;
-                    endIndex = syncIndices[i];
-
-                    int maxIndex;
-                    if (i == syncIndices.Count - 1)
-                    {
-                        maxIndex = _subtitle.Paragraphs.Count;
-                    }
-                    else
-                    {
-                        maxIndex = syncIndices[i];
-                    }
-
-                    Sync(startIndex, endIndex, minIndex, maxIndex, _synchronizationPoints[startIndex].Time.TotalMilliseconds / TimeCode.BaseUnit, _synchronizationPoints[endIndex].Time.TotalMilliseconds / TimeCode.BaseUnit);
-
-                    minIndex = endIndex;
-                }
-            }
-
+            _subtitle = result;
             subtitleListView1.Fill(_subtitle);
             RefreshSynchronizationPointsUi();
         }
-
-        private void AdjustViaShowEarlierLater(int index, double newTotalMilliseconds)
-        {
-            var oldTotalMilliseconds = _subtitle.Paragraphs[index].StartTime.TotalMilliseconds;
-            var diff = newTotalMilliseconds - oldTotalMilliseconds;
-            _subtitle.AddTimeToAllParagraphs(TimeSpan.FromMilliseconds(diff));
-        }
-
         private void listBoxSyncPoints_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (listBoxSyncPoints.SelectedIndex >= 0)
@@ -509,18 +421,19 @@ namespace Nikse.SubtitleEdit.Forms
         private void subtitleListView2_SelectedIndexChanged(object sender, EventArgs e)
         {
             SetViewColors(_subtitle, subtitleListView1, _synchronizationPoints.Keys, GetSelectedParagraph(_otherSubtitle, subtitleListView2));
+            UpdateClassicGaps();
         }
 
         private static Paragraph GetSelectedParagraph(Subtitle subtitle, SubtitleListView view)
         {
             var selectedIndex = view.SelectedIndex;
-            return selectedIndex == SubtitleListView.InvalidIndex ? null : subtitle.Paragraphs[selectedIndex];
+            return subtitle == null || selectedIndex < 0 || selectedIndex >= subtitle.Paragraphs.Count ? null : subtitle.Paragraphs[selectedIndex];
         }
 
 
         private void SetViewColors(Subtitle subtitle, SubtitleListView view, IEnumerable<int> marked, Paragraph syncParagraph = null)
         {
-            if (!view.Visible) return;
+            if (!view.Visible || subtitle == null) return;
             var markedHashSet = marked.Where(v => v != SubtitleListView.InvalidIndex).ToHashSet();
             if (syncParagraph is null)
             {

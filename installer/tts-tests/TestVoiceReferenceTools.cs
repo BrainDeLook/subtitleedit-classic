@@ -23,7 +23,12 @@ class TestVoiceReferenceTools
  static void Pump(Task task){var end=DateTime.UtcNow.AddSeconds(40);while(!task.IsCompleted){if(DateTime.UtcNow>end)throw new TimeoutException();Application.DoEvents();Thread.Sleep(5);}task.GetAwaiter().GetResult();}
  static void Show(Form form){form.ShowInTaskbar=false;form.StartPosition=FormStartPosition.Manual;form.Location=new Point(-20000,-20000);form.Show();SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());Application.DoEvents();}
  static void SetTranscript(WhisperAudioToText form,string value){var result=new Subtitle();result.Paragraphs.Add(new Paragraph(value,0,1000));form.GetType().GetField("<TranscribedSubtitle>k__BackingField",Flags).SetValue(form,result);form.DialogResult=DialogResult.OK;}
- [STAThread] static int Main(string[] args){try{
+ [STAThread] static int Main(string[] args)
+ {
+  Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);Application.EnableVisualStyles();var result=1;
+  using(var anchor=new Form{ShowInTaskbar=false,StartPosition=FormStartPosition.Manual,Location=new Point(-30000,-30000),Size=new Size(1,1)}){anchor.Shown+=(s,e)=>{try{result=Run(args);}finally{anchor.Close();}};Application.Run(anchor);}return result;
+ }
+ static int Run(string[] args){try{
   var data=Path.GetFullPath(args[0]);Directory.CreateDirectory(data);Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Dictionaries"));typeof(Configuration).GetField("DataDirectory",BindingFlags.Public|BindingFlags.Static).SetValue(null,data+Path.DirectorySeparatorChar);Configuration.Settings.General.Language="ru-RU";Configuration.Settings.General.FFmpegLocation=args[1];LanguageSettings.Current=Language.Load(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Languages/ru-RU.xml"));Application.EnableVisualStyles();File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"libmpv-2.dll"),Path.Combine(data,"libmpv-2.dll"),true);
   if(Environment.GetEnvironmentVariable("GITHUB_ACTIONS")=="true")Configuration.Settings.General.MpvExtraOptions="--ao=null --vo=null";
   new ClassicSpeechOptions{Engine=ClassicSpeechCatalog.Crisp,Backend="parakeet",Language="en",Variant="cpu",UseVad=false}.Save();

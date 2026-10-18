@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Controls;
+using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AudioToText;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.BluRaySup;
@@ -2705,7 +2705,7 @@ namespace Nikse.SubtitleEdit.Forms
                 return;
             }
 
-            using (var visualSync = new VisualSync(this))
+            using (var visualSync = new VisualSync(this) { SharedWavePeaks = audioVisualizer.WavePeaks, SharedWaveVideo = _videoFileName })
             {
                 visualSync.VideoFileName = _videoFileName;
                 visualSync.AudioTrackNumber = VideoAudioTrackNumber;
@@ -8270,7 +8270,7 @@ namespace Nikse.SubtitleEdit.Forms
 
                         if (format != null && subtitleToAppend.Paragraphs.Count > 1)
                         {
-                            using (var visualSync = new VisualSync(this))
+                            using (var visualSync = new VisualSync(this) { SharedWavePeaks = audioVisualizer.WavePeaks, SharedWaveVideo = _videoFileName })
                             {
                                 visualSync.Initialize(toolStripButtonVisualSync.Image as Bitmap, subtitleToAppend, null, _fileName, _language.AppendViaVisualSyncTitle, CurrentFrameRate, false);
                                 visualSync.ShowDialog(this);
@@ -23279,7 +23279,7 @@ namespace Nikse.SubtitleEdit.Forms
                 return;
             }
 
-            using (var pointSync = new SyncPointsSync())
+            using (var pointSync = new SyncPointsSync() { SharedWavePeaks = audioVisualizer.WavePeaks, SharedWaveVideo = _videoFileName })
             {
                 pointSync.Initialize(_subtitle, _fileName, _videoFileName, VideoAudioTrackNumber);
                 mediaPlayer.Pause();
@@ -23323,133 +23323,11 @@ namespace Nikse.SubtitleEdit.Forms
                 return;
             }
 
-            using (var pointSync = new SyncPointsSync())
+            using (var pointSync = new SyncPointsSync() { SharedWavePeaks = audioVisualizer.WavePeaks, SharedWaveVideo = _videoFileName })
             {
-                openFileDialog1.Title = _language.OpenOtherSubtitle;
-                openFileDialog1.FileName = string.Empty;
-                openFileDialog1.Filter = UiUtil.SubtitleExtensionFilter.Value;
-                if (openFileDialog1.ShowDialog() == DialogResult.OK && File.Exists(openFileDialog1.FileName))
                 {
-                    var file = new FileInfo(openFileDialog1.FileName);
-                    var fileName = file.FullName;
-                    var extension = file.Extension.ToLowerInvariant();
-
-                    // TODO: Check for mkv etc
-                    if (extension == ".sub")
-                    {
-                        if (IsVobSubFile(fileName, false))
-                        {
-                            MessageBox.Show(_language.NoSupportHereVobSub);
-                            return;
-                        }
-                    }
-
-                    if (extension == ".sup")
-                    {
-                        if (FileUtil.IsBluRaySup(fileName))
-                        {
-                            MessageBox.Show(_language.NoSupportHereBluRaySup);
-                            return;
-                        }
-                        else if (FileUtil.IsSpDvdSup(fileName))
-                        {
-                            MessageBox.Show(_language.NoSupportHereDvdSup);
-                            return;
-                        }
-                    }
-
-                    var sub = new Subtitle();
-                    if (extension == ".mkv" || extension == ".mks")
-                    {
-                        using (var matroska = new MatroskaFile(fileName))
-                        {
-                            if (matroska.IsValid)
-                            {
-                                var subtitleList = matroska.GetTracks(true);
-                                if (subtitleList.Count > 1)
-                                {
-                                    using (var subtitleChooser = new MatroskaSubtitleChooser("mkv"))
-                                    {
-                                        subtitleChooser.Initialize(subtitleList);
-                                        if (_loading)
-                                        {
-                                            subtitleChooser.Icon = (Icon)Icon.Clone();
-                                            subtitleChooser.ShowInTaskbar = true;
-                                            subtitleChooser.ShowIcon = true;
-                                        }
-
-                                        if (subtitleChooser.ShowDialog(this) == DialogResult.OK)
-                                        {
-                                            sub = LoadMatroskaSubtitleForSync(subtitleList[subtitleChooser.SelectedIndex], matroska);
-                                        }
-                                    }
-                                }
-                                else if (subtitleList.Count > 0)
-                                {
-                                    sub = LoadMatroskaSubtitleForSync(subtitleList[0], matroska);
-                                }
-                                else
-                                {
-                                    MessageBox.Show(_language.NoSubtitlesFound);
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    if (extension == ".divx" || extension == ".avi")
-                    {
-                        MessageBox.Show(_language.NoSupportHereDivx);
-                        return;
-                    }
-
-                    if ((extension == ".mp4" || extension == ".m4v" || extension == ".mov" || extension == ".3gp") && file.Length > 10000)
-                    {
-                        var mp4Parser = new MP4Parser(fileName);
-                        var mp4SubtitleTracks = mp4Parser.GetSubtitleTracks();
-                        if (mp4SubtitleTracks.Count == 0)
-                        {
-                            MessageBox.Show(_language.NoSubtitlesFound);
-                            return;
-                        }
-                        else if (mp4SubtitleTracks.Count == 1)
-                        {
-                            sub = LoadMp4SubtitleForSync(mp4SubtitleTracks[0]);
-                        }
-                        else
-                        {
-                            using (var subtitleChooser = new MatroskaSubtitleChooser("mp4"))
-                            {
-                                subtitleChooser.Initialize(mp4SubtitleTracks);
-                                if (subtitleChooser.ShowDialog(this) == DialogResult.OK)
-                                {
-                                    sub = LoadMp4SubtitleForSync(mp4SubtitleTracks[0]);
-                                }
-                            }
-                        }
-                    }
-
-                    if (file.Length > 1024 * 1024 * 10 && sub.Paragraphs.Count == 0) // max 10 mb
-                    {
-                        var text = string.Format(_language.FileXIsLargerThan10MB + Environment.NewLine + Environment.NewLine + _language.ContinueAnyway, fileName);
-                        if (MessageBox.Show(this, text, Title, MessageBoxButtons.YesNoCancel) != DialogResult.Yes)
-                        {
-                            return;
-                        }
-                    }
-
-                    sub.Renumber();
-                    if (sub.Paragraphs.Count == 0)
-                    {
-                        var f = sub.LoadSubtitle(fileName, out var enc, null);
-                        if (f == null)
-                        {
-                            ShowUnknownSubtitle(fileName);
-                            return;
-                        }
-                    }
-
-                    pointSync.Initialize(_subtitle, _fileName, _videoFileName, VideoAudioTrackNumber, fileName, sub);
+                    pointSync.Initialize(_subtitle, _fileName, _videoFileName, VideoAudioTrackNumber, string.Empty, new Subtitle());
+                    pointSync.SetClassicReference(new ClassicSyncReference(), string.Empty);
                     mediaPlayer.Pause();
                     if (pointSync.ShowDialog(this) == DialogResult.OK)
                     {

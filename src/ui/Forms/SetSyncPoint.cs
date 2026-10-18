@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.VideoPlayers;
@@ -45,6 +45,7 @@ namespace Nikse.SubtitleEdit.Forms
             UiUtil.FixLargeFonts(this, buttonSetSyncPoint);
             videoPlayerContainer1.TryLoadGfx();
             videoPlayerContainer1.HidePlayerName();
+            InitializeClassicPoint();
         }
 
         public TimeSpan SynchronizationPoint => timeUpDownLine.TimeCode.TimeSpan;
@@ -52,7 +53,7 @@ namespace Nikse.SubtitleEdit.Forms
         public void Initialize(Subtitle subtitle, string subtitleFileName, int index, string videoFileName, int audioTrackNumber)
         {
             _subtitleFileName = subtitleFileName;
-            _subtitle = subtitle;
+            _subtitle = new Subtitle(subtitle, false);
             _audioTrackNumber = audioTrackNumber;
             subtitleListView1.Fill(subtitle);
             _guess = subtitle.Paragraphs[index].StartTime.TimeSpan;
@@ -61,7 +62,7 @@ namespace Nikse.SubtitleEdit.Forms
             labelSubtitle.Text = string.Empty;
             labelVideoFileName.Text = LanguageSettings.Current.General.NoVideoLoaded;
 
-            timeUpDownLine.TimeCode = subtitle.Paragraphs[index].StartTime;
+            timeUpDownLine.TimeCode = new TimeCode(subtitle.Paragraphs[index].StartTime.TotalMilliseconds);
 
             if (!string.IsNullOrEmpty(videoFileName) && File.Exists(videoFileName))
             {
@@ -188,7 +189,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (videoPlayerContainer1 == null)
+            if (videoPlayerContainer1?.VideoPlayer == null)
             {
                 return;
             }
@@ -204,10 +205,11 @@ namespace Nikse.SubtitleEdit.Forms
             var pos = videoPlayerContainer1.CurrentPosition;
             if (Math.Abs(pos - _lastPosition) > 0.01)
             {
-                UiUtil.ShowSubtitle(_subtitle, videoPlayerContainer1, new SubRip());
-                timeUpDownLine.TimeCode = TimeCode.FromSeconds(pos);
+                UiUtil.ShowSubtitle(_subtitle, videoPlayerContainer1, _subtitle.OriginalFormat ?? new SubRip());
+                if (!timeUpDownLine.ContainsFocus) timeUpDownLine.TimeCode = TimeCode.FromSeconds(pos);
                 _lastPosition = pos;
             }
+            UpdateClassicPointWave();
         }
 
         private void buttonOK_Click(object sender, EventArgs e)
@@ -233,7 +235,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
             else if (e.KeyCode == Keys.P && e.Control)
             {
-                videoPlayerContainer1.VideoPlayer.Pause();
+                videoPlayerContainer1.Pause();
                 e.SuppressKeyPress = true;
             }
             else if (e.Modifiers == Keys.Alt && e.KeyCode == Keys.Left)
@@ -298,19 +300,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void GoBackSeconds(double seconds, VideoPlayer mediaPlayer)
         {
-            if (mediaPlayer != null)
-            {
-                if (mediaPlayer.CurrentPosition > seconds)
-                {
-                    mediaPlayer.CurrentPosition -= seconds;
-                }
-                else
-                {
-                    mediaPlayer.CurrentPosition = 0;
-                }
-
-                videoPlayerContainer1.RefreshProgressBar();
-            }
+            SeekClassicPoint((mediaPlayer == null ? timeUpDownLine.TimeCode.TotalSeconds : mediaPlayer.CurrentPosition) - seconds);
         }
 
         private void buttonStartHalfASecondBack_Click(object sender, EventArgs e)
@@ -320,12 +310,12 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void buttonStartThreeSecondsBack_Click(object sender, EventArgs e)
         {
-            GoBackSeconds(3, videoPlayerContainer1.VideoPlayer);
+            GoBackSeconds(1, videoPlayerContainer1.VideoPlayer);
         }
 
         private void buttonStartThreeSecondsAhead_Click(object sender, EventArgs e)
         {
-            GoBackSeconds(-3.0, videoPlayerContainer1.VideoPlayer);
+            GoBackSeconds(-1, videoPlayerContainer1.VideoPlayer);
         }
 
         private void buttonStartHalfASecondAhead_Click(object sender, EventArgs e)
@@ -345,6 +335,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void GetTimeLoad(object sender, EventArgs e)
         {
+            UpdateClassicPointWave();
             if (subtitleListView1.SelectedItems.Count == 1)
             {
                 subtitleListView1.SelectIndexAndEnsureVisible(subtitleListView1.SelectedItems[0].Index);
@@ -357,8 +348,7 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 var index = subtitleListView1.SelectedItems[0].Index;
 
-                videoPlayerContainer1.Pause();
-                videoPlayerContainer1.CurrentPosition = _subtitle.Paragraphs[index].StartTime.TotalMilliseconds / TimeCode.BaseUnit;
+                SeekClassicPoint(_subtitle.Paragraphs[index].StartTime.TotalSeconds);
             }
         }
 
