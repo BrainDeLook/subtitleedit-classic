@@ -1,5 +1,12 @@
 ﻿# Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.28
+
+- Adapted stable 5.3's command palette to the classic main window: Edit → Command palette, default Ctrl+Shift+K. The catalog combines the current main menus with named main/grid/waveform shortcut actions, including actions without assigned keys and menu-only Classic additions. Text-box-only actions and the palette itself are excluded. Existing action handlers retain their guards and undo behavior; named dispatch does not modify key assignments.
+- Added localized name/group/shortcut search, all-word matching in any order, initials and ranked results. Successful actions are remembered in session only (last ten), including distinct IDs for dynamically generated menu entries. Enter/double-click/Run chooses an action; arrows and PageUp/PageDown navigate, Escape cancels and the configured Help key opens the pinned stable documentation. Actions run after the palette closes.
+- The palette's Shortcut button provides a separate persistent binding or menu-only operation, preserving the legacy Settings.xml schema. Existing assignments are checked for conflicts; an occupied default Ctrl+Shift+K is left with its original command. Media-dependent named actions and unavailable menu commands are disabled where their context is absent. The classic window resizes without hiding footer controls.
+- Validation: actual main-window execution of an unassigned next-line command, ordinary assigned-key routing, merge/undo with text and actors restored, conflict rejection and shortcut persistence; ranking, initials, group/key search, recent-history limits, disabled actions, no-match state, keyboard navigation, cancellation and Russian/English normal/minimum-size windows. Existing media/speech/translation/OCR regressions are also run. Paid API requests are not used. This increment remains local.
+
 ## Unreleased — local 4.0.25.27
 
 - Adapted stable 5.3 custom Beautify time codes profiles to the classic profile editor: Save as profile, load named entries alongside Default/Netflix/SDI, and delete individual custom profiles. Overwrite and deletion require confirmation. The separate, atomically written Classic profile library retains all timing fields, including hidden per-section shot-change behaviors, without changing the legacy Settings.xml schema. Explicitly saved library entries survive cancelling the current editor, matching stable 5.3.
