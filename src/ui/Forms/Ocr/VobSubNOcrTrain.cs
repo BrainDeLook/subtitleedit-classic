@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.Ocr;
@@ -17,7 +17,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 {
     public sealed partial class VobSubNOcrTrain : Form
     {
-        private bool _abort;
+        private volatile bool _abort;
         private bool _training;
         private ComboBox _lineAlgorithm;
         private TextBox _trainingCharacters;
@@ -63,6 +63,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             }
             comboBoxSubtitleFontSize.SelectedIndex = 50;
             textBoxInputFile.Text = Configuration.Settings.Tools.OcrTrainSrtFile;
+            InitializeClassicTraining();
         }
 
         internal void Initialize()
@@ -82,47 +83,65 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             DialogResult = DialogResult.OK;
         }
 
-        private void buttonTrain_Click(object sender, EventArgs e)
+        private async void buttonTrain_Click(object sender, EventArgs e)
         {
-            if (buttonTrain.Text == LanguageSettings.Current.SpellCheck.Abort)
+            if (_training) { _abort = true; return; }
+            try
             {
-                _abort = true;
-                return;
+                var sizes = ParseFontSizes(comboBoxSubtitleFontSize.Text);
+                var chars = _trainingCharacters.Text;
+                if (File.Exists(textBoxInputFile.Text))
+                {
+                    var sub = new Subtitle();
+                    sub.LoadSubtitle(textBoxInputFile.Text, out _, null);
+                    chars = string.Concat(sub.Paragraphs.Select(p => HtmlUtil.RemoveHtmlTags(p.Text)));
+                }
+                if (string.IsNullOrWhiteSpace(chars) || listViewFonts.CheckedItems.Count == 0)
+                    throw new InvalidOperationException(_russian ? "Выберите шрифты и символы для обучения." : "Select fonts and characters to train.");
+                var basePath = _baseDatabase.Text.Trim();
+                if (basePath.Length > 0 && !File.Exists(basePath)) throw new FileNotFoundException("nOCR database not found", basePath);
+                var settings = new NOcrTrainerSettings
+                {
+                    FontNames = listViewFonts.CheckedItems.Cast<ListViewItem>().Select(x => x.Text).ToList(),
+                    IncludeBold = checkBoxBold.Checked, IncludeItalic = checkBoxItalic.Checked,
+                    NumberOfLineSegments = (int)numericUpDownSegmentsPerCharacter.Value,
+                    CharactersToTrain = chars, MergedLetterCombinations = textBoxMerged.Text,
+                    LineSegmentAlgorithm = (NOcrLineAlgorithm)_lineAlgorithm.SelectedIndex
+                };
+                _training = true; _abort = false;
+                _trainingBody.Enabled = false; buttonOK.Enabled = false;
+                buttonTrain.Text = LanguageSettings.Current.SpellCheck.Abort;
+                var progress = new Progress<string>(text => { if (!IsDisposed) labelInfo.Text = text; });
+                var db = await System.Threading.Tasks.Task.Run(() => TrainSizes(settings, sizes, basePath, () => _abort, progress));
+                if (_closeAfterTraining || IsDisposed) return;
+                labelInfo.Text = _abort ? (_russian ? "Остановлено. Можно сохранить изученные символы." : "Stopped. Learned characters can be saved.") : (_russian ? "Обучение завершено" : "Training complete");
+                if (db.TotalCharacterCount == 0) return;
+                saveFileDialog1.Filter = "nOCR DB|*.nocr";
+                saveFileDialog1.InitialDirectory = Configuration.OcrDirectory;
+                saveFileDialog1.FileName = basePath.Length > 0 ? Path.GetFileName(basePath) : "";
+                if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+                {
+                    db.FileName = saveFileDialog1.FileName; db.Save();
+                    labelInfo.Text = (_russian ? "Сохранено: " : "Saved: ") + db.FileName;
+                }
             }
-
-            var chars=_trainingCharacters.Text;
-            if(File.Exists(textBoxInputFile.Text)) {
-                var sub=new Subtitle();sub.LoadSubtitle(textBoxInputFile.Text,out _,null);chars=string.Concat(sub.Paragraphs.Select(p=>HtmlUtil.RemoveHtmlTags(p.Text)));
-            }
-            if(string.IsNullOrWhiteSpace(chars) || listViewFonts.CheckedItems.Count==0)return;
-            _training=true;try {
-            _abort=false;buttonTrain.Text=LanguageSettings.Current.SpellCheck.Abort;buttonOK.Enabled=false;
-            var nOcrD=new NOcrDb(null);
-            var settings=new NOcrTrainerSettings{FontNames=listViewFonts.CheckedItems.Cast<ListViewItem>().Select(x=>x.Text).ToList(),FontSize=float.Parse(comboBoxSubtitleFontSize.Text),IncludeBold=checkBoxBold.Checked,IncludeItalic=checkBoxItalic.Checked,NumberOfLineSegments=(int)numericUpDownSegmentsPerCharacter.Value,CharactersToTrain=chars,MergedLetterCombinations=textBoxMerged.Text,LineSegmentAlgorithm=(NOcrLineAlgorithm)_lineAlgorithm.SelectedIndex};
-            new NOcrTrainer().Train(settings,nOcrD,()=>_abort,p=>{labelInfo.Text=p.CurrentFontName+" / "+p.CurrentText+" — "+p.CharactersLearned+" / "+p.CharactersSkipped;Application.DoEvents();});
-            if(_abort){labelInfo.Text=LanguageSettings.Current.General.Cancel;return;}
-            labelInfo.Text = "Saving...";
-            labelInfo.Refresh();
-            saveFileDialog1.Filter = "nOCR DB|*.nocr";
-            saveFileDialog1.InitialDirectory = Configuration.OcrDirectory;
-            if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+            catch (Exception ex) { if (!_closeAfterTraining && !IsDisposed) MessageBox.Show(this, ex.Message); }
+            finally
             {
-                labelInfo.Text = $"Saving to {saveFileDialog1.FileName}...";
-                nOcrD.FileName = saveFileDialog1.FileName;
-                nOcrD.Save();
-                labelInfo.Text = "Training done";
+                _training = false; _abort = false;
+                if (!IsDisposed)
+                {
+                    _trainingBody.Enabled = true; buttonOK.Enabled = true;
+                    buttonTrain.Text = LanguageSettings.Current.VobSubOcr.StartTraining;
+                    if (_closeAfterTraining) Close();
+                }
             }
-            else
-            {
-                labelInfo.Text = "Saving aborted";
-            }
-
-            } catch(Exception ex){MessageBox.Show(this,ex.Message);}finally{_training=false;buttonOK.Enabled=true;buttonTrain.Text=LanguageSettings.Current.VobSubOcr.StartTraining;_abort=false;}
         }
 
         private void VobSubNOcrTrain_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if(_training){_abort=true;e.Cancel=true;return;}
+            if(_training){_closeAfterTraining=true;_abort=true;e.Cancel=true;return;}
+            SaveClassicTrainingPreferences();
             var sb = new StringBuilder();
             foreach (ListViewItem item in listViewFonts.Items)
             {

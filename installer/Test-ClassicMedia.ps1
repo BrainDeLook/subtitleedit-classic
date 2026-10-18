@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory=$true)][string]$ApplicationDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [string]$FFmpegLocation,
@@ -67,6 +67,7 @@ $tests=@{
     TestClassicCompletion='speech-tests/TestClassicCompletion.cs'
     TestAdvancedBatchTranslation='speech-tests/TestAdvancedBatchTranslation.cs'
     TestAiReviewPasses='speech-tests/TestAiReviewPasses.cs'
+    TestClassicUpdatesAndTraining='video-ocr-tests/TestClassicUpdatesAndTraining.cs'
     TestStableNOcr='video-ocr-tests/TestStableNOcr.cs'
 }
 foreach($name in $tests.Keys) {
@@ -167,6 +168,8 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Local AI, translation, context and ASR recovery regression failed." }
     & "$OutputDirectory/TestAdvancedBatchTranslation.exe" unit (Join-Path $OutputDirectory "advanced-batch-translation")
     if ($LASTEXITCODE -ne 0) { throw "Advanced translation, batch file output, cancellation and classic layout regression failed." }
+    & "$OutputDirectory/TestClassicUpdatesAndTraining.exe" unit (Join-Path $OutputDirectory "classic-updates-training")
+    if($LASTEXITCODE -ne 0){throw "Classic updates and nOCR training failed"}
     & "$OutputDirectory/TestAiReviewPasses.exe" unit (Join-Path $OutputDirectory "ai-review-passes")
     if ($LASTEXITCODE -ne 0) { throw "AI review filters, warnings, apply passes, main undo and cancellation regression failed." }
     if ($AudioSelectionSample) {

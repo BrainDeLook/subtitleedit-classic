@@ -28,9 +28,9 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void InitLanguage()
         {
-            Text = LanguageSettings.Current.CheckForUpdates.Title;
+            Text = LanguageSettings.Current.CheckForUpdates.Title + " — Classic";
             labelStatus.Text = LanguageSettings.Current.CheckForUpdates.CheckingForUpdates;
-            buttonDownloadAndInstall.Text = LanguageSettings.Current.CheckForUpdates.InstallUpdate;
+            buttonDownloadAndInstall.Text = Configuration.Settings.General.Language.StartsWith("ru",StringComparison.OrdinalIgnoreCase) ? "Скачать Classic" : "Download Classic";
             buttonDownloadAndInstall.Visible = false;
             textBoxChangeLog.Visible = false;
             buttonOK.Text = LanguageSettings.Current.General.Ok;
@@ -76,6 +76,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             _updatesHelper = new CheckForUpdatesHelper();
             await _updatesHelper.CheckForUpdates(true);
+            if(IsDisposed || Disposing)return;
             timerCheckForUpdates.Start();
 
             buttonOK.Focus();
@@ -195,7 +196,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void buttonDownloadAndInstall_Click(object sender, EventArgs e)
         {
-            UiUtil.OpenUrl("https://github.com/SubtitleEdit/subtitleedit/releases");
+            UiUtil.OpenUrl(_updatesHelper?.ReleasePageUrl ?? CheckForUpdatesHelper.LatestStableUrl);
         }
 
         private void buttonDontCheckUpdates_Click(object sender, EventArgs e)

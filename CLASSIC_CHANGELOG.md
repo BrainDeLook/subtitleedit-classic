@@ -1,4 +1,10 @@
-# Subtitle Edit Classic changelog
+﻿# Subtitle Edit Classic changelog
+
+## Unreleased — local 4.0.25.26
+
+- Routed both startup and Help-menu update checks to stable releases of BrainDeLook/subtitleedit-classic. Download opens the matching Classic release; version normalization avoids offering an older published installer over a newer local build. Drafts, prereleases and invalid version tags are rejected. GitHub API rate limits use the same fork's public latest-stable redirect, validated before use; there is no upstream application-release fallback. Proxy settings are retained. Rate-limited checks show a release-notes link rather than API release-body text.
+- Adapted stable 5.3 nOCR training additions to the classic window: checked font selection with a live preview, multiple integer sizes (10–200 px), and incremental training from an existing database. Training runs in the background. Stop allows an explicit save of learned glyphs; closing cancels without showing a save dialog. Existing databases are unchanged until Save, which preserves the previous version as a backup. The scrollable form keeps footer actions accessible at smaller sizes.
+- Validation: real unauthenticated GitHub stable-channel check, simulated stable/draft/prerelease/error/foreign-redirect responses, version comparison, real Latin/Cyrillic multi-size training, incremental database retention, cancellation, backup/reload, preview rendering and minimum-size scrolling. Paid APIs are not used. This increment remains local and is not a new release.
 
 ## Unreleased — local 4.0.25.25
 

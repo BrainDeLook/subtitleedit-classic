@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Net.Http;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using Nikse.SubtitleEdit.Core.Common;
-using Nikse.SubtitleEdit.Core.Http;
 using Nikse.SubtitleEdit.Forms;
 using Nikse.SubtitleEdit.Logic.Plugins;
 
@@ -13,145 +13,101 @@ namespace Nikse.SubtitleEdit.Logic
 {
     public class CheckForUpdatesHelper
     {
-        private static readonly Regex VersionNumberRegex = new Regex(@"\d\.\d", RegexOptions.Compiled); // 3.4.0 (xth June 2014)
-        readonly List<string> _months = new List<string> { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
-
-        private const string ChangeLogUrl = "https://raw.githubusercontent.com/SubtitleEdit/subtitleedit/main/Changelog.txt";
-
-        private string _changeLog;
-        private int _successCount;
-
+        public const string RepositoryUrl="https://github.com/BrainDeLook/subtitleedit-classic";
+        public const string StableReleaseApi="https://api.github.com/repos/BrainDeLook/subtitleedit-classic/releases/latest";
+        public const string LatestStableUrl=RepositoryUrl+"/releases/latest";
+        private readonly HttpMessageHandler _handler;
         public string Error { get; set; }
         public int PluginUpdates { get; set; }
-
-        public bool Done => _successCount == 1;
+        public bool Done { get; private set; }
         public bool ManualCheck { get; set; }
-
         public string LatestVersionNumber { get; set; }
         public string LatestChangeLog { get; set; }
+        public string ReleasePageUrl { get; private set; }=LatestStableUrl;
 
-        public CheckForUpdatesHelper()
-        {
-            Error = null;
-            _successCount = 0;
-        }
+        public CheckForUpdatesHelper() { }
+        public CheckForUpdatesHelper(HttpMessageHandler handler) { _handler = handler; }
 
-        private string GetLatestVersionNumber(string latestChangeLog)
+        private static HttpMessageHandler CreateHandler()
         {
-            foreach (var line in latestChangeLog.Replace(Environment.NewLine, "\n").Split('\n'))
+            var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            var settings = Configuration.Settings.Proxy;
+            if (!string.IsNullOrWhiteSpace(settings.ProxyAddress))
             {
-                var s = line.Trim();
-                if (!s.Contains("BETA", StringComparison.OrdinalIgnoreCase) &&
-                    !s.Contains('x') && 
-                    !s.Contains('*') && 
-                    s.Contains('(') && 
-                    s.Contains(')') && 
-                    _months.Any(month=>s.Contains(month)) &&
-                    VersionNumberRegex.IsMatch(s))
-                {
-                    var indexOfSpace = s.IndexOf(' ');
-                    if (indexOfSpace > 0)
-                    {
-                        return s.Substring(0, indexOfSpace).Trim();
-                    }
-                }
+                var proxy = new WebProxy(settings.ProxyAddress);
+                if (settings.UseDefaultCredentials) proxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+                else if (!string.IsNullOrWhiteSpace(settings.UserName)) proxy.Credentials = new NetworkCredential(settings.UserName, settings.Password, settings.Domain);
+                handler.Proxy = proxy; handler.UseProxy = true;
             }
-
-            return null;
+            return handler;
         }
 
-        private string GetLatestChangeLog(string changeLog)
+        public static Version ParseStableVersion(string tag)
         {
-            var releaseOn = false;
-            var sb = new StringBuilder();
-            foreach (var line in changeLog.Replace(Environment.NewLine, "\n").Split('\n'))
-            {
-                var s = line.Trim();
-                if (s.Length == 0 && releaseOn)
-                {
-                    return sb.ToString();
-                }
-
-                if (!releaseOn)
-                {
-                    if (!s.Contains('x') && 
-                        !s.Contains('*') && 
-                        s.Contains('(') && 
-                        s.Contains(')') &&
-                        _months.Any(month => s.Contains(month)) &&
-                        VersionNumberRegex.IsMatch(s))
-                    {
-                        releaseOn = true;
-                    }
-                }
-
-                if (releaseOn)
-                {
-                    sb.AppendLine(line);
-                }
-            }
-
-            return sb.ToString();
+            var match=Regex.Match(tag??"",@"^[vV]?(\d+\.\d+\.\d+(?:\.\d+)?)$");
+            if(!match.Success || !Version.TryParse(match.Groups[1].Value,out var version))throw new FormatException("Invalid Classic stable release version.");
+            return new Version(version.Major,version.Minor,Math.Max(0,version.Build),Math.Max(0,version.Revision));
         }
-
+        public void ReadStableRelease(string json)
+        {
+            var release=JObject.Parse(json);
+            if((bool?)release["draft"]!=false || (bool?)release["prerelease"]!=false)throw new FormatException("The Classic update endpoint did not return a stable release.");
+            var tag=(string)release["tag_name"];var version=ParseStableVersion(tag);
+            LatestVersionNumber=version.ToString();
+            ReleasePageUrl=RepositoryUrl+"/releases/tag/"+Uri.EscapeDataString(tag);
+            LatestChangeLog="Subtitle Edit Classic "+tag+Environment.NewLine+Environment.NewLine+((string)release["body"]??"");
+        }
         public async Task CheckForUpdates(bool manualCheck)
         {
-            ManualCheck = manualCheck;
-
+            ManualCheck=manualCheck;Done=false;Error=null;PluginUpdates=0;LatestVersionNumber=null;LatestChangeLog=null;ReleasePageUrl=LatestStableUrl;
             try
             {
-                using (var httpClient = DownloaderFactory.MakeHttpClient())
+                using(var http=new HttpClient(_handler ?? CreateHandler(), _handler == null))
                 {
-                    _changeLog = await httpClient.GetStringAsync(ChangeLogUrl).ConfigureAwait(false);
+                    http.Timeout=TimeSpan.FromSeconds(15);
+                    http.DefaultRequestHeaders.UserAgent.ParseAdd("SubtitleEdit-Classic/4.0");
+                    http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+                    using(var response=await http.GetAsync(StableReleaseApi).ConfigureAwait(false))
+                    {
+                        if (response.StatusCode == HttpStatusCode.Forbidden || (int)response.StatusCode == 429)
+                        {
+                            // Public /latest uses GitHub's stable channel without the API rate limit.
+                            using (var latest = await http.GetAsync(LatestStableUrl).ConfigureAwait(false))
+                            {
+                                var location = latest.Headers.Location;
+                                if (location != null && !location.IsAbsoluteUri) location = new Uri(new Uri(RepositoryUrl + "/"), location);
+                                var prefix = RepositoryUrl + "/releases/tag/";
+                                if ((latest.StatusCode != HttpStatusCode.Redirect && latest.StatusCode != HttpStatusCode.MovedPermanently) || location == null || !location.AbsoluteUri.StartsWith(prefix, StringComparison.Ordinal))
+                                    throw new HttpRequestException("The Classic stable release could not be checked. Try again later.");
+                                var tag = Uri.UnescapeDataString(location.AbsoluteUri.Substring(prefix.Length));
+                                ParseStableVersion(tag);
+                                ReadStableRelease(new JObject { ["tag_name"] = tag, ["draft"] = false, ["prerelease"] = false, ["body"] = "Release notes: " + location.AbsoluteUri }.ToString());
+                            }
+                        }
+                        else
+                        {
+                            if (!response.IsSuccessStatusCode) throw new HttpRequestException("Classic update check failed (HTTP " + (int)response.StatusCode + ").");
+                            ReadStableRelease(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                        }
+                    }
                 }
-
-                var installedPlugins = new InstalledPluginMetadataProvider().GetPlugins();
-                if (installedPlugins.Count > 0)
+                // Plugin metadata is independent of the application's release channel.
+                // Its failure must not hide a successfully checked Classic release.
+                try
                 {
-                    var onlinePlugins = new OnlinePluginMetadataProvider(PluginsGet.PluginXmlFileUrl).GetPlugins();
-                    var updates = PluginUpdateChecker.GetAvailableUpdates(installedPlugins, onlinePlugins.ToArray());
-                    PluginUpdates = updates.Count;
+                    var installed=new InstalledPluginMetadataProvider().GetPlugins();
+                    if(installed.Count>0){var online=new OnlinePluginMetadataProvider(PluginsGet.PluginXmlFileUrl).GetPlugins();PluginUpdates=PluginUpdateChecker.GetAvailableUpdates(installed,online.ToArray()).Count;}
                 }
-
-                LatestChangeLog = GetLatestChangeLog(_changeLog);
-                LatestVersionNumber = GetLatestVersionNumber(LatestChangeLog);
-                _successCount = 1;
+                catch{PluginUpdates=0;}
             }
-            catch (Exception exception)
-            {
-                if (Error == null)
-                {
-                    Error = exception.Message;
-                }
-            }
+            catch(Exception exception){Error=exception.Message;}
+            finally{Done=true;}
         }
-
-        public bool IsUpdateAvailable()
+        public bool IsUpdateAvailable()=>string.IsNullOrEmpty(Error) && (PluginUpdates>0 || IsNewSubtitleEditAvailable());
+        public bool IsNewSubtitleEditAvailable()=>string.IsNullOrEmpty(Error) && IsNewer(LatestVersionNumber,typeof(CheckForUpdatesHelper).Assembly.GetName().Version.ToString());
+        public static bool IsNewer(string latest,string installed)
         {
-            if (!string.IsNullOrEmpty(Error))
-            {
-                return false;
-            }
-
-            try
-            {
-                if (PluginUpdates > 0)
-                {
-                    return true;
-                }
-
-                return IsNewSubtitleEditAvailable();
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        public bool IsNewSubtitleEditAvailable()
-        {
-            //string[] currentVersionInfo = "3.3.14".Split('.'); // for testing...
-            return Version.Parse(LatestVersionNumber) > Version.Parse(Utilities.AssemblyVersion);
+            try{return ParseStableVersion(latest)>ParseStableVersion(installed);}catch(FormatException){return false;}
         }
     }
 }
