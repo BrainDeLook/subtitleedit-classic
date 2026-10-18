@@ -1744,6 +1744,7 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicVoiceReferenceMenu();
             InitializeClassicAiMenu();
             InitializeClassicCommandPalette();
+            InitializeClassicAssistedEditing();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;

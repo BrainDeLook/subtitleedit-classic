@@ -45,6 +45,7 @@ $tests=@{
     TestClassicTimingProfiles='TestClassicTimingProfiles.cs'
     TestClassicCompareComplete='TestClassicCompareComplete.cs'
     TestClassicSynchronization='TestClassicSynchronization.cs'
+    TestClassicAssistedEditing='TestClassicAssistedEditing.cs'
     TestClassicCompareSync='TestClassicCompareSync.cs'
     TestClassicCompare='TestClassicCompare.cs'
     TestClassicBeautifyPreview='TestClassicBeautifyPreview.cs'
@@ -181,6 +182,8 @@ if ($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw "Complete classic comparison workflow regression failed"}
     & "$OutputDirectory/TestClassicSynchronization.exe" (Join-Path $OutputDirectory "classic-synchronization") $FFmpegLocation
     if($LASTEXITCODE -ne 0){throw "Classic visual, point and reference synchronization regression failed"}
+    & "$OutputDirectory/TestClassicAssistedEditing.exe" (Join-Path $OutputDirectory "classic-assisted-editing")
+    if($LASTEXITCODE -ne 0){throw "Classic assisted split/move, preview, shortcuts and editor undo regression failed"}
     & "$OutputDirectory/TestClassicCompareSync.exe" (Join-Path $OutputDirectory "classic-compare-sync")
     if($LASTEXITCODE -ne 0){throw "Classic comparison sync and alignment regression failed"}
     & "$OutputDirectory/TestClassicCompare.exe" (Join-Path $OutputDirectory "classic-compare")
