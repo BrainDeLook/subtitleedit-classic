@@ -74,20 +74,21 @@ namespace Nikse.SubtitleEdit.Forms
             openFileDialog1.Filter = UiUtil.SubtitleExtensionFilter.Value;
             LoadConfigurations();
             buttonExport.Enabled = false;
+            InitializeClassicMerge();
         }
 
         public void Initialize(Subtitle subtitle1, string subtitleFileName1, string title)
         {
             Compare_Resize(null, null);
             labelStatus.Text = string.Empty;
-            _subtitle1 = subtitle1;
+            BeginClassicMerge(subtitle1);
             labelSubtitle1.Text = subtitleFileName1;
             if (string.IsNullOrEmpty(subtitleFileName1))
             {
                 labelSubtitle1.Text = title;
             }
 
-            subtitleListView1.Fill(subtitle1);
+            subtitleListView1.Fill(_subtitle1);
             subtitleListView1.AutoSizeAllColumns(this);
             subtitleListView2.AutoSizeAllColumns(this);
 
@@ -111,10 +112,10 @@ namespace Nikse.SubtitleEdit.Forms
         {
             Compare_Resize(null, null);
             labelStatus.Text = string.Empty;
-            _subtitle1 = subtitle1;
+            BeginClassicMerge(subtitle1);
             labelSubtitle1.Text = subtitleFileName1;
 
-            _subtitle2 = subtitle2;
+            _subtitle2 = new Subtitle(subtitle2, false);
             labelSubtitle2.Text = subtitleFileName2;
 
             _language = LanguageAutoDetect.AutoDetectGoogleLanguage(_subtitle1);
@@ -136,6 +137,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             if (subtitleNumber == 1)
             {
+                DisableClassicMerge();
                 _subtitle1 = LoadSubtitle(fileName);
                 subtitleListView1.Fill(_subtitle1);
             }
@@ -150,7 +152,7 @@ namespace Nikse.SubtitleEdit.Forms
                 selectedIndex = 0;
             }
 
-            if (_subtitle1.Paragraphs.Count > 0 && _subtitle2?.Paragraphs.Count > 0)
+            if (_subtitle1 != null && _subtitle2 != null)
             {
                 CompareSubtitles(selectedIndex);
             }
@@ -372,7 +374,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void CompareSubtitles(int selectedIndex)
         {
-            if (_loadingConfig || _subtitle2 == null || _subtitle2.Paragraphs.Count == 0)
+            if (_loadingConfig || _subtitle2 == null)
             {
                 return;
             }
@@ -380,6 +382,8 @@ namespace Nikse.SubtitleEdit.Forms
             timer1.Stop();
             var sub1 = new Subtitle(_subtitle1);
             var sub2 = new Subtitle(_subtitle2);
+            var originalLeft = sub1.Paragraphs.Select((p, i) => new { p, i }).ToDictionary(x => x.p, x => x.i);
+            var originalRight = sub2.Paragraphs.Select((p, i) => new { p, i }).ToDictionary(x => x.p, x => x.i);
 
             var index = 0;
             var p1 = sub1.GetParagraphOrDefault(index);
@@ -417,14 +421,23 @@ namespace Nikse.SubtitleEdit.Forms
                 p2 = sub2.GetParagraphOrDefault(index);
             }
 
+            max = Math.Max(sub1.Paragraphs.Count, sub2.Paragraphs.Count);
             var minSub = sub1.Paragraphs.Count < sub2.Paragraphs.Count ? sub1 : sub2;
             for (var idx = minSub.Paragraphs.Count; idx < max; idx++)
             {
                 minSub.Paragraphs.Insert(idx, new Paragraph());
             }
 
+            _classicRows.Clear(); _classicSelection = null;
             subtitleListView1.Fill(sub1);
             subtitleListView2.Fill(sub2);
+            for (var row = 0; row < Math.Max(sub1.Paragraphs.Count, sub2.Paragraphs.Count); row++)
+            {
+                var pair = new ClassicComparePair { Left = sub1.GetParagraphOrDefault(row) is Paragraph l && originalLeft.TryGetValue(l, out var li) ? li : -1, Right = sub2.GetParagraphOrDefault(row) is Paragraph r && originalRight.TryGetValue(r, out var ri) ? ri : -1 };
+                _classicRows.Add(pair);
+                if (row < subtitleListView1.Items.Count) subtitleListView1.Items[row].Tag = pair;
+                if (row < subtitleListView2.Items.Count) subtitleListView2.Items[row].Tag = pair;
+            }
 
             // coloring + differences index list
             _differences = new List<int>();
@@ -512,7 +525,7 @@ namespace Nikse.SubtitleEdit.Forms
                                 subtitleListView2.SetBackgroundColor(index, ListViewGreen, subtitleListView2.ColumnIndexEnd);
                             }
                             // Duration
-                            if (!IsTimeEqual(p1.Duration, p2.Duration))
+                            if (!IsTimeEqual(p1.Duration, p2.Duration) && !(IsTimeEqual(p1.StartTime, p2.StartTime) && IsTimeEqual(p1.EndTime, p2.EndTime)))
                             {
                                 subtitleListView1.SetBackgroundColor(index, ListViewGreen, subtitleListView1.ColumnIndexDuration);
                                 subtitleListView2.SetBackgroundColor(index, ListViewGreen, subtitleListView2.ColumnIndexDuration);
@@ -625,6 +638,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             subtitleListView1.SelectIndexAndEnsureVisible(selectedIndex);
             SelectLinesInBothListViews('L');
+            RefreshClassicMerge();
         }
 
         private bool ShouldBreakToLetter() => _language != null && (_language == "ja" || _language == "zh");
@@ -711,13 +725,12 @@ namespace Nikse.SubtitleEdit.Forms
                 columnsEqual++;
             }
 
-            if (IsTimeEqual(p1.Duration, p2.Duration))
+            if (IsTimeEqual(p1.Duration, p2.Duration) || IsTimeEqual(p1.StartTime, p2.StartTime) && IsTimeEqual(p1.EndTime, p2.EndTime))
             {
                 columnsEqual++;
             }
 
-            if (p1.Text.Trim() == p2.Text.Trim() ||
-                checkBoxIgnoreFormatting.Checked && HtmlUtil.RemoveHtmlTags(p1.Text.Trim()) == HtmlUtil.RemoveHtmlTags(p2.Text.Trim()))
+            if (!IsTextDifferent(p1, p2))
             {
                 columnsEqual++;
             }
@@ -725,15 +738,15 @@ namespace Nikse.SubtitleEdit.Forms
             return columnsEqual;
         }
 
-        private static bool IsTimeEqual(TimeCode t1, TimeCode t2)
+        private bool IsTimeEqual(TimeCode t1, TimeCode t2)
         {
-            if (Configuration.Settings.General.UseTimeFormatHHMMSSFF)
+            if (Configuration.Settings.General.UseTimeFormatHHMMSSFF && t1.ToDisplayString() == t2.ToDisplayString())
             {
-                return t1.ToDisplayString() == t2.ToDisplayString();
+                return true;
             }
 
             const double tolerance = 0.1;
-            return Math.Abs(t1.TotalMilliseconds - t2.TotalMilliseconds) < tolerance;
+            return Math.Abs(t1.TotalMilliseconds - t2.TotalMilliseconds) <= (double)(_classicTolerance?.Value ?? 0) + 0.000001 || Math.Abs(t1.TotalMilliseconds - t2.TotalMilliseconds) < tolerance;
         }
 
         private int GetColumnsEqualExceptNumberAndDuration(Paragraph p1, Paragraph p2)
@@ -754,8 +767,7 @@ namespace Nikse.SubtitleEdit.Forms
                 columnsEqual++;
             }
 
-            if (p1.Text.Trim() == p2.Text.Trim() ||
-                checkBoxIgnoreFormatting.Checked && HtmlUtil.RemoveHtmlTags(p1.Text.Trim()) == HtmlUtil.RemoveHtmlTags(p2.Text.Trim()))
+            if (!IsTextDifferent(p1, p2))
             {
                 columnsEqual++;
             }
@@ -1091,8 +1103,8 @@ namespace Nikse.SubtitleEdit.Forms
             buttonOpenSubtitle2.Left = subtitleListView2.Left;
             buttonReloadSubtitle2.Left = buttonOpenSubtitle2.Left + buttonOpenSubtitle2.Width + 7;
 
-            subtitleListView1.Height = Height - (subtitleListView1.Top + 165);
-            subtitleListView2.Height = Height - (subtitleListView2.Top + 165);
+            subtitleListView1.Height = Math.Max(30, Height - (subtitleListView1.Top + 165));
+            subtitleListView2.Height = Math.Max(30, Height - (subtitleListView2.Top + 165));
 
             richTextBox1.Width = subtitleListView1.Width;
             richTextBox2.Width = subtitleListView2.Width;
@@ -1343,6 +1355,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             if (listView.Name == "subtitleListView1")
             {
+                DisableClassicMerge();
                 _subtitle1 = new Subtitle();
                 _subtitle1.LoadSubtitle(filePath, out _, null);
                 subtitleListView1.Fill(_subtitle1);
@@ -1351,7 +1364,7 @@ namespace Nikse.SubtitleEdit.Forms
                 labelSubtitle1.Text = filePath;
                 buttonReloadSubtitle1.Enabled = true;
                 _language = LanguageAutoDetect.AutoDetectGoogleLanguage(_subtitle1);
-                if (_subtitle1.Paragraphs.Count > 0)
+                if (_subtitle2 != null)
                 {
                     var selectedIndices = subtitleListView1.GetSelectedIndices();
                     var selectedIndex = selectedIndices.Length > 0 ? selectedIndices[0] : 0;
@@ -1367,7 +1380,7 @@ namespace Nikse.SubtitleEdit.Forms
                 subtitleListView2.SelectIndexAndEnsureVisible(0);
                 labelSubtitle2.Text = filePath;
                 buttonReloadSubtitle2.Enabled = true;
-                if (_subtitle2.Paragraphs.Count > 0)
+                if (_subtitle1 != null)
                 {
                     var selectedIndices = subtitleListView1.GetSelectedIndices();
                     var selectedIndex = selectedIndices.Length > 0 ? selectedIndices[0] : 0;

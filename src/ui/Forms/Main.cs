@@ -22646,6 +22646,9 @@ namespace Nikse.SubtitleEdit.Forms
                 compareForm.Initialize(_subtitle, _fileName, _languageGeneral.CurrentSubtitle);
             }
 
+            var compareFileName = _fileName;
+            compareForm.ApplyComparedSubtitle = (baseline, result) =>
+                string.Equals(compareFileName, _fileName, StringComparison.OrdinalIgnoreCase) && ApplyClassicCompare(baseline, result);
             compareForm.Show(this);
             compareForm.Activate();
         }

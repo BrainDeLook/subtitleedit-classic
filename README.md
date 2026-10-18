@@ -8,6 +8,8 @@ English · [Русский](README.ru.md)
 
 ## Classic 4.0.25
 
+The local preview extends **File → Compare** with a millisecond time tolerance, signed timing deltas and a working current-file copy: take reference text, timing or both, insert a missing cue, delete a current cue and undo individual edits. Apply commits through editor undo with a concurrent-change guard; Close discards unapplied edits. Opening another file on the left makes the comparison read-only. Manual pairing/sync points and inline editing from SE5 are still pending. This is not yet in the published installer.
+
 The local preview adds a live **Beautify time codes** comparison: synchronized original/result timelines or waveforms, changed-cue navigation, signed time/frame deltas and inferred reason hints. Calculations use a copy and Apply returns the displayed result through normal undo. Cached editor audio is reused; waveform extraction follows the selected audio track. This is not yet in the published installer.
 
 The local preview adds **Edit → Command palette** (Ctrl+Shift+K when free): search classic menu and main/grid/waveform shortcut actions by name, group, keys or initials, then run with Enter. It includes unassigned actions, session-only recent history and a separate configurable palette shortcut. Text-box-only commands are excluded. This is not yet in the published installer.

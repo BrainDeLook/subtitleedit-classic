@@ -90,7 +90,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
         private void QueueLivePreview()
         {
             if(!_previewReady || IsDisposed || _previewCloseRequested)return;
-            FixedSubtitle=null;buttonOK.Enabled=false;_previewDirty=true;
+            FixedSubtitle=null;buttonOK.Enabled=false;_previewDirty=true;NavigateChange(-1);
             _previewStats.Text=P("Обновление предпросмотра…", "Updating preview…");
             if(_previewOperation!=null){_previewOperation.Cancel();return;}
             if(!_extractingExact)_previewTimer.Start();
@@ -128,6 +128,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
         }
         private void NavigateChange(int at)
         {
+            if(FixedSubtitle==null){_changeAt=-1;_previewPosition.Text=P("Предпросмотр ещё не рассчитан", "Preview has not been calculated");_previewDetail.Text="";_previewReason.Text="";_previousChange.Enabled=false;_nextChange.Enabled=false;return;}
             if(_previewChanges.Count==0 || _displayAfter==null){_changeAt=-1;_previewPosition.Text=P("Изменений нет", "No changes");_previewDetail.Text="";_previewReason.Text="";_previousChange.Enabled=false;_nextChange.Enabled=false;return;}
             _changeAt=Math.Max(0,Math.Min(_previewChanges.Count-1,at));var i=_previewChanges[_changeAt];var before=_subtitle.Paragraphs[i];var after=_displayAfter.Paragraphs[i];
             _previewPosition.Text=P("Изменение ","Change ")+(_changeAt+1)+" / "+_previewChanges.Count+" · #"+(before.Number>0?before.Number:i+1)+" · "+HtmlUtil.RemoveHtmlTags(before.Text).Replace(Environment.NewLine," ");

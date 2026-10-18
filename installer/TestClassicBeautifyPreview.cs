@@ -60,10 +60,12 @@ class TestClassicBeautifyPreview
     using(var bmp=new Bitmap(form.Width,form.Height)){form.DrawToBitmap(bmp,new Rectangle(0,0,form.Width,form.Height));bmp.Save(Path.Combine(root,"beautify-preview-"+language+".png"));}
     form.Size=form.MinimumSize;await Task.Delay(50);var apply=(Button)Field(form,"buttonOK");Check(apply.Visible && apply.Parent.Height>=apply.Height && apply.Parent.RectangleToScreen(apply.Parent.ClientRectangle).Bottom<=form.RectangleToScreen(form.ClientRectangle).Bottom,"Apply footer remains fully visible at minimum size");
     var cached=new WavePeakData(10,Enumerable.Range(0,120).Select(i=>new WavePeak((short)500,(short)-500)).ToArray());Call(form,"SetPreviewPeaks",cached);Check(before.WavePeaks==cached && after.WavePeaks==cached && before.ShowWaveform,"Both previews reuse the same actual audio peaks");
-    var snap=(CheckBox)Field(form,"checkBoxSnapToShotChanges");snap.Checked=true;await Task.Delay(250);Check(form.FixedSubtitle==null && !apply.Enabled,"Unavailable selected shot changes invalidate preview and block Apply");snap.Checked=false;await Ready(form);
+    var snap=(CheckBox)Field(form,"checkBoxSnapToShotChanges");snap.Checked=true;await Task.Delay(250);Check(form.FixedSubtitle==null && !apply.Enabled,"Unavailable selected shot changes invalidate preview and block Apply");Check(!((Label)Field(form,"_previewPosition")).Text.Contains(language=="ru-RU"?"Изменений нет":"No changes"),"Blocked preview never reports zero changes");snap.Checked=false;await Ready(form);
     Configuration.Settings.BeautifyTimeCodes.Profile.Gap=6;Call(form,"QueueLivePreview");Check(!apply.Enabled,"Changing profile marks previous preview stale immediately");await Ready(form);
     var accepted=Json(form.FixedSubtitle);Call(form,"buttonOK_Click",form,EventArgs.Empty);Check(form.DialogResult==DialogResult.OK && Json(form.FixedSubtitle)==accepted && Json(source)==original,"Apply returns precisely the preview without mutating the source");
    }
+   var stable=new Subtitle();stable.Paragraphs.Add(new Paragraph("Stable cue",1000,2000));
+   using(var form=new Beautify(stable,null,null,new List<double>())){Show(form);await Ready(form);Check(((List<int>)Field(form,"_previewChanges")).Count==0 && ((Label)Field(form,"_previewPosition")).Text.Contains(language=="ru-RU"?"Изменений нет":"No changes"),"A valid unchanged result still reports no changes");}
    using(var form=new Beautify(source,null,null,new List<double>())){Show(form);await Ready(form);form.DialogResult=DialogResult.Cancel;form.Close();Check(Json(source)==original,"Cancel discards timing proposals");}
   }
   var many=new Subtitle();for(int i=0;i<10000;i++)many.Paragraphs.Add(new Paragraph("Test",i*3000+15,i*3000+1987));var manyOriginal=Json(many);

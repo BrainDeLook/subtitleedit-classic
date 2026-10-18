@@ -1,5 +1,12 @@
 ﻿# Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.30
+
+- Adapted stable 5.3 Compare actions to the classic two-pane window: persisted millisecond time tolerance, signed start/end deltas, reference text/timing/both transfer, insertion of reference-only cues, deletion of current-only cues and local undo. F8/Shift+F8 navigate differences, Alt+Left takes text and timing, Ctrl+Z undoes a working-copy edit. Aligned rows retain explicit source indices through filtering; missing-line insertion uses the full alignment rather than only visible rows.
+- The current file is edited on a copy. Apply validates the original editor content and filename, creates a normal editor undo entry and retains current-file metadata. Close discards unapplied edits. Replacing or reloading the left file switches merging off. Timing-only/text-only transfer does not replace actors/styles. This increment retains the existing classic alignment engine; manual pair/sync points and inline editing remain pending.
+- A blocked or pending Beautify preview now says it has not been calculated instead of incorrectly reporting no changes.
+- Validation: actual aligned/filtered cue transfer, hidden following-row insertion, deletion and undo, empty reference, tolerance boundaries and real difference counts, source/reference isolation, editor Apply/Undo, repeated Apply, concurrent-change rejection and Russian/English minimum-size windows. Full existing media/speech/translation/OCR regression is run without paid requests. This increment remains local.
+
 ## Unreleased — local 4.0.25.29
 
 - Adapted stable 5.3's live Beautify time codes workflow to the classic tool: synchronized Original/Beautified timelines, cached editor waveform reuse, previous/next/first/last change navigation, original cue numbers, old/new times and signed millisecond/frame deltas. The stats line reports the cue/change counts, frame rate, exact-time-code mode and active shot changes. Reason hints are inferred from the result (frame/shot alignment, gaps, duration limits or other profile rules), not an engine trace.
