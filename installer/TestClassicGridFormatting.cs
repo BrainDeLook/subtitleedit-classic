@@ -70,6 +70,21 @@ class TestClassicGridFormatting
         File.WriteAllText(settings, "{\"Formatting\":999}"); Check(ClassicGridAppearance.Load(settings).Formatting == ClassicGridFormattingMode.ShowTags, "Invalid saved modes fall back safely");
         File.WriteAllText(settings, "broken"); Check(ClassicGridAppearance.Load(settings).Formatting == ClassicGridFormattingMode.ShowTags, "Invalid settings JSON falls back safely");
         var painter = new ClassicGridPainter();
+        foreach(var points in new[]{8f,12f,22f}) foreach(var sample in new[]{"fff", "Курсив"})
+        using(var baseFont=new Font("Segoe UI",points)) using(var italic=new Font(baseFont,FontStyle.Italic))
+        using(var actual=new Bitmap(400,100)) using(var expected=new Bitmap(400,100))
+        {
+            using(var graphics=Graphics.FromImage(actual)) { graphics.Clear(Color.White);painter.Draw(graphics,new Rectangle(20,10,340,70),"<i>"+sample+"</i>",baseFont,Color.Black,Color.White,false,false,visual); }
+            using(var graphics=Graphics.FromImage(expected)) { graphics.Clear(Color.White);TextRenderer.DrawText(graphics,sample,italic,new Point(40,10),Color.Black,TextFormatFlags.NoPadding|TextFormatFlags.NoPrefix|TextFormatFlags.SingleLine|TextFormatFlags.NoClipping); }
+            Func<Bitmap,int> ink=image=>{var count=0;for(int y=0;y<image.Height;y++)for(int x=0;x<image.Width;x++)if(image.GetPixel(x,y).ToArgb()!=Color.White.ToArgb())count++;return count;};
+            Check(ink(actual)==ink(expected) && ink(actual)>0,"Italic glyph ink is complete, matching an unclipped reference: "+points+" "+sample);
+        }
+        using(var image=new Bitmap(200,80)) using(var graphics=Graphics.FromImage(image)) using(var font=new Font("Segoe UI",22))
+        {
+            graphics.Clear(Color.White);var cell=new Rectangle(20,10,80,45);painter.Draw(graphics,cell,"<i>ffffffffffffffffffff</i>",font,Color.Black,Color.White,false,false,visual);
+            var outside=false;for(int y=0;y<image.Height;y++)for(int x=0;x<image.Width;x++)if(!cell.Contains(x,y) && image.GetPixel(x,y).ToArgb()!=Color.White.ToArgb())outside=true;
+            Check(!outside,"Italic overhang stays clipped at the cell boundary, including ellipsis");
+        }
         using (var bitmap = new Bitmap(800, 300)) using (var graphics = Graphics.FromImage(bitmap)) using (var font = new Font("Segoe UI", 11))
         {
             graphics.Clear(Color.White);

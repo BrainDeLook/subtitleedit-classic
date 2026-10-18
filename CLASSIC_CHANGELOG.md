@@ -1,5 +1,10 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.39
+
+- Fixed clipped italic glyphs in the formatted subtitle grid. Styled fragments retain their text advance while drawing with glyph overhang; clipping is enforced at the cell boundary instead of at each fragment boundary. A small DPI-scaled leading inset protects the first glyph. Source text, selection colors and existing formatting modes are unchanged.
+- Added pixel-coverage checks against an unclipped native reference for Latin/Cyrillic italic text at three font sizes, plus a cell-boundary clipping check. These run with the existing formatting, source-retention and persistence tests. This fix remains local.
+
 ## Unreleased — local 4.0.25.38
 
 - Added a stable 5.3-style display-only formatting selector under Options → Subtitle grid formatting: Show tags (the existing default), Show formatting, Hide tags, and Show formatting and remaining tags. The working and original text columns render HTML/ASS bold, italic, underline, strikeout, primary color, font name and bounded font size. Nonvisual ASS commands, including complete transitions, remain visible in the last mode. Unsupported commands are not simulated as video effects.

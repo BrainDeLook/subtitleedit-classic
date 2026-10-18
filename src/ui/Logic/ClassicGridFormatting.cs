@@ -254,7 +254,10 @@ namespace Nikse.SubtitleEdit.Logic
             graphics.SetClip(bounds, System.Drawing.Drawing2D.CombineMode.Intersect);
             var flags = TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding | TextFormatFlags.SingleLine | TextFormatFlags.PreserveGraphicsClipping;
             if (rtl) flags |= TextFormatFlags.RightToLeft | TextFormatFlags.Right;
-            var x = rtl ? bounds.Right : bounds.Left;
+            // Italic glyph ink may extend beyond its advance width on either side.
+            // Keep a cell-level clip, but do not clip each styled run to its advance.
+            var bearing = Math.Max(1, (int)Math.Ceiling(font.GetHeight(graphics) / 6f));
+            var x = rtl ? bounds.Right - bearing : bounds.Left + bearing;
             try
             {
                 foreach (var run in runs)
@@ -271,7 +274,7 @@ namespace Nikse.SubtitleEdit.Logic
                         var available = rtl ? x - bounds.Left : bounds.Right - x;
                         if (available <= 0) break;
                         var rectangle = new Rectangle(rtl ? Math.Max(bounds.Left, x - width) : x, bounds.Top, Math.Min(width, available), bounds.Height);
-                        TextRenderer.DrawText(graphics, run.Text, styled, rectangle, color, flags | (width > available ? TextFormatFlags.EndEllipsis : 0));
+                        TextRenderer.DrawText(graphics, run.Text, styled, rectangle, color, flags | TextFormatFlags.NoClipping | (width > available ? TextFormatFlags.EndEllipsis : 0));
                         if (width > available) break;
                         x += rtl ? -width : width;
                     }
