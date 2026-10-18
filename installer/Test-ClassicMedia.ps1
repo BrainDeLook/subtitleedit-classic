@@ -43,6 +43,7 @@ $tests=@{
     TestClassic53Ocr='video-ocr-tests/TestClassic53Ocr.cs'
     TestClassicTiming='TestClassicTiming.cs'
     TestClassicTimingProfiles='TestClassicTimingProfiles.cs'
+    TestClassicBeautifyPreview='TestClassicBeautifyPreview.cs'
     TestClassicCommandPalette='TestClassicCommandPalette.cs'
     TestClassicNOcr='video-ocr-tests/TestClassicNOcr.cs'
     TestClassicActors='tts-tests/TestClassicActors.cs'
@@ -172,6 +173,8 @@ if ($FFmpegLocation) {
     if ($LASTEXITCODE -ne 0) { throw "Advanced translation, batch file output, cancellation and classic layout regression failed." }
     & "$OutputDirectory/TestClassicCommandPalette.exe" (Join-Path $OutputDirectory "classic-command-palette")
     if($LASTEXITCODE -ne 0){throw "Classic command palette regression failed"}
+    & "$OutputDirectory/TestClassicBeautifyPreview.exe" (Join-Path $OutputDirectory "classic-beautify-preview") $FFmpegLocation
+    if($LASTEXITCODE -ne 0){throw "Classic beautify live preview regression failed"}
     & "$OutputDirectory/TestClassicTimingProfiles.exe" (Join-Path $OutputDirectory "classic-timing-profiles")
     if($LASTEXITCODE -ne 0){throw "Classic named timing profiles regression failed"}
     & "$OutputDirectory/TestClassicUpdatesAndTraining.exe" unit (Join-Path $OutputDirectory "classic-updates-training")

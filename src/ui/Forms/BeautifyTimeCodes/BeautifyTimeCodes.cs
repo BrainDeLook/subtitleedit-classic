@@ -39,6 +39,9 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
         private TimeCodesGenerator _timeCodesGenerator;
 
         public BeautifyTimeCodes(Subtitle subtitle, VideoInfo videoInfo, string videoFileName, List<double> shotChanges)
+            : this(subtitle, videoInfo, videoFileName, shotChanges, null, 0) { }
+
+        public BeautifyTimeCodes(Subtitle subtitle, VideoInfo videoInfo, string videoFileName, List<double> shotChanges, WavePeakData peaks, int audioTrack)
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
@@ -58,9 +61,10 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
                 _duration = videoInfo.TotalSeconds;
             }
 
+            if (double.IsNaN(_frameRate) || double.IsInfinity(_frameRate) || _frameRate <= 0) _frameRate = 25;
             _videoInfo = videoInfo;
             _videoFileName = videoFileName;
-            _subtitle = subtitle;
+            _subtitle = new Subtitle(subtitle, false);
 
             var language = LanguageSettings.Current.BeautifyTimeCodes;
             var settings = Configuration.Settings.BeautifyTimeCodes;
@@ -92,7 +96,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
             {
                 // Load time codes
                 _timeCodes = TimeCodesFileHelper.FromDisk(videoFileName);
-                _shotChanges = shotChanges;
+                _shotChanges = shotChanges == null ? new List<double>() : new List<double>(shotChanges);
 
                 // Check if ffprobe is available              
                 if (!IsFfProbeAvailable(this))
@@ -110,6 +114,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
                 checkBoxSnapToShotChanges.Checked = false;
             }
 
+            InitializeLivePreview(peaks, audioTrack);
             RefreshControls();
         }
 
@@ -144,10 +149,14 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
                 labelShotChangesStatus.Text = LanguageSettings.Current.BeautifyTimeCodes.NoShotChangesLoaded;
                 buttonImportShotChanges.Enabled = true;
             }
+            QueueLivePreview();
         }
 
         private void buttonExtractTimeCodes_Click(object sender, EventArgs e)
         {
+            _extractingExact = true;
+            try
+            {
             _timeCodesGenerator = new TimeCodesGenerator();
             _abortTimeCodes = false;
             checkBoxSnapToShotChanges.Enabled = false;
@@ -211,7 +220,20 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
                 }
             }
 
-            RefreshControls();
+            }
+            catch (Exception ex) { if (!_previewCloseRequested) MessageBox.Show(this, ex.Message); }
+            finally
+            {
+                _extractingExact = false;
+                checkBoxSnapToShotChanges.Enabled = _videoFileName != null;
+                checkBoxExtractExactTimeCodes.Enabled = _videoFileName != null;
+                labelTimeCodesStatus.Enabled = true;buttonExtractTimeCodes.Enabled = true;
+                buttonCancelTimeCodes.Visible = false;buttonCancel.Enabled = true;
+                Cursor = Cursors.Default;progressBarExtractTimeCodes.Style = ProgressBarStyle.Blocks;
+                labelExtractTimeCodesProgress.Visible = false;
+                RefreshControls();
+                if (_previewCloseRequested) Close();
+            }
         }
 
         private void UpdateTimeCodeProgress()
@@ -241,7 +263,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
         {
             using (var form = new BeautifyTimeCodesProfile(_frameRate))
             {
-                form.ShowDialog(this);
+                if (form.ShowDialog(this) == DialogResult.OK) QueueLivePreview();
             }
         }
 
@@ -276,33 +298,8 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
                 return;
             }
 
-            // Prepare
-            groupBoxTimeCodes.Enabled = false;
-            groupBoxShotChanges.Enabled = false;
-            buttonOK.Enabled = false;
-
-            // Actual processing
-            FixedSubtitle = new Subtitle(_subtitle, false);
-
-            var timeCodesBeautifier = new TimeCodesBeautifier(
-                FixedSubtitle,
-                _frameRate,
-                checkBoxExtractExactTimeCodes.Checked ? _timeCodes : new List<double>(), // ditto
-                checkBoxSnapToShotChanges.Checked ? _shotChanges : new List<double>()
-            );
-            timeCodesBeautifier.ProgressChanged += delegate (int progress)
-            {
-                progressBar.Value = progress;
-                progressBar.Invalidate();
-            };
-            timeCodesBeautifier.Beautify();
-
-            // Check for any paragraphs that still have a gap smaller than the smallest max. gap
+            if (_previewOperation != null || _waveOperation != null || FixedSubtitle == null) return;
             CheckUnfixableParagraphs();
-
-            // Re-enable group boxes, otherwise child controls are also disabled, and we need their original state for the checks below
-            groupBoxTimeCodes.Enabled = true;
-            groupBoxShotChanges.Enabled = true;
 
             // Save settings
             Configuration.Settings.BeautifyTimeCodes.AlignTimeCodes = checkBoxAlignTimeCodes.Checked;
@@ -329,7 +326,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
 
             UnfixableParagraphs = new List<UnfixableParagraphsPair>();
 
-            for (var p = 0; p < FixedSubtitle.Paragraphs.Count - 2; p++)
+            for (var p = 0; p < FixedSubtitle.Paragraphs.Count - 1; p++)
             {
                 var paragraph = FixedSubtitle.Paragraphs.ElementAtOrDefault(p);
                 var nextParagraph = FixedSubtitle.Paragraphs.ElementAtOrDefault(p + 1);

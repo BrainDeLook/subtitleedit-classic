@@ -8,6 +8,8 @@ English · [Русский](README.ru.md)
 
 ## Classic 4.0.25
 
+The local preview adds a live **Beautify time codes** comparison: synchronized original/result timelines or waveforms, changed-cue navigation, signed time/frame deltas and inferred reason hints. Calculations use a copy and Apply returns the displayed result through normal undo. Cached editor audio is reused; waveform extraction follows the selected audio track. This is not yet in the published installer.
+
 The local preview adds **Edit → Command palette** (Ctrl+Shift+K when free): search classic menu and main/grid/waveform shortcut actions by name, group, keys or initials, then run with Enter. It includes unassigned actions, session-only recent history and a separate configurable palette shortcut. Text-box-only commands are excluded. This is not yet in the published installer.
 
 Local development adds named **Beautify time codes** profiles to the classic profile editor. Save, load and delete custom rule sets alongside the built-in presets; cancelling profile edits preserves active settings, while explicitly saved library entries remain available. These changes are not yet in the published installer.

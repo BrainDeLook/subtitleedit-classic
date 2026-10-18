@@ -1,5 +1,12 @@
 ﻿# Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.29
+
+- Adapted stable 5.3's live Beautify time codes workflow to the classic tool: synchronized Original/Beautified timelines, cached editor waveform reuse, previous/next/first/last change navigation, original cue numbers, old/new times and signed millisecond/frame deltas. The stats line reports the cue/change counts, frame rate, exact-time-code mode and active shot changes. Reason hints are inferred from the result (frame/shot alignment, gaps, duration limits or other profile rules), not an engine trace.
+- Preview calculations run in the background on a copy of the subtitle, with debounced refresh after profile/settings changes. Apply returns the displayed result through the existing main-window undo path; stale/missing-input previews cannot be applied. Cancel and closing during processing retain the editor's source. Shared waveform controls gain an opt-in read-only mode; ordinary editor dragging remains unchanged. Gap warnings also inspect the final adjacent pair.
+- Without audio peaks, the tool explicitly shows cue timelines only. Load waveform extracts the selected audio track with FFmpeg, shares peaks between both views and removes its owned temporary files. Both whole-subtitle and selected-lines entries forward the editor's current peaks/audio selection. The window is resizable with scrollable legacy settings and a separate footer; closing cancels preview/audio work and waits for cleanup.
+- Validation: actual beautifier/preview equivalence, source/metadata retention, exact displayed-result application, invalidation, change navigation and cue numbering, zoom synchronization, read-only views, cancellation on 10,000 cues and Russian/English normal/minimum-size layouts. A generated two-audio-track MKV verifies that waveform extraction uses the selected sounding track instead of the silent first track. Existing media/speech/translation/OCR regressions are also run. This increment remains local; no paid requests are used.
+
 ## Unreleased — local 4.0.25.28
 
 - Adapted stable 5.3's command palette to the classic main window: Edit → Command palette, default Ctrl+Shift+K. The catalog combines the current main menus with named main/grid/waveform shortcut actions, including actions without assigned keys and menu-only Classic additions. Text-box-only actions and the palette itself are excluded. Existing action handlers retain their guards and undo behavior; named dispatch does not modify key assignments.

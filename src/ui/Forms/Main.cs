@@ -36938,7 +36938,7 @@ namespace Nikse.SubtitleEdit.Forms
                     selectedLines.Paragraphs.Add(_subtitle.Paragraphs[index]);
                 }
 
-                using (var form = new BeautifyTimeCodes.BeautifyTimeCodes(selectedLines, _videoInfo, _videoFileName, audioVisualizer.ShotChanges))
+                using (var form = new BeautifyTimeCodes.BeautifyTimeCodes(selectedLines, _videoInfo, _videoFileName, audioVisualizer.ShotChanges, audioVisualizer.WavePeaks, ClassicSelectedAudioIndex()))
                 {
                     form.Text = string.Format(LanguageSettings.Current.BeautifyTimeCodes.TitleSelectedLines, selectedIndices.Length);
 
@@ -36982,7 +36982,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
             else
             {
-                using (var form = new BeautifyTimeCodes.BeautifyTimeCodes(_subtitle, _videoInfo, _videoFileName, audioVisualizer.ShotChanges))
+                using (var form = new BeautifyTimeCodes.BeautifyTimeCodes(_subtitle, _videoInfo, _videoFileName, audioVisualizer.ShotChanges, audioVisualizer.WavePeaks, ClassicSelectedAudioIndex()))
                 {
                     var result = form.ShowDialog(this);
 

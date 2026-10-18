@@ -315,7 +315,9 @@ namespace Nikse.SubtitleEdit.Controls
         public bool ShowGridLines { get; set; }
         public bool AllowNewSelection { get; set; }
 
-        public bool Locked { get; set; }
+        private bool _locked;
+        public bool ReadOnlyView { get; set; }
+        public bool Locked { get => ReadOnlyView || _locked; set => _locked = value; }
 
         public double EndPositionSeconds
         {
