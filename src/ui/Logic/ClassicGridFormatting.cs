@@ -16,6 +16,8 @@ namespace Nikse.SubtitleEdit.Logic
     {
         public ClassicGridFormattingMode Formatting { get; set; }
         public bool ShowForcedColumn { get; set; }
+        public bool GridSpellCheck { get; set; }
+        public string GridSpellDictionary { get; set; }
         public List<ClassicColumnPreference> Columns { get; set; }
         public static ClassicGridAppearance Load(string path)
         {
@@ -51,6 +53,8 @@ namespace Nikse.SubtitleEdit.Logic
         public string Face { get; internal set; }
         public float? Size { get; internal set; }
         public bool Tag { get; internal set; }
+        public int[] SourceStarts { get; internal set; }
+        public int[] SourceEnds { get; internal set; }
     }
 
     public static class ClassicGridMarkup
@@ -74,6 +78,8 @@ namespace Nikse.SubtitleEdit.Logic
             var result = new List<ClassicGridRun>();
             var state = new State();
             var buffer = new StringBuilder();
+            var starts = new List<int>(); var ends = new List<int>();
+            var sourceOffset = 0;
             var stack = new List<KeyValuePair<string, State>>();
             var visible = 0;
             Action flush = () =>
@@ -81,22 +87,28 @@ namespace Nikse.SubtitleEdit.Logic
                 if (buffer.Length == 0) return;
                 result.Add(new ClassicGridRun { Text = buffer.ToString(), Style = mode == ClassicGridFormattingMode.HideTags ? FontStyle.Regular : state.Style,
                     Color = mode == ClassicGridFormattingMode.HideTags ? null : state.Color, Face = mode == ClassicGridFormattingMode.HideTags ? null : state.Face,
-                    Size = mode == ClassicGridFormattingMode.HideTags ? null : state.Size });
-                buffer.Clear();
+                    Size = mode == ClassicGridFormattingMode.HideTags ? null : state.Size, SourceStarts=starts.ToArray(), SourceEnds=ends.ToArray() });
+                buffer.Clear(); starts.Clear(); ends.Clear();
             };
-            Action<string, bool> append = (value, tag) =>
+            Action<string, bool, int> appendMapped = (value, tag, spanLength) =>
             {
                 if (visible >= VisibleLimit || value.Length == 0) return;
                 var length = Math.Min(value.Length, VisibleLimit - visible);
                 // Do not split a supplementary character at the display limit.
                 if (length < value.Length && length > 0 && char.IsHighSurrogate(value[length - 1])) length--;
                 if (tag) { flush(); result.Add(new ClassicGridRun { Text = value.Substring(0, length), Tag = true }); }
-                else buffer.Append(value, 0, length);
+                else
+                {
+                    buffer.Append(value, 0, length);
+                    for(var n=0;n<length;n++){starts.Add(spanLength<0?-1:sourceOffset+(spanLength==0?n:0));ends.Add(spanLength<0?-1:sourceOffset+(spanLength==0?n+1:spanLength));}
+                }
                 visible += length;
                 if (length < value.Length) { flush(); result.Add(new ClassicGridRun { Text = "…" }); visible = VisibleLimit; }
             };
+            Action<string,bool> append=(value,tag)=>appendMapped(value,tag,0);
             for (var i = 0; i < source.Length && visible < VisibleLimit;)
             {
+                sourceOffset=i;
                 if (mode != ClassicGridFormattingMode.ShowTags && source[i] == '{' && i + 1 < source.Length && source[i + 1] == '\\')
                 {
                     var end = source.IndexOf('}', i + 2);
@@ -128,7 +140,7 @@ namespace Nikse.SubtitleEdit.Logic
                             flush();
                             var closing = content.StartsWith("/", StringComparison.Ordinal);
                             var name = content.TrimStart('/').Split(new[] { ' ', '\t', '\r', '\n', '/' }, 2)[0].ToLowerInvariant();
-                            if (name == "br") append(separator, false);
+                            if (name == "br") appendMapped(separator, false, -1);
                             else if (name == "i" || name == "b" || name == "u" || name == "s" || name == "font")
                             {
                                 if (closing)
@@ -151,10 +163,10 @@ namespace Nikse.SubtitleEdit.Logic
                 if (source[i] == '\r' || source[i] == '\n' || source[i] == '\u2028')
                 {
                     if (source[i] == '\r' && i + 1 < source.Length && source[i + 1] == '\n') i++;
-                    append(separator, false); i++; continue;
+                    appendMapped(separator, false, -1); i++; continue;
                 }
                 if (mode != ClassicGridFormattingMode.ShowTags && source[i] == '\\' && i + 1 < source.Length && (source[i + 1] == 'N' || source[i + 1] == 'n' || source[i + 1] == 'h'))
-                { append(source[i + 1] == 'h' ? "\u00a0" : separator, false); i += 2; continue; }
+                { appendMapped(source[i + 1] == 'h' ? "\u00a0" : separator, false, source[i+1]=='h'?2:-1); i += 2; continue; }
                 if (mode != ClassicGridFormattingMode.ShowTags && source[i] == '&')
                 {
                     var end = source.IndexOf(';', i + 1, Math.Min(16, source.Length - i - 1));
@@ -162,7 +174,7 @@ namespace Nikse.SubtitleEdit.Logic
                     {
                         var entity = source.Substring(i, end - i + 1);
                         var decoded = System.Net.WebUtility.HtmlDecode(entity);
-                        if (entity != decoded) { append(decoded, false); i = end + 1; continue; }
+                        if (entity != decoded) { appendMapped(decoded, false, end-i+1); i = end + 1; continue; }
                     }
                 }
                 var count = char.IsHighSurrogate(source[i]) && i + 1 < source.Length && char.IsLowSurrogate(source[i + 1]) ? 2 : 1;
@@ -225,7 +237,7 @@ namespace Nikse.SubtitleEdit.Logic
         }
     }
 
-    public sealed class ClassicGridPainter
+    public sealed partial class ClassicGridPainter
     {
         private readonly Dictionary<string, List<ClassicGridRun>> _cache = new Dictionary<string, List<ClassicGridRun>>();
         public void Clear() => _cache.Clear();
@@ -241,7 +253,7 @@ namespace Nikse.SubtitleEdit.Logic
             Func<byte, double> component = value => value / 255.0 <= 0.04045 ? value / 255.0 / 12.92 : Math.Pow((value / 255.0 + 0.055) / 1.055, 2.4);
             return 0.2126 * component(color.R) + 0.7152 * component(color.G) + 0.0722 * component(color.B);
         }
-        public void Draw(Graphics graphics, Rectangle bounds, string text, Font font, Color foreground, Color background, bool selected, bool rtl, ClassicGridFormattingMode mode, string separator = " || ")
+        public void Draw(Graphics graphics, Rectangle bounds, string text, Font font, Color foreground, Color background, bool selected, bool rtl, ClassicGridFormattingMode mode, string separator = " || ", Func<string,List<Nikse.SubtitleEdit.Core.SpellCheck.SpellCheckWord>> check = null, Action<ClassicGridSpellHit> hit = null)
         {
             if (bounds.Width <= 0 || bounds.Height <= 0) return;
             var key = ((int)mode).ToString(CultureInfo.InvariantCulture) + ":" + separator + ":" + text;
@@ -283,6 +295,7 @@ namespace Nikse.SubtitleEdit.Logic
                 }
             }
             finally { graphics.Restore(saved); }
+            if(check!=null)DrawSpelling(graphics,bounds,text,font,selected,rtl,runs,check,hit);
         }
     }
 }

@@ -13,6 +13,8 @@ namespace Nikse.SubtitleEdit.Controls
     /// </summary>
     public sealed class SETextBox : Panel, ISelectedText
     {
+        public event Action<string,SpellCheckAction> SpellWordChanged;
+        public void ApplyExternalSpellingWord(string word,SpellCheckAction action)=>_uiTextBox?.ApplyExternalSpellingWord(word,action);
         private AdvancedTextBox _uiTextBox;
         private SimpleTextBox _simpleTextBox;
 
@@ -38,6 +40,7 @@ namespace Nikse.SubtitleEdit.Controls
                 if (_uiTextBox is null)
                 {
                     _uiTextBox = new AdvancedTextBox();
+                    _uiTextBox.SpellWordChanged+=(word,action)=>SpellWordChanged?.Invoke(word,action);
                     ConfigureTextBoxEvents(_uiTextBox);
                 }
 

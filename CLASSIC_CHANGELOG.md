@@ -1,5 +1,13 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.46
+
+- Adapted the complete grid live-spelling workflow: separate persistent enable/disable and automatic/manual dictionary selection under Spell check, a resizable settings dialog with the existing dictionary downloader, wavy underlines in all four grid-formatting modes, and mouse / Apps / Shift+F10 context actions. Checking works independently of the edit-box live-spelling and syntax-color settings. Missing dictionaries are reported without blocking subtitle editing.
+- Native Hunspell suggestions replace only the selected working word through ordinary editor Undo/Redo. Source mappings retain HTML/ASS tags even when styling splits a word, and handle decoded entities, RTL, selection and clipping. Stale menu snapshots cannot modify changed text; original-column menus are read-only. Display caches and source mappings never modify subtitle content.
+- Ignore all is session-only until the dictionary changes; added words and proper names use the classic shared lists and survive restart. Word-list actions refresh both grid and edit-box checkers. Reapplying the same dictionary preserves session ignores. Dictionary errors, malformed user XML and invalid saved dictionary identities disable spelling safely; selecting a valid dictionary restores it. URLs, email, hashtags, numbers, HTML/ASS tags, known names, user words and classic apostrophe/compound rules are respected.
+- Checking is restricted to displayed text and cached by dictionary/word-list state; cache size and rendered length are bounded. Subtitle edits, language/settings changes, word-list actions and refresh after external dialogs invalidate the appropriate display state. Russian/English settings, restart, cancel, independent toggles, keyboard menus, source protection, actual English Hunspell and UTF-8 Cyrillic fixtures are covered. This increment remains local; no paid APIs are used.
+- Returning from dictionary downloads retries newly available dictionaries without an extra toggle. Validation: 97 complete-workflow checks and 2,166 combined regression checks passed, including missing/malformed dictionaries and recovery. The entire increment was installed once as local 4.0.25.46 with a rollback EXE and Settings.xml unchanged.
+
 ## Unreleased — local 4.0.25.45
 
 - Completed the remaining stable 5.3 grid-column display types: optional Teletext for EBU STL shows the stored row (1–23) and L/C/R alignment; missing/invalid rows stay blank unless the cue explicitly specifies alignment. A valid row without an explicit alignment displays C. Other formats hide the column while retaining its preference.

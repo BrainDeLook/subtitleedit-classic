@@ -489,7 +489,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         private void SubtitleListView_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
         {
-            if (GridFormattingMode != ClassicGridFormattingMode.ShowTags &&
+            if ((GridFormattingMode != ClassicGridFormattingMode.ShowTags || GridSpelling?.Ready==true) &&
                 (e.ColumnIndex == ColumnIndexText || e.ColumnIndex == ColumnIndexTextOriginal))
             {
                 DrawFormattedSubtitleCell(e);
@@ -602,7 +602,14 @@ namespace Nikse.SubtitleEdit.Controls
             using (var brush = new SolidBrush(background)) e.Graphics.FillRectangle(brush, e.Bounds);
             var bounds = new Rectangle(e.Bounds.Left + 3, e.Bounds.Top + 2, Math.Max(0, e.Bounds.Width - 7), Math.Max(0, e.Bounds.Height - 3));
             var rtl = RightToLeftLayout || RightToLeft == RightToLeft.Yes || Configuration.Settings?.General.RightToLeftMode == true;
-            _gridPainter.Draw(e.Graphics, bounds, e.SubItem.Text, e.SubItem.Font ?? Font, foreground, background, e.Item.Selected, rtl, GridFormattingMode, _lineSeparatorString);
+            var key=e.ItemIndex+":"+e.ColumnIndex;
+            _gridSpellingHits.Remove(key);
+            if(_gridSpellingHits.Count>512)_gridSpellingHits.Clear();
+            var hits=new List<ClassicGridSpellHit>();
+            var text=e.ColumnIndex==ColumnIndexText && e.Item.Tag is Paragraph p?p.Text:e.SubItem.Text;
+            _gridPainter.Draw(e.Graphics, bounds, text??string.Empty, e.SubItem.Font ?? Font, foreground, background, e.Item.Selected, rtl, GridFormattingMode, _lineSeparatorString,
+                GridSpelling?.Ready==true?(Func<string,List<Nikse.SubtitleEdit.Core.SpellCheck.SpellCheckWord>>)GridSpelling.Check:null,h=>hits.Add(h));
+            if(hits.Count>0)_gridSpellingHits[key]=hits;
         }
 
         internal static StringFormat CreateStringFormat(Control control)

@@ -1750,6 +1750,7 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicGridAppearance();
             InitializeClassicForcedLines();
             InitializeClassicColumns();
+            InitializeClassicGridSpelling();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -8940,6 +8941,8 @@ namespace Nikse.SubtitleEdit.Forms
             var format = GetCurrentSubtitleFormat();
             var formatType = format.GetType();
             var coordinates = SubtitleListview1.PointToClient(Cursor.Position);
+            if(SubtitleListview1.SpellingKeyboardMenu && FirstSelectedIndex>=0)
+            {var cell=SubtitleListview1.Items[FirstSelectedIndex].SubItems[SubtitleListview1.ColumnIndexText].Bounds;coordinates=new Point(cell.Left+4,cell.Top+cell.Height/2);}
             var hitTest = SubtitleListview1.HitTest(coordinates);
             if (coordinates.Y < 19 || (hitTest.Item != null && hitTest.Item.Index == 0 && coordinates.Y < hitTest.Item.Position.Y))
             {
@@ -26559,6 +26562,7 @@ namespace Nikse.SubtitleEdit.Forms
         {
             _timerSlow.Stop();
             RefreshClassicShotColumns();
+            UpdateClassicGridSpelling();
             SubtitleListview1.RefreshDetailColumns();
 
             if (Configuration.Settings.General.DebugTranslationSync)

@@ -960,6 +960,15 @@ namespace Nikse.SubtitleEdit.Controls
             TextChangedHighlight(this, EventArgs.Empty);
         }
 
+        public event Action<string,SpellCheckAction> SpellWordChanged;
+        public void ApplyExternalSpellingWord(string word,SpellCheckAction action)
+        {
+            if(!IsSpellCheckerInitialized)return;
+            if(action==SpellCheckAction.SkipAll){if(!_skipAllList.Contains(word))_skipAllList.Add(word);}
+            else if(action==SpellCheckAction.AddToDictionary || action==SpellCheckAction.AddToNames)
+                _spellCheckWordLists=new SpellCheckWordLists(Utilities.DictionaryFolder,System.IO.Path.GetFileName(_currentDictionary),this);
+            IsSpellCheckRequested=true;Invalidate();
+        }
         public void DoAction(SpellCheckAction action)
         {
             if (_currentWord != null)
@@ -981,6 +990,7 @@ namespace Nikse.SubtitleEdit.Controls
                         break;
                 }
 
+                SpellWordChanged?.Invoke(_currentWord.Text,action);
                 if (_wrongWords.Contains(_currentWord))
                 {
                     IsWrongWord = false;
