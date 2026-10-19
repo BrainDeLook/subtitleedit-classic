@@ -51,9 +51,15 @@ namespace Nikse.SubtitleEdit.Forms
         {
             try
             {
-                if(save) { var settings=ClassicGridAppearance.Load(ClassicGridAppearancePath); settings.ShowForcedColumn=visible; settings.Save(ClassicGridAppearancePath); }
+                if(save)
+                {
+                    var settings=ClassicGridAppearance.Load(ClassicGridAppearancePath);settings.ShowForcedColumn=visible;
+                    if(settings.Columns!=null)foreach(var column in settings.Columns.Where(c=>c!=null && c.Key=="Forced"))column.Visible=visible;
+                    settings.Save(ClassicGridAppearancePath);
+                }
             }
             catch(Exception ex) when(ex is IOException || ex is UnauthorizedAccessException) { MessageBox.Show(this,ex.Message);return; }
+            SyncClassicForcedColumnPreference(visible);
             if(visible) SubtitleListview1.ShowForcedColumn("Forced"); else SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.Forced);
             if(_classicForcedColumn!=null) _classicForcedColumn.Checked=visible;
         }

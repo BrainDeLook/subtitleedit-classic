@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Forms;
 using Nikse.SubtitleEdit.Core.Settings;
 
@@ -32,6 +33,30 @@ namespace Nikse.SubtitleEdit.Controls
         }
 
         private List<SubtitleColumn> SubtitleColumns { get; }
+        private Dictionary<SubtitleColumn,bool> _columnVisibility;
+        private List<SubtitleColumn> _columnOrder;
+        public bool ApplyingColumnOrder { get; private set; }
+        public SubtitleColumn[] GetColumnDisplayOrder() => SubtitleColumns.OrderBy(c=>Columns[GetColumnIndex(c)].DisplayIndex).ToArray();
+        private bool ColumnSuppressed(SubtitleColumn column) => _columnVisibility!=null && _columnVisibility.TryGetValue(column,out var visible) && !visible;
+        public void SetColumnPreferences(IEnumerable<ClassicColumnPreference> preferences)
+        {
+            if(preferences==null) { _columnVisibility=null;_columnOrder=null;return; }
+            var normalized=ClassicColumnPreference.Normalize(preferences,c=>true);
+            _columnOrder=normalized.Select(p=>(SubtitleColumn)Enum.Parse(typeof(SubtitleColumn),p.Key)).ToList();
+            _columnVisibility=normalized.ToDictionary(p=>(SubtitleColumn)Enum.Parse(typeof(SubtitleColumn),p.Key),p=>p.Visible);
+            ApplyColumnOrder();
+        }
+        private void ApplyColumnOrder()
+        {
+            if(_columnOrder==null || ApplyingColumnOrder)return;
+            ApplyingColumnOrder=true;
+            try
+            {
+                var order=SubtitleColumns.OrderBy(c=>_columnOrder.IndexOf(c)<0?int.MaxValue:_columnOrder.IndexOf(c)).ToArray();
+                for(var i=0;i<order.Length;i++)Columns[GetColumnIndex(order[i])].DisplayIndex=i;
+            }
+            finally { ApplyingColumnOrder=false; }
+        }
 
         public int GetColumnIndex(SubtitleColumn column)
         {
@@ -411,12 +436,15 @@ namespace Nikse.SubtitleEdit.Controls
             _setLastColumnWidthTimer.Stop();
             if (Columns.Count > 0)
             {
+                var fill = Columns.Count - 1;
+                if (_columnOrder != null && ColumnIndexText >= 0)
+                    fill = ColumnIndexTextOriginal >= 0 && Columns[ColumnIndexTextOriginal].DisplayIndex > Columns[ColumnIndexText].DisplayIndex ? ColumnIndexTextOriginal : ColumnIndexText;
                 var width = 0;
-                for (var i = 0; i < Columns.Count - 1; i++)
+                for (var i = 0; i < Columns.Count; i++)
                 {
-                    width += Columns[i].Width;
+                    if(i!=fill) width += Columns[i].Width;
                 }
-                Columns[Columns.Count - 1].Width = ClientSize.Width - width;
+                SetColumnWidthRetry(fill, ClientSize.Width - width);
             }
         }
 
@@ -436,6 +464,7 @@ namespace Nikse.SubtitleEdit.Controls
             ColumnIndexExtra = GetColumnIndex(SubtitleColumn.Extra);
             ColumnIndexNetwork = GetColumnIndex(SubtitleColumn.Network);
             ColumnIndexForced = GetColumnIndex(SubtitleColumn.Forced);
+            ApplyColumnOrder();
         }
 
         private static void SubtitleListView_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
@@ -897,6 +926,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowStartColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.Start)) return;
             if (GetColumnIndex(SubtitleColumn.Start) == -1)
             {
                 var ch = new ColumnHeader { Text = title };
@@ -932,6 +962,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowEndColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.End)) return;
             if (GetColumnIndex(SubtitleColumn.End) == -1)
             {
                 var ch = new ColumnHeader { Text = title };
@@ -943,7 +974,7 @@ namespace Nikse.SubtitleEdit.Controls
                 else if (ColumnIndexNumber >= 0)
                 {
                     SubtitleColumns.Insert(ColumnIndexNumber + 1, SubtitleColumn.End);
-                    Columns.Insert(ColumnIndexStart + 1, ch);
+                    Columns.Insert(ColumnIndexNumber + 1, ch);
                 }
                 else
                 {
@@ -972,6 +1003,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowDurationColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.Duration)) return;
             if (GetColumnIndex(SubtitleColumn.Duration) == -1)
             {
                 var ch = new ColumnHeader { Text = title };
@@ -988,7 +1020,7 @@ namespace Nikse.SubtitleEdit.Controls
                 else if (ColumnIndexNumber >= 0)
                 {
                     SubtitleColumns.Insert(ColumnIndexNumber + 1, SubtitleColumn.Duration);
-                    Columns.Insert(ColumnIndexStart + 1, ch);
+                    Columns.Insert(ColumnIndexNumber + 1, ch);
                 }
                 else
                 {
@@ -1041,6 +1073,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowForcedColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.Forced)) return;
             if (ColumnIndexForced >= 0) { Columns[ColumnIndexForced].Text = title; return; }
             var index = ColumnIndexText >= 0 ? ColumnIndexText : SubtitleColumns.Count;
             SubtitleColumns.Insert(index, SubtitleColumn.Forced);
@@ -1059,6 +1092,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowExtraColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.Extra)) return;
             if (GetColumnIndex(SubtitleColumn.Extra) == -1)
             {
                 if (ColumnIndexNetwork >= 0)
@@ -1094,6 +1128,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowCharsSecColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.CharactersPerSeconds)) return;
             if (GetColumnIndex(SubtitleColumn.CharactersPerSeconds) == -1)
             {
                 var ch = new ColumnHeader { Text = title };
@@ -1125,6 +1160,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowWordsMinColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.WordsPerMinute)) return;
             if (GetColumnIndex(SubtitleColumn.WordsPerMinute) == -1)
             {
                 var ch = new ColumnHeader { Text = title };
@@ -1161,6 +1197,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowGapColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.Gap)) return;
             if (GetColumnIndex(SubtitleColumn.Gap) == -1)
             {
                 var ch = new ColumnHeader { Text = title };
@@ -1202,6 +1239,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowActorColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.Actor)) return;
             if (GetColumnIndex(SubtitleColumn.Actor) == -1)
             {
                 var ch = new ColumnHeader { Text = title };
@@ -1252,6 +1290,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowRegionColumn(string title)
         {
+            if (ColumnSuppressed(SubtitleColumn.Region)) return;
             if (GetColumnIndex(SubtitleColumn.Region) == -1)
             {
                 var ch = new ColumnHeader { Text = title };
@@ -1311,7 +1350,7 @@ namespace Nikse.SubtitleEdit.Controls
                 Columns.RemoveAt(idx);
                 foreach (ListViewItem lvi in Items)
                 {
-                    if (lvi.SubItems.Count - 1 > idx && lvi.SubItems[idx] != null)
+                    if (lvi.SubItems.Count > idx && lvi.SubItems[idx] != null)
                     {
                         lvi.SubItems.RemoveAt(idx);
                     }
@@ -2483,6 +2522,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         private void SetColumnWidthRetry(int columnIndex, int width)
         {
+            width = Math.Max(columnIndex == ColumnIndexText || columnIndex == ColumnIndexTextOriginal ? 80 : 10, width);
             Columns[columnIndex].Width = width;
             Columns[columnIndex].Width = width;
         }

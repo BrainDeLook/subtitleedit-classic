@@ -16,6 +16,7 @@ namespace Nikse.SubtitleEdit.Logic
     {
         public ClassicGridFormattingMode Formatting { get; set; }
         public bool ShowForcedColumn { get; set; }
+        public List<ClassicColumnPreference> Columns { get; set; }
         public static ClassicGridAppearance Load(string path)
         {
             try

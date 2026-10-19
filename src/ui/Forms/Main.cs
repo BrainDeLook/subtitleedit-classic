@@ -1748,6 +1748,7 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicTextTools();
             InitializeClassicGridAppearance();
             InitializeClassicForcedLines();
+            InitializeClassicColumns();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -5805,6 +5806,8 @@ namespace Nikse.SubtitleEdit.Forms
                 resetApplied = settings.ResetApplied;
             }
 
+            RefreshClassicColumnsFromLegacySettings();
+
             try
             { // can have some problems with fonts...
                 UiUtil.InitializeSubtitleFont(textBoxSource);
@@ -5851,7 +5854,7 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 if (Configuration.Settings.Tools.ListViewShowColumnStartTime)
                 {
-                    SubtitleListview1.ShowEndColumn(LanguageSettings.Current.General.StartTime);
+                    SubtitleListview1.ShowStartColumn(LanguageSettings.Current.General.StartTime);
                 }
                 else
                 {

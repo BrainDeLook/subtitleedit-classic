@@ -1,5 +1,13 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.42
+
+- Added Options / grid context menu → Columns, adapting the stable 5.3 visibility/order workflow for the existing classic columns. A resizable Russian/English dialog provides checkboxes, Up/Down and Alt+Up/Down, draft-only reset, OK and Cancel. Number, text, original and network visibility stay controlled by the editor; format-dependent actor, region and style columns explain their availability. This does not add the remaining SE5-only column types.
+- Saved logical keys separately from native ListView indexes. Header dragging is remembered, and disappearing/reappearing format or original columns retain their place. Applying a layout keeps cue selection, scroll position, text/metadata, original text and undo history intact. Hidden columns stay hidden when format handlers try to show them. The Forced switch and legacy Tools visibility settings update the same preferences; changing grid formatting retains them. Invalid/duplicate keys normalize safely and failed preference writes leave the active layout unchanged.
+- Corrected classic header/subitem misalignment when restoring End without Start, restoring Duration without Start/End, and removing the final metadata column. Settings now restores Start through the correct method. With a custom order, spare width goes to the text column instead of an arbitrary last logical column; text columns retain a readable minimum and can scroll horizontally when many columns are enabled.
+- Validation includes all eight Start/End/Duration visibility combinations, header dragging, ASS/SRT transitions, original and Forced coexistence, restart, legacy-settings synchronization, reset/cancel/save failure, exact source retention and Russian/English minimum-size forms. This increment remains local; no paid APIs are used.
+- Validation: 118 column-workflow checks and 1,941 combined regression checks passed. The local EXE was installed with a rollback copy and Settings.xml unchanged.
+
 ## Unreleased — local 4.0.25.41
 
 - Moved File → Save forced lines as directly below Save as, alongside the other save commands.
