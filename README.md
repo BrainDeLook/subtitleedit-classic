@@ -6,6 +6,8 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 
 English · [Русский](README.ru.md)
 
+The local build adds **Layer** (ASS only) and **Pixel width** through **Options → Columns…**. Layer follows the existing layer editors and hides in other formats while retaining its saved preference. Pixel width is the widest line without tags, measured using the classic measurement font/size/bold settings; the existing width limit and syntax-coloring switch control its warning. It estimates text width rather than rendering ASS effects or positioning. Both columns persist their visibility/order and remain hidden in older layouts. This addition is local and is not in the published installer.
+
 The local build adds optional **Shot in / Shot out** in **Options → Columns…**. They show signed start/end offsets from the nearest shot change: negative before, positive after, in milliseconds or frames according to the editor time-display mode. Cells highlight the active timing profile’s adjustment zones. Load a video and generate/import shot changes first; distant boundaries and missing shot data stay blank. Visibility/order persist, and existing layouts keep these columns hidden. This addition is local and is not in the published installer.
 
 ## Classic 4.0.25

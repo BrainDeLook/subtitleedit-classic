@@ -1,5 +1,11 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.44
+
+- Added optional Layer and Pixel width through Options / grid context menu → Columns. Layer displays ASS stacking order and updates through the existing single/multiple-cue layer editors; other formats hide it while retaining the saved preference. SSA Marked is not treated as an ASS layer. Pixel width displays the widest stripped line, using the classic measurement font, size and bold settings, and highlights values above the configured width limit when width syntax coloring is enabled. This is a text-width estimate, not a renderer for ASS positioning or effects.
+- Both columns retain independent visibility/order across restarts and format changes. Existing layouts leave the new keys hidden. Width calculations cache by cue text and measurement font with weak cue references; edits invalidate the cache, settings changes refresh values, and hidden columns do no measurement. Cue text, timing and metadata remain unchanged. This increment remains local; no paid APIs are used.
+- Binary EBU STL retains the text-width column; VobSub index files hide both new text metadata columns. Validation: 40 feature checks and 2,014 combined regression checks passed, including font changes, width limits, layer commands, ASS/SRT transitions, persistence and Russian/English minimum-size layouts. Cached width refresh for 10,000 cues took approximately 13 ms.
+
 ## Unreleased — local 4.0.25.43
 
 - Added optional Shot in / Shot out columns through Options / grid context menu → Columns, using stable 5.3 signed cue-minus-cut offsets. Negative values precede the nearest cut; positive values follow it. Values use milliseconds or frames according to the editor time-display mode. The lookup window is at least one second and expands for wider timing-profile zones.

@@ -53,6 +53,7 @@ $tests=@{
     TestClassicForcedLines='TestClassicForcedLines.cs'
     TestClassicColumns='TestClassicColumns.cs'
     TestClassicShotColumns='TestClassicShotColumns.cs'
+    TestClassicDetailColumns='TestClassicDetailColumns.cs'
     TestClassicCompareSync='TestClassicCompareSync.cs'
     TestClassicCompare='TestClassicCompare.cs'
     TestClassicBeautifyPreview='TestClassicBeautifyPreview.cs'
@@ -199,6 +200,8 @@ if ($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw "Classic column visibility, ordering, persistence, format transitions and dialog regression failed"}
     & "$OutputDirectory/TestClassicShotColumns.exe" (Join-Path $OutputDirectory "classic-shot-columns")
     if($LASTEXITCODE -ne 0){throw "Classic shot offsets, profile zones, frame display and column persistence regression failed"}
+    & "$OutputDirectory/TestClassicDetailColumns.exe" (Join-Path $OutputDirectory "classic-detail-columns")
+    if($LASTEXITCODE -ne 0){throw "Classic ASS layer, measured pixel width, format gating and column persistence regression failed"}
     & "$OutputDirectory/TestClassicErrorList.exe" (Join-Path $OutputDirectory "classic-error-list")
     if($LASTEXITCODE -ne 0){throw "Classic error categories, exports, navigation and batch reports regression failed"}
     & "$OutputDirectory/TestClassicTextTools.exe" (Join-Path $OutputDirectory "classic-text-tools")

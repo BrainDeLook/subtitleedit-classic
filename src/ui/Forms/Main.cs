@@ -248,6 +248,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void SetCurrentFormat(SubtitleFormat format)
         {
+            SyncClassicDetailColumns(format);
             if (format.IsVobSubIndexFile)
             {
                 UiUtil.InitializeSubtitleFormatComboBox(comboBoxSubtitleFormats.ComboBox, format);
@@ -4476,6 +4477,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ShowHideTextBasedFeatures(SubtitleFormat format)
         {
+            SyncClassicDetailColumns(format);
             textBoxSource.ReadOnly = format?.IsTextBased == false;
         }
 
@@ -10262,6 +10264,7 @@ namespace Nikse.SubtitleEdit.Forms
                 foreach (int index in SubtitleListview1.SelectedIndices)
                 {
                     _subtitle.Paragraphs[index].Layer = number;
+                    SubtitleListview1.SetTimeAndText(index, _subtitle.Paragraphs[index], _subtitle.GetParagraphOrDefault(index + 1));
                 }
             }
         }
@@ -10278,6 +10281,7 @@ namespace Nikse.SubtitleEdit.Forms
                     foreach (int index in selectedIndices)
                     {
                         _subtitle.Paragraphs[index].Layer = form.Layer;
+                        SubtitleListview1.SetTimeAndText(index, _subtitle.Paragraphs[index], _subtitle.GetParagraphOrDefault(index + 1));
                     }
 
                     numericUpDownLayer.Value = form.Layer;
@@ -11585,6 +11589,7 @@ namespace Nikse.SubtitleEdit.Forms
                 var layer = (int)numericUpDownLayer.Value;
                 MakeHistoryForUndo(string.Format(_language.BeforeX, $"{_language.Menu.ContextMenu.SetLayer}: {layer}"));
                 p.Layer = layer;
+                SubtitleListview1.SetTimeAndText(_subtitleListViewIndex, p, _subtitle.GetParagraphOrDefault(_subtitleListViewIndex + 1));
             }
         }
 
@@ -26554,6 +26559,7 @@ namespace Nikse.SubtitleEdit.Forms
         {
             _timerSlow.Stop();
             RefreshClassicShotColumns();
+            SubtitleListview1.RefreshDetailColumns();
 
             if (Configuration.Settings.General.DebugTranslationSync)
             {

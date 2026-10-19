@@ -31,7 +31,9 @@ namespace Nikse.SubtitleEdit.Controls
             Network,
             Forced,
             ShotIn,
-            ShotOut
+            ShotOut,
+            Layer,
+            PixelWidth
         }
 
         private List<SubtitleColumn> SubtitleColumns { get; }
@@ -84,6 +86,8 @@ namespace Nikse.SubtitleEdit.Controls
         public int ColumnIndexForced { get; private set; }
         public int ColumnIndexShotIn { get; private set; }
         public int ColumnIndexShotOut { get; private set; }
+        public int ColumnIndexLayer { get; private set; }
+        public int ColumnIndexPixelWidth { get; private set; }
 
         public bool IsOriginalTextColumnVisible => ColumnIndexTextOriginal >= 0;
         private string _lineSeparatorString = " || ";
@@ -470,6 +474,8 @@ namespace Nikse.SubtitleEdit.Controls
             ColumnIndexForced = GetColumnIndex(SubtitleColumn.Forced);
             ColumnIndexShotIn = GetColumnIndex(SubtitleColumn.ShotIn);
             ColumnIndexShotOut = GetColumnIndex(SubtitleColumn.ShotOut);
+            ColumnIndexLayer = GetColumnIndex(SubtitleColumn.Layer);
+            ColumnIndexPixelWidth = GetColumnIndex(SubtitleColumn.PixelWidth);
             ApplyColumnOrder();
         }
 
@@ -1804,6 +1810,8 @@ namespace Nikse.SubtitleEdit.Controls
                     case SubtitleColumn.Network:
                         item.SubItems.Add(string.Empty);
                         break;
+                    case SubtitleColumn.Layer:
+                    case SubtitleColumn.PixelWidth:
                     case SubtitleColumn.ShotIn:
                     case SubtitleColumn.ShotOut:
                         item.SubItems.Add(string.Empty);
@@ -1815,6 +1823,7 @@ namespace Nikse.SubtitleEdit.Controls
             }
 
             UpdateShotCells(item, paragraph);
+            UpdateDetailCells(item, paragraph);
             return item;
         }
 
@@ -2001,6 +2010,7 @@ namespace Nikse.SubtitleEdit.Controls
                 if (item.Tag is Paragraph paragraph)
                 {
                     UpdateCpsAndWpm(item, paragraph);
+                    UpdateDetailCells(item, paragraph, text);
                 }
             }
         }
@@ -2052,6 +2062,7 @@ namespace Nikse.SubtitleEdit.Controls
 
                 SetForced(index, paragraph.Forced);
                 UpdateShotCells(Items[index], paragraph);
+                UpdateDetailCells(item, paragraph);
 
                 UpdateCpsAndWpm(item, paragraph);
             }
