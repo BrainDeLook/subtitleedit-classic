@@ -1,5 +1,12 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.47
+
+- Right-clicking a misspelled grid word now opens a dedicated spelling popup with a bold word-specific heading, top-level native suggestions and shared word-list actions. Its final Standard subtitle menu command opens the normal cue context menu at the original grid location with a bypass that prevents reopening the spelling popup. Correct words and other cells keep the standard menu. Keyboard context actions use the same routing; original references remain read-only.
+- Bundled the full Russian Hunspell dictionary from LibreOffice, with unchanged source files, upstream copyright/redistribution notice and pinned source/checksums. The installer adds ru_RU only when no local copy exists; user words, proper names, selected dictionary and other settings are retained. Portable builds include the same dictionary files. Russian is available to both grid and existing classic spell checking; automatic language detection and explicit ru_RU/en_US selection are supported.
+- Verified real Russian inflections, typo detection and suggestions, markup-safe correction with Undo/Redo, popup structure and rendering, normal-menu bypass, read-only references, both interface languages and Russian/English dictionary switching. This increment remains local; no paid APIs are used.
+- Validation: 35 popup/Russian checks, 97 existing complete spelling-workflow checks and 2,201 combined regression checks passed. Local 4.0.25.47 and the full Russian dictionary were installed together, with checksums verified, a rollback EXE and Settings.xml unchanged.
+
 ## Unreleased — local 4.0.25.46
 
 - Adapted the complete grid live-spelling workflow: separate persistent enable/disable and automatic/manual dictionary selection under Spell check, a resizable settings dialog with the existing dictionary downloader, wavy underlines in all four grid-formatting modes, and mouse / Apps / Shift+F10 context actions. Checking works independently of the edit-box live-spelling and syntax-color settings. Missing dictionaries are reported without blocking subtitle editing.

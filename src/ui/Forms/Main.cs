@@ -8940,7 +8940,7 @@ namespace Nikse.SubtitleEdit.Forms
         {
             var format = GetCurrentSubtitleFormat();
             var formatType = format.GetType();
-            var coordinates = SubtitleListview1.PointToClient(Cursor.Position);
+            var coordinates = _gridSpellBypass?_gridSpellingMenuPoint:SubtitleListview1.PointToClient(Cursor.Position);
             if(SubtitleListview1.SpellingKeyboardMenu && FirstSelectedIndex>=0)
             {var cell=SubtitleListview1.Items[FirstSelectedIndex].SubItems[SubtitleListview1.ColumnIndexText].Bounds;coordinates=new Point(cell.Left+4,cell.Top+cell.Height/2);}
             var hitTest = SubtitleListview1.HitTest(coordinates);

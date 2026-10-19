@@ -1,0 +1,4 @@
+# Preserve the bundled Russian dictionary and its upstream notice byte for byte.
+Dictionaries/ru_RU.aff -text
+Dictionaries/ru_RU.dic -text
+Dictionaries/README_ru_RU.txt -text

@@ -110,7 +110,7 @@ class TestClassicGridSpelling
                 Call(main,"UndoToIndex",true);var restored=(Subtitle)Field(main,"_subtitle");Check(restored.Paragraphs[0].Text=="<i>speling</i> world","One editor Undo restores the misspelled original: "+language);
                 Call(main,"UndoToIndex",false);restored=(Subtitle)Field(main,"_subtitle");Check(restored.Paragraphs[0].Text=="<i>spelling</i> world","Redo restores the correction: "+language);
                 Call(main,"ApplyGridSpelling",restored.Paragraphs[0],hit,"oops");Check(restored.Paragraphs[0].Text=="<i>spelling</i> world","Stale menu snapshots cannot change edited text: "+language);
-                Call(main,"BuildGridSpellMenu",hit,0,true);Check(menu.DropDownItems.OfType<ToolStripMenuItem>().All(i=>!i.Enabled),"Original-column spelling menu cannot modify the reference: "+language);
+                Call(main,"BuildGridSpellMenu",hit,0,true);Check(!menu.DropDownItems.OfType<ToolStripMenuItem>().Any(i=>i.Tag as string=="suggestion") && menu.DropDownItems.OfType<ToolStripMenuItem>().Where(i=>i.Enabled).All(i=>i.Name=="classicStandardGridMenu"),"Original-column spelling menu cannot modify the reference: "+language);
                 // Both live renderers share explicit word-list actions, without reloading the native dictionary.
                 var editor=(SETextBox)Field(main,"textBoxListViewText");editor.Initialize(true,false);var advanced=(AdvancedTextBox)Field(editor,"_uiTextBox");
                 Call(advanced,"LoadDictionaries","en_US");advanced.IsSpellCheckerInitialized=true;
@@ -123,8 +123,8 @@ class TestClassicGridSpelling
                 Call(grid,"OnKeyDown",new KeyEventArgs(Keys.Apps));Check(grid.SpellingKeyboardMenu,"Keyboard context menu targets spelling in selected row: "+language);
                 restored.Paragraphs[0].Text="wrld word";grid.SetTimeAndText(0,restored.Paragraphs[0],null);grid.SelectIndexAndEnsureVisible(0);
                 using(var bitmap=new Bitmap(grid.Width,grid.Height))grid.DrawToBitmap(bitmap,new Rectangle(Point.Empty,grid.Size));
-                var context=(ContextMenuStrip)Field(main,"contextMenuStripListView");var opening=new System.ComponentModel.CancelEventArgs();Call(context,"OnOpening",opening);
-                Check(!opening.Cancel && menu.Available && menu.DropDownItems.Count>0,"Actual keyboard context-menu opening reaches spelling commands: "+language);
+                main.Hide();var context=(ContextMenuStrip)Field(main,"contextMenuStripListView");var opening=new System.ComponentModel.CancelEventArgs();Call(context,"OnOpening",opening);
+                Check(opening.Cancel && menu.Available && menu.DropDownItems.Count>0,"Actual keyboard context-menu opening reaches spelling commands: "+language);
                 var options=ClassicGridAppearance.Load(Path.Combine(root,"ClassicGridAppearance.json"));options.ShowForcedColumn=true;options.Save(Path.Combine(root,"ClassicGridAppearance.json"));
                 Call(main,"SaveGridSpelling",true,"en_US");Check(ClassicGridAppearance.Load(Path.Combine(root,"ClassicGridAppearance.json")).ShowForcedColumn,"Spelling preference saves preserve the other grid settings: "+language);
                 Call(main,"SaveGridSpelling",false,"en_US");Check(grid.GridSpelling==null,"Disabling grid spelling removes its renderer: "+language);
