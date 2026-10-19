@@ -33,7 +33,8 @@ namespace Nikse.SubtitleEdit.Controls
             ShotIn,
             ShotOut,
             Layer,
-            PixelWidth
+            PixelWidth,
+            Teletext
         }
 
         private List<SubtitleColumn> SubtitleColumns { get; }
@@ -88,6 +89,7 @@ namespace Nikse.SubtitleEdit.Controls
         public int ColumnIndexShotOut { get; private set; }
         public int ColumnIndexLayer { get; private set; }
         public int ColumnIndexPixelWidth { get; private set; }
+        public int ColumnIndexTeletext { get; private set; }
 
         public bool IsOriginalTextColumnVisible => ColumnIndexTextOriginal >= 0;
         private string _lineSeparatorString = " || ";
@@ -476,6 +478,7 @@ namespace Nikse.SubtitleEdit.Controls
             ColumnIndexShotOut = GetColumnIndex(SubtitleColumn.ShotOut);
             ColumnIndexLayer = GetColumnIndex(SubtitleColumn.Layer);
             ColumnIndexPixelWidth = GetColumnIndex(SubtitleColumn.PixelWidth);
+            ColumnIndexTeletext = GetColumnIndex(SubtitleColumn.Teletext);
             ApplyColumnOrder();
         }
 
@@ -1810,6 +1813,7 @@ namespace Nikse.SubtitleEdit.Controls
                     case SubtitleColumn.Network:
                         item.SubItems.Add(string.Empty);
                         break;
+                    case SubtitleColumn.Teletext:
                     case SubtitleColumn.Layer:
                     case SubtitleColumn.PixelWidth:
                     case SubtitleColumn.ShotIn:

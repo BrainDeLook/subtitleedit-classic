@@ -18,9 +18,16 @@ namespace Nikse.SubtitleEdit.Controls
         // Weak keys avoid retaining deleted cues or closed documents. No measurement when hidden.
         private readonly ConditionalWeakTable<Paragraph, WidthCache> _pixelWidths = new ConditionalWeakTable<Paragraph, WidthCache>();
 
+        public bool UseWebVttMetadata { get; set; }
+        private sealed class WebVttCache
+        {
+            public string Text, Classes, Voice;
+        }
+        private readonly ConditionalWeakTable<Paragraph, WebVttCache> _webVttValues = new ConditionalWeakTable<Paragraph, WebVttCache>();
+
         public void ShowDetailColumn(SubtitleColumn column, string title)
         {
-            if (column != SubtitleColumn.Layer && column != SubtitleColumn.PixelWidth)
+            if (column != SubtitleColumn.Layer && column != SubtitleColumn.PixelWidth && column != SubtitleColumn.Teletext && column != SubtitleColumn.Actor && column != SubtitleColumn.Extra)
                 throw new ArgumentOutOfRangeException(nameof(column));
             if (ColumnSuppressed(column)) return;
             var index = GetColumnIndex(column);
@@ -39,13 +46,33 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void RefreshDetailColumns()
         {
-            if (ColumnIndexLayer < 0 && ColumnIndexPixelWidth < 0) return;
+            if (ColumnIndexLayer < 0 && ColumnIndexPixelWidth < 0 && ColumnIndexTeletext < 0 && !UseWebVttMetadata) return;
             foreach (ListViewItem item in Items)
                 if (item.Tag is Paragraph paragraph) UpdateDetailCells(item, paragraph);
         }
 
+        private static void SetFormatCell(ListViewItem item, int index, string value)
+        {
+            if(index >= 0 && index < item.SubItems.Count && item.SubItems[index].Text != value) item.SubItems[index].Text = value;
+        }
+
         private void UpdateDetailCells(ListViewItem item, Paragraph paragraph, string text = null)
         {
+            text = text ?? paragraph.Text ?? string.Empty;
+            if (UseWebVttMetadata && (ColumnIndexActor >= 0 || ColumnIndexExtra >= 0))
+            {
+                var values = _webVttValues.GetOrCreateValue(paragraph);
+                if (values.Text != text)
+                {
+                    values.Text = text;
+                    values.Classes = ClassicFormatColumnValues.WebVttClasses(text);
+                    values.Voice = ClassicFormatColumnValues.WebVttVoice(text);
+                }
+                SetFormatCell(item, ColumnIndexActor, values.Voice ?? string.Empty);
+                SetFormatCell(item, ColumnIndexExtra, values.Classes ?? string.Empty);
+            }
+            if (ColumnIndexTeletext >= 0)
+                SetFormatCell(item, ColumnIndexTeletext, ClassicFormatColumnValues.Teletext(paragraph, text));
             if (ColumnIndexLayer >= 0 && ColumnIndexLayer < item.SubItems.Count)
             {
                 var layer = paragraph.Layer.ToString(CultureInfo.InvariantCulture);
@@ -54,7 +81,6 @@ namespace Nikse.SubtitleEdit.Controls
             if (ColumnIndexPixelWidth < 0 || ColumnIndexPixelWidth >= item.SubItems.Count) return;
             var general = Configuration.Settings.General;
             var cache = _pixelWidths.GetOrCreateValue(paragraph);
-            text = text ?? paragraph.Text ?? string.Empty;
             if (cache.Text != text || cache.Font != general.MeasureFontName || cache.Size != general.MeasureFontSize || cache.Bold != general.MeasureFontBold)
             {
                 var max = 0;

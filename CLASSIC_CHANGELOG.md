@@ -1,5 +1,12 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.45
+
+- Completed the remaining stable 5.3 grid-column display types: optional Teletext for EBU STL shows the stored row (1–23) and L/C/R alignment; missing/invalid rows stay blank unless the cue explicitly specifies alignment. A valid row without an explicit alignment displays C. Other formats hide the column while retaining its preference.
+- Adapted the Style and Actor column preferences to WebVTT class/voice aliases, including numbered WebVTT. Class names come from cue tags, preserve order and remove duplicates; voice displays the first voice tag. Existing text/voice/style edits refresh the derived values. Ordinary ASS style/actor fields resume when leaving WebVTT. Header insertion keeps existing rows aligned; format transitions, visibility and ordering retain the shared preferences.
+- Derived metadata is display-only and does not write into Paragraph.Extra/Actor or change cue text/timing. WebVTT parses cache by cue text with weak references. Added Russian/English column explanations and binary EBU STL / text WebVTT test fixtures. This increment remains local; no paid APIs are used.
+- Validation: 55 format-column checks and 2,069 combined regression checks passed, including real binary STL export/readback, WebVTT round trips, existing voice edits, duplicate classes, row/alignment boundaries, format transitions, visibility, restart and minimum-size layouts.
+
 ## Unreleased — local 4.0.25.44
 
 - Added optional Layer and Pixel width through Options / grid context menu → Columns. Layer displays ASS stacking order and updates through the existing single/multiple-cue layer editors; other formats hide it while retaining the saved preference. SSA Marked is not treated as an ASS layer. Pixel width displays the widest stripped line, using the classic measurement font, size and bold settings, and highlights values above the configured width limit when width syntax coloring is enabled. This is a text-width estimate, not a renderer for ASS positioning or effects.

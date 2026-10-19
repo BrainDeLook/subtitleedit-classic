@@ -24,7 +24,7 @@ namespace Nikse.SubtitleEdit.Forms
                 case C.Start:return tools.ListViewShowColumnStartTime;case C.End:return tools.ListViewShowColumnEndTime;case C.Duration:return tools.ListViewShowColumnDuration;
                 case C.CharactersPerSeconds:return tools.ListViewShowColumnCharsPerSec;case C.WordsPerMinute:return tools.ListViewShowColumnWordsPerMin;case C.Gap:return tools.ListViewShowColumnGap;
                 case C.Actor:return tools.ListViewShowColumnActor || SubtitleListview1.ColumnIndexActor>=0;case C.Region:return tools.ListViewShowColumnRegion;
-                case C.ShotIn:case C.ShotOut:case C.Layer:case C.PixelWidth:return false;
+                case C.ShotIn:case C.ShotOut:case C.Layer:case C.PixelWidth:case C.Teletext:return false;
                 case C.Forced:return ClassicGridAppearance.Load(ClassicGridAppearancePath).ShowForcedColumn;case C.Extra:return true;default:return true;
             }
         }
@@ -36,7 +36,7 @@ namespace Nikse.SubtitleEdit.Forms
                 case C.Number:return general.NumberSymbol;case C.Start:return general.StartTime;case C.End:return general.EndTime;case C.Duration:return general.Duration;
                 case C.Text:return general.Text;case C.TextOriginal:return ClassicAssistedText.L("Оригинал","Original text");case C.Actor:return general.Actor;case C.Region:return general.Region;
                 case C.CharactersPerSeconds:return general.CharsPerSec;case C.WordsPerMinute:return general.WordsPerMin;case C.Gap:return general.Gap;
-                case C.Layer:return general.Layer;case C.PixelWidth:return ClassicAssistedText.L("Ширина, px","Pixel width");
+                case C.Teletext:return "Teletext";case C.Layer:return general.Layer;case C.PixelWidth:return ClassicAssistedText.L("Ширина, px","Pixel width");
                 case C.ShotIn:return "Shot in";case C.ShotOut:return "Shot out";
                 case C.Extra:return ClassicAssistedText.L("Стиль / дополнительно","Style / extra");case C.Network:return ClassicAssistedText.L("Сетевой статус","Network status");default:return "Forced";
             }
@@ -46,7 +46,10 @@ namespace Nikse.SubtitleEdit.Forms
             if(column==C.Number || column==C.Text)return ClassicAssistedText.L("Обязательный столбец","Required column");
             if(column==C.TextOriginal)return ClassicAssistedText.L("Показывается, когда открыт оригинал","Shown while an original subtitle is open");
             if(column==C.Network)return ClassicAssistedText.L("Управляется сетевым сеансом","Managed by the network session");
-            if(column==C.Actor || column==C.Region || column==C.Extra)return ClassicAssistedText.L("В форматах, где этот столбец используется","When the subtitle format uses this column");
+            if(column==C.Region)return ClassicAssistedText.L("В форматах, где этот столбец используется","When the subtitle format uses this column");
+            if(column==C.Teletext)return ClassicAssistedText.L("Только EBU STL: строка 1–23 и выравнивание L/C/R","EBU STL only: row 1–23 and alignment L/C/R");
+            if(column==C.Extra)return ClassicAssistedText.L("Стиль формата; в WebVTT — классы из <c.class>","Format style; WebVTT classes from <c.class>");
+            if(column==C.Actor)return ClassicAssistedText.L("Актёр формата; в WebVTT — голос из <v Name>","Format actor; WebVTT voice from <v Name>");
             if(column==C.Layer)return ClassicAssistedText.L("Только ASS: слой наложения реплики","ASS only: subtitle stacking layer");
             if(column==C.PixelWidth)return ClassicAssistedText.L("Самая широкая строка без тегов. Используется шрифт измерения из параметров.","Widest line without tags, using the measurement font from Settings.");
             if(column==C.ShotIn || column==C.ShotOut)return ClassicAssistedText.L("От начала / конца до смены плана: − до, + после; мс или кадры. Нужны видео и смены плана.","Start / end minus nearest cut: − before, + after; ms or frames. Requires video and shot changes.");
@@ -107,11 +110,13 @@ namespace Nikse.SubtitleEdit.Forms
                         case C.Layer:if(format is AdvancedSubStationAlpha)SubtitleListview1.ShowDetailColumn(column,ColumnLabel(column));else SubtitleListview1.HideColumn(column);break;
                         case C.PixelWidth:if(!format.IsVobSubIndexFile)SubtitleListview1.ShowDetailColumn(column,ColumnLabel(column));else SubtitleListview1.HideColumn(column);break;
                         case C.ShotIn:case C.ShotOut:SubtitleListview1.ShowShotColumn(column,ColumnLabel(column));break;
-                        case C.Extra:if(format.HasStyleSupport)SubtitleListview1.ShowExtraColumn(ColumnLabel(column));break;
-                        case C.Actor:if(format is AdvancedSubStationAlpha || format is SubStationAlpha || format is CsvNuendo || format is PodcastIndexer)SubtitleListview1.ShowActorColumn(ColumnLabel(column));break;
+                        case C.Teletext:if(format is Ebu)SubtitleListview1.ShowDetailColumn(column,ColumnLabel(column));else SubtitleListview1.HideColumn(column);break;
+                        case C.Extra:if(format.HasStyleSupport || IsClassicWebVtt(format))SubtitleListview1.ShowExtraColumn(ColumnLabel(column));break;
+                        case C.Actor:if(format is AdvancedSubStationAlpha || format is SubStationAlpha || format is CsvNuendo || format is PodcastIndexer || IsClassicWebVtt(format))SubtitleListview1.ShowActorColumn(ColumnLabel(column));break;
                         case C.Region:if(format is TimedText10)SubtitleListview1.ShowRegionColumn(ColumnLabel(column));break;
                     }
                 }
+                SyncClassicDetailColumns(format);
                 SubtitleListview1.Fill(_subtitle,_subtitleOriginal);_selectedIndices=selected.ToList();RestoreSubtitleListviewIndices();
                 if(top>=0 && top<SubtitleListview1.Items.Count)SubtitleListview1.TopItem=SubtitleListview1.Items[top];
                 RefreshClassicForcedAvailability();
@@ -120,13 +125,27 @@ namespace Nikse.SubtitleEdit.Forms
             }
             finally{_applyingClassicColumns=false;}
         }
+        private static bool IsClassicWebVtt(SubtitleFormat format) => format is WebVTT || format is WebVTTFileWithLineNumber;
         private void SyncClassicDetailColumns(SubtitleFormat format)
         {
+            var webVtt=IsClassicWebVtt(format);
+            if(SubtitleListview1.UseWebVttMetadata && !webVtt)
+            {
+                SubtitleListview1.HideColumn(C.Extra);SubtitleListview1.HideColumn(C.Actor);
+            }
+            SubtitleListview1.UseWebVttMetadata=webVtt;
             if(_classicColumns==null)return;
-            foreach(var column in new[]{C.Layer,C.PixelWidth})
+            if(webVtt)
+            {
+                if(_classicColumns.Single(p=>p.Key==C.Extra.ToString()).Visible)SubtitleListview1.ShowDetailColumn(C.Extra,ClassicAssistedText.L("Стиль (WebVTT)","Style (WebVTT)"));
+                else SubtitleListview1.HideColumn(C.Extra);
+                if(_classicColumns.Single(p=>p.Key==C.Actor.ToString()).Visible)SubtitleListview1.ShowDetailColumn(C.Actor,ClassicAssistedText.L("Голос (WebVTT)","Voice (WebVTT)"));
+                else SubtitleListview1.HideColumn(C.Actor);
+            }
+            foreach(var column in new[]{C.Layer,C.PixelWidth,C.Teletext})
             {
                 var enabled=_classicColumns.Single(p=>p.Key==column.ToString()).Visible;
-                var available=column==C.Layer?format is AdvancedSubStationAlpha:format!=null && !format.IsVobSubIndexFile;
+                var available=column==C.Layer?format is AdvancedSubStationAlpha:column==C.Teletext?format is Ebu:format!=null && !format.IsVobSubIndexFile;
                 if(enabled && available)SubtitleListview1.ShowDetailColumn(column,ColumnLabel(column));
                 else SubtitleListview1.HideColumn(column);
             }
