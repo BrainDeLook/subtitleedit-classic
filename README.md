@@ -1,4 +1,4 @@
-# Subtitle Edit Classic
+﻿# Subtitle Edit Classic
 
 A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/SubtitleEdit/subtitleedit/tree/se4-legacy), preserving the original Windows Forms interface.
 
@@ -23,6 +23,8 @@ The local build adds **Layer** (ASS only) and **Pixel width** through **Options 
 The local build adds optional **Shot in / Shot out** in **Options → Columns…**. They show signed start/end offsets from the nearest shot change: negative before, positive after, in milliseconds or frames according to the editor time-display mode. Cells highlight the active timing profile’s adjustment zones. Load a video and generate/import shot changes first; distant boundaries and missing shot data stay blank. Visibility/order persist, and existing layouts keep these columns hidden. This addition is local and is not in the published installer.
 
 ## Classic 4.0.25
+
+The local ASS/SSA style manager now shares one import/copy workflow for files and library categories: Overwrite, Keep both or Cancel, with an optional answer for all conflicts in the operation. Name matching ignores case; overwrite preserves the existing name and position, while Keep both adds an available suffix. Cancel discards the whole transfer. Cross-format imports convert alignment, and library category/default metadata is retained. Move multiple selected styles together using Up/Down/Top/Bottom or Ctrl+Up/Down. Apply supports ordinary editor Undo. This addition is local and is not in the published installer.
 
 The local build adds **Options / subtitle-grid context menu → Columns…** for the existing classic columns: choose visibility, reorder with Up/Down or Alt+Up/Down, reset the draft, then apply with OK. Cancel leaves the layout unchanged. Header dragging and dialog changes persist across restarts and format changes. Original/network columns remain document-managed; format-dependent columns explain when they appear. The Forced toggle and legacy Tools settings stay synchronized. Cue data, original text, selection and undo history are retained. The additional format-dependent columns are described above. This addition is local and is not in the published installer.
 

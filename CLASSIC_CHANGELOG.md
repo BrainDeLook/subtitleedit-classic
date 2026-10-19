@@ -1,4 +1,10 @@
-# Subtitle Edit Classic changelog
+﻿# Subtitle Edit Classic changelog
+
+## Unreleased — local 4.0.25.52
+
+- Adapted stable 5.3 ASS/SSA style import and library transfer conflicts: Overwrite, Keep both or Cancel, with an operation-scoped answer for all conflicts. Matching ignores name casing; overwrite retains the target name and position, while Keep both allocates an available `_2`, `_3` suffix. Cancelling discards the entire transfer. Library categories and their default flags are retained.
+- File and library transfers share the same workflow. ASS/SSA imports convert native alignment values. Multiple selected styles can move up, down, to top or bottom together, including Ctrl+Up/Down, while retaining their relative order and selection. Applied file style changes support ordinary editor Undo.
+- Validation: 104 dedicated checks cover real ASS/SSA files, Russian/English dialogs, formatting round trips, conflict decisions, library isolation, reordered headers and editor Apply/Undo. This increment remains local; no paid APIs are used.
 
 ## Unreleased — local 4.0.25.51
 

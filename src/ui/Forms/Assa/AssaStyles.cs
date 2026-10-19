@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Forms.Styles;
 using Nikse.SubtitleEdit.Logic;
@@ -961,12 +961,12 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                     stylesAdded = true;
                     foreach (var style in styles)
                     {
-                        sb.AppendLine(style.ToRawAss(format));
+                        sb.AppendLine(_isSubStationAlpha?style.ToRawSsa(format):style.ToRawAss(format));
                     }
 
                     if (styles.Count == 0)
                     {
-                        sb.AppendLine(new SsaStyle().ToRawAss(format));
+                        sb.AppendLine(_isSubStationAlpha?new SsaStyle().ToRawSsa(format):new SsaStyle().ToRawAss(format));
                     }
 
                     sb.AppendLine();
@@ -1925,84 +1925,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private void buttonImport_Click(object sender, EventArgs e)
         {
-            openFileDialogImport.Title = LanguageSettings.Current.SubStationAlphaStyles.ImportStyleFromFile;
-            openFileDialogImport.InitialDirectory = Configuration.DataDirectory;
-            if (_isSubStationAlpha)
-            {
-                openFileDialogImport.Filter = SubStationAlpha.NameOfFormat + "|*.ssa|" + LanguageSettings.Current.General.AllFiles + "|*.*";
-                saveFileDialogStyle.FileName = "my_styles.ssa";
-            }
-            else
-            {
-                openFileDialogImport.Filter = AdvancedSubStationAlpha.NameOfFormat + "|*.ass|" + LanguageSettings.Current.General.AllFiles + "|*.*";
-                saveFileDialogStyle.FileName = "my_styles.ass";
-            }
-
-            if (openFileDialogImport.ShowDialog(this) == DialogResult.OK)
-            {
-                var s = new Subtitle();
-                var format = s.LoadSubtitle(openFileDialogImport.FileName, out _, null);
-                if (format != null && format.HasStyleSupport)
-                {
-                    var styles = AdvancedSubStationAlpha.GetStylesFromHeader(s.Header);
-                    if (styles.Count > 0)
-                    {
-                        using (var cs = new ChooseStyle(s, format.GetType() == typeof(SubStationAlpha)))
-                        {
-                            if (cs.ShowDialog(this) == DialogResult.OK && cs.SelectedStyleNames.Count > 0)
-                            {
-                                var styleNames = string.Join(", ", cs.SelectedStyleNames.ToArray());
-                                SsaStyle lastStyle = null;
-                                foreach (var styleName in cs.SelectedStyleNames)
-                                {
-                                    var style = AdvancedSubStationAlpha.GetSsaStyle(styleName, s.Header);
-                                    lastStyle = style;
-                                    if (GetSsaStyleFile(style.Name) != null && GetSsaStyleFile(style.Name) != null)
-                                    {
-                                        var count = 2;
-                                        var doRepeat = GetSsaStyleFile(style.Name + count) != null;
-                                        while (doRepeat)
-                                        {
-                                            doRepeat = GetSsaStyleFile(style.Name + count) != null;
-                                            count++;
-                                        }
-                                        style.RawLine = style.RawLine.Replace(" " + style.Name + ",", " " + style.Name + count + ",");
-                                        style.Name += count;
-                                    }
-
-                                    _doUpdate = false;
-                                    AddStyle(listViewStyles, style, _subtitle, _isSubStationAlpha);
-                                    AddStyleToHeader(style);
-                                    _header = _header.Trim();
-                                    if (_header.EndsWith("[Events]", StringComparison.Ordinal))
-                                    {
-                                        _header = _header.Substring(0, _header.Length - "[Events]".Length).Trim();
-                                        _header += Environment.NewLine + style.RawLine;
-                                        _header += Environment.NewLine + Environment.NewLine + "[Events]" + Environment.NewLine;
-                                    }
-                                    else
-                                    {
-                                        _header = _header.Trim() + Environment.NewLine + style.RawLine + Environment.NewLine;
-                                    }
-                                }
-
-                                if (lastStyle != null)
-                                {
-                                    UpdateSelectedIndices(listViewStyles);
-                                    textBoxStyleName.Text = lastStyle.Name;
-                                    textBoxStyleName.Focus();
-                                    _doUpdate = true;
-                                    SetControlsFromStyle(lastStyle);
-                                    listViewStyles_SelectedIndexChanged(null, null);
-                                }
-
-                                labelStatus.Text = string.Format(LanguageSettings.Current.SubStationAlphaStyles.StyleXImportedFromFileY, styleNames, openFileDialogImport.FileName);
-                                timerClearStatus.Start();
-                            }
-                        }
-                    }
-                }
-            }
+            ImportClassicStyles(false);
         }
 
         private void buttonExport_Click(object sender, EventArgs e)
@@ -2039,53 +1962,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private void buttonAddStyleToStorage_Click(object sender, EventArgs e)
         {
-            if (listViewStyles.SelectedItems.Count == 0)
-            {
-                return;
-            }
-
-            var addedStyles = new List<string>();
-            foreach (ListViewItem selectedItem in listViewStyles.SelectedItems)
-            {
-                string styleName = selectedItem.Text;
-                SsaStyle oldStyle = AdvancedSubStationAlpha.GetSsaStyle(styleName, _header);
-                var style = new SsaStyle(oldStyle);
-
-                if (StyleExistsInListView(styleName, listViewStorage))
-                {
-                    DialogResult result = Configuration.Settings.General.PromptDeleteLines ?
-                        MessageBox.Show(string.Format(LanguageSettings.Current.SubStationAlphaStyles.OverwriteX, styleName), string.Empty, MessageBoxButtons.YesNoCancel) :
-                        DialogResult.Yes;
-
-                    if (result != DialogResult.Yes)
-                    {
-                        continue;
-                    }
-
-                    var idx = _currentCategory.Styles.IndexOf(_currentCategory.Styles.First(p => p.Name == styleName));
-                    _currentCategory.Styles[idx] = style;
-                    listViewStorage.Items.RemoveAt(idx);
-                    AddStyle(listViewStorage, style, _subtitle, _isSubStationAlpha, idx);
-                    addedStyles.Add(styleName);
-                    continue;
-                }
-
-                _currentCategory.Styles.Add(style);
-                AddStyle(listViewStorage, style, _subtitle, _isSubStationAlpha);
-                addedStyles.Add(styleName);
-            }
-
-            listViewStorage.SelectedItems.Clear();
-            foreach (var style in addedStyles)
-            {
-                foreach (ListViewItem item in listViewStorage.Items)
-                {
-                    if (item.Text == style)
-                    {
-                        item.Selected = true;
-                    }
-                }
-            }
+            CopyClassicStyles(true);
         }
 
         private void listViewStorage_SelectedIndexChanged(object sender, EventArgs e)
@@ -2221,76 +2098,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private void buttonStorageImport_Click(object sender, EventArgs e)
         {
-            openFileDialogImport.Title = LanguageSettings.Current.SubStationAlphaStyles.ImportStyleFromFile;
-            openFileDialogImport.InitialDirectory = Configuration.DataDirectory;
-            if (_isSubStationAlpha)
-            {
-                openFileDialogImport.Filter = SubStationAlpha.NameOfFormat + "|*.ssa|" + LanguageSettings.Current.General.AllFiles + "|*.*";
-                saveFileDialogStyle.FileName = "my_styles.ssa";
-            }
-            else
-            {
-                openFileDialogImport.Filter = AdvancedSubStationAlpha.NameOfFormat + "|*.ass|" + LanguageSettings.Current.General.AllFiles + "|*.*";
-                saveFileDialogStyle.FileName = "my_styles.ass";
-            }
-
-            if (openFileDialogImport.ShowDialog(this) != DialogResult.OK)
-            {
-                return;
-            }
-
-            var s = new Subtitle();
-            var format = s.LoadSubtitle(openFileDialogImport.FileName, out _, null);
-            if (format != null && format.HasStyleSupport)
-            {
-                var styles = AdvancedSubStationAlpha.GetStylesFromHeader(s.Header);
-                if (styles.Count > 0)
-                {
-                    using (var cs = new ChooseStyle(s, format.GetType() == typeof(SubStationAlpha)))
-                    {
-                        if (cs.ShowDialog(this) == DialogResult.OK && cs.SelectedStyleNames.Count > 0)
-                        {
-                            var styleNames = string.Join(", ", cs.SelectedStyleNames.ToArray());
-
-                            SsaStyle lastStyle = null;
-                            foreach (var styleName in cs.SelectedStyleNames)
-                            {
-                                var style = AdvancedSubStationAlpha.GetSsaStyle(styleName, s.Header);
-                                lastStyle = style;
-                                if (GetSsaStyleStorage(style.Name) != null && GetSsaStyleStorage(style.Name) != null)
-                                {
-                                    var count = 2;
-                                    var doRepeat = GetSsaStyleStorage(style.Name + count) != null;
-                                    while (doRepeat)
-                                    {
-                                        doRepeat = GetSsaStyleStorage(style.Name + count) != null;
-                                        count++;
-                                    }
-                                    style.RawLine = style.RawLine.Replace(" " + style.Name + ",", " " + style.Name + count + ",");
-                                    style.Name += count;
-                                }
-
-                                _doUpdate = false;
-                                _currentCategory.Styles.Add(style);
-                                AddStyle(listViewStorage, style, _subtitle, _isSubStationAlpha);
-                            }
-
-                            if (lastStyle != null)
-                            {
-                                UpdateSelectedIndices(listViewStorage);
-                                textBoxStyleName.Text = lastStyle.Name;
-                                textBoxStyleName.Focus();
-                                _doUpdate = true;
-                                SetControlsFromStyle(lastStyle);
-                                listViewStorage_SelectedIndexChanged(null, null);
-                            }
-
-                            labelStatus.Text = string.Format(LanguageSettings.Current.SubStationAlphaStyles.StyleXImportedFromFileY, styleNames, openFileDialogImport.FileName);
-                            timerClearStatus.Start();
-                        }
-                    }
-                }
-            }
+            ImportClassicStyles(true);
         }
 
         private void buttonStorageExport_Click(object sender, EventArgs e)
@@ -2349,6 +2157,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private void listViewStyles_KeyDown(object sender, KeyEventArgs e)
         {
+            if(e.Modifiers==Keys.Control && (e.KeyCode==Keys.Up || e.KeyCode==Keys.Down)){MoveClassicStyles(listViewStyles,e.KeyCode==Keys.Up?"up":"down");e.SuppressKeyPress=true;return;}
             if (e.Modifiers == Keys.Control && e.KeyCode == Keys.C)
             {
                 buttonCopy_Click(null, null);
@@ -2376,6 +2185,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private void listViewStorage_KeyDown(object sender, KeyEventArgs e)
         {
+            if(e.Modifiers==Keys.Control && (e.KeyCode==Keys.Up || e.KeyCode==Keys.Down)){MoveClassicStyles(listViewStorage,e.KeyCode==Keys.Up?"up":"down");e.SuppressKeyPress=true;return;}
             if (e.Modifiers == Keys.Control && e.KeyCode == Keys.C)
             {
                 buttonStorageCopy_Click(null, null);
@@ -2532,54 +2342,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private void buttonAddToFile_Click(object sender, EventArgs e)
         {
-            if (listViewStorage.SelectedItems.Count == 0)
-            {
-                return;
-            }
-
-            var addedStyles = new List<string>();
-            foreach (ListViewItem selectedItem in listViewStorage.SelectedItems)
-            {
-                string styleName = selectedItem.Text;
-                SsaStyle oldStyle = _currentCategory.Styles.First(p => p.Name == styleName);
-                var style = new SsaStyle(oldStyle);
-
-                if (StyleExistsInListView(styleName, listViewStyles))
-                {
-                    DialogResult result = Configuration.Settings.General.PromptDeleteLines ?
-                        MessageBox.Show(string.Format(LanguageSettings.Current.SubStationAlphaStyles.OverwriteX, styleName), string.Empty, MessageBoxButtons.YesNoCancel) :
-                        DialogResult.Yes;
-
-                    if (result != DialogResult.Yes)
-                    {
-                        continue;
-                    }
-
-                    var items = GetListItemsAsList(listViewStyles);
-                    var idx = items.IndexOf(items.First(p => p.Text == styleName));
-                    listViewStyles.Items.RemoveAt(idx);
-                    ReplaceStyleInHeader(style);
-                    AddStyle(listViewStyles, style, _subtitle, _isSubStationAlpha, idx);
-                    addedStyles.Add(styleName);
-                    continue;
-                }
-
-                AddStyle(listViewStyles, style, _subtitle, _isSubStationAlpha);
-                AddStyleToHeader(style);
-                addedStyles.Add(styleName);
-            }
-
-            listViewStyles.SelectedItems.Clear();
-            foreach (var style in addedStyles)
-            {
-                foreach (ListViewItem item in listViewStyles.Items)
-                {
-                    if (item.Text == style)
-                    {
-                        item.Selected = true;
-                    }
-                }
-            }
+            CopyClassicStyles(false);
         }
 
         private void moveUpToolStripMenuItem_Click(object sender, EventArgs e)
@@ -2589,133 +2352,22 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private void MoveUp(ListView listView)
         {
-            if (listView.SelectedItems.Count != 1)
-            {
-                return;
-            }
-
-            var idx = listView.SelectedItems[0].Index;
-            if (idx == 0)
-            {
-                return;
-            }
-
-            var item = listView.SelectedItems[0];
-            listView.Items.RemoveAt(idx);
-            if (listView == listViewStorage)
-            {
-                var style = _currentCategory.Styles[idx];
-                _currentCategory.Styles.RemoveAt(idx);
-                _currentCategory.Styles.Insert(idx - 1, style);
-            }
-            else
-            {
-                var style = _currentFileStyles[idx];
-                _currentFileStyles.RemoveAt(idx);
-                _currentFileStyles.Insert(idx - 1, style);
-            }
-
-            idx--;
-            listView.Items.Insert(idx, item);
-            UpdateSelectedIndices(listView, idx);
+            MoveClassicStyles(listView,"up");
         }
 
         private void MoveDown(ListView listView)
         {
-            if (listView.SelectedItems.Count != 1)
-            {
-                return;
-            }
-
-            var idx = listView.SelectedItems[0].Index;
-            if (idx >= listView.Items.Count - 1)
-            {
-                return;
-            }
-
-            var item = listView.SelectedItems[0];
-            listView.Items.RemoveAt(idx);
-            if (listView == listViewStorage)
-            {
-                var style = _currentCategory.Styles[idx];
-                _currentCategory.Styles.RemoveAt(idx);
-                _currentCategory.Styles.Insert(idx + 1, style);
-            }
-            else
-            {
-                var style = _currentFileStyles[idx];
-                _currentFileStyles.RemoveAt(idx);
-                _currentFileStyles.Insert(idx + 1, style);
-            }
-
-            idx++;
-            listView.Items.Insert(idx, item);
-            UpdateSelectedIndices(listView, idx);
+            MoveClassicStyles(listView,"down");
         }
 
         private void MoveToTop(ListView listView)
         {
-            if (listView.SelectedItems.Count != 1)
-            {
-                return;
-            }
-
-            var idx = listView.SelectedItems[0].Index;
-            if (idx == 0)
-            {
-                return;
-            }
-
-            var item = listView.SelectedItems[0];
-            listView.Items.RemoveAt(idx);
-            if (listView == listViewStorage)
-            {
-                var style = _currentCategory.Styles[idx];
-                _currentCategory.Styles.RemoveAt(idx);
-                _currentCategory.Styles.Insert(0, style);
-            }
-            else
-            {
-                var style = _currentFileStyles[idx];
-                _currentFileStyles.RemoveAt(idx);
-                _currentFileStyles.Insert(0, style);
-            }
-
-            idx = 0;
-            listView.Items.Insert(idx, item);
-            UpdateSelectedIndices(listView, idx);
+            MoveClassicStyles(listView,"top");
         }
 
         private void MoveToBottom(ListView listView)
         {
-            if (listView.SelectedItems.Count != 1)
-            {
-                return;
-            }
-
-            var idx = listView.SelectedItems[0].Index;
-            if (idx == listView.Items.Count - 1)
-            {
-                return;
-            }
-
-            var item = listView.SelectedItems[0];
-            listView.Items.RemoveAt(idx);
-            if (listView == listViewStorage)
-            {
-                var style = _currentCategory.Styles[idx];
-                _currentCategory.Styles.RemoveAt(idx);
-                _currentCategory.Styles.Add(style);
-            }
-            else
-            {
-                var style = _currentFileStyles[idx];
-                _currentFileStyles.RemoveAt(idx);
-                _currentFileStyles.Add(style);
-            }
-
-            listView.Items.Add(item);
-            UpdateSelectedIndices(listView);
+            MoveClassicStyles(listView,"bottom");
         }
 
         private void moveDownToolStripMenuItem_Click(object sender, EventArgs e)
