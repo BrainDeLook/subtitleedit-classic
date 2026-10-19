@@ -166,6 +166,8 @@ namespace Nikse.SubtitleEdit.Logic
             { nameof(MainShortcuts.MainListViewSetActor6), "MainListViewSetActor6" },
             { nameof(MainShortcuts.MainListViewSetActor7), "MainListViewSetActor7" },
             { nameof(MainShortcuts.MainListViewSetActor8), "MainListViewSetActor8" },
+            { nameof(MainShortcuts.MainListViewSetActor9), "MainListViewSetActor9" },
+            { nameof(MainShortcuts.MainListViewSetActor10), "MainListViewSetActor10" },
             { nameof(MainShortcuts.MainListViewSetNewActor), "MainListViewSetNewActor" },
             { nameof(MainShortcuts.MainListViewToggleCustomTags), "MainListViewToggleCustomTags" },
             { nameof(MainShortcuts.MainListViewToggleDashes), "MainListViewToggleDashes" },

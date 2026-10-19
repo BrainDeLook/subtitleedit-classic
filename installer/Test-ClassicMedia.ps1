@@ -52,6 +52,7 @@ $tests=@{
     TestClassicGridFormatting='TestClassicGridFormatting.cs'
     TestClassicGridSpelling='TestClassicGridSpelling.cs'
     TestClassicSpellingPopup='TestClassicSpellingPopup.cs'
+    TestClassicCuePickers='TestClassicCuePickers.cs'
     TestClassicForcedLines='TestClassicForcedLines.cs'
     TestClassicColumns='TestClassicColumns.cs'
     TestClassicShotColumns='TestClassicShotColumns.cs'
@@ -201,6 +202,8 @@ if ($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw "Classic complete grid live spelling, dictionaries, markup-safe corrections, undo and settings regression failed"}
     & "$OutputDirectory/TestClassicSpellingPopup.exe" (Join-Path $OutputDirectory "classic-spelling-popup") (Join-Path $PSScriptRoot "../Dictionaries")
     if($LASTEXITCODE -ne 0){throw "Classic focused spelling popup, standard-menu fallback and bundled full Russian dictionary regression failed"}
+    & "$OutputDirectory/TestClassicCuePickers.exe" (Join-Path $OutputDirectory "classic-cue-pickers")
+    if($LASTEXITCODE -ne 0){throw "Classic actor/style pickers, session order, assignment, shortcuts and undo regression failed"}
     & "$OutputDirectory/TestClassicForcedLines.exe" (Join-Path $OutputDirectory "classic-forced-lines")
     if($LASTEXITCODE -ne 0){throw "Classic forced marks, persistence, undo, grid and subset export regression failed"}
     & "$OutputDirectory/TestClassicColumns.exe" (Join-Path $OutputDirectory "classic-columns")

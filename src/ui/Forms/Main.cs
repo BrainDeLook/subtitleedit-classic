@@ -1751,6 +1751,7 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicForcedLines();
             InitializeClassicColumns();
             InitializeClassicGridSpelling();
+            InitializeClassicCuePickers();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -9383,16 +9384,8 @@ namespace Nikse.SubtitleEdit.Forms
                     setStylesForSelectedLinesToolStripMenuItem.Text = _language.Menu.ContextMenu.SetStyle;
                 }
 
-                // actor
-                foreach (var p in _subtitle.Paragraphs)
-                {
-                    if (!string.IsNullOrEmpty(p.Actor) && !actors.Contains(p.Actor))
-                    {
-                        actors.Add(p.Actor);
-                    }
-
-                    actors.Sort();
-                }
+                // Actor shortcuts follow a stable order for this document session.
+                actors = _classicActorOrder.Get(_subtitle);
 
                 setActorForSelectedLinesToolStripMenuItem.DropDownItems.Clear();
                 for (var index = 0; index < actors.Count; index++)
@@ -10246,6 +10239,12 @@ namespace Nikse.SubtitleEdit.Forms
         }
         private void SetActor(string actor)
         {
+            if(ClassicPickersSupported && !string.IsNullOrEmpty(actor))
+            {
+                ReloadFromSourceView();
+                ApplyClassicPickerChoice(_subtitle,AssistedContent(_subtitle),_subtitle.Header,SubtitleListview1.SelectedIndices.Cast<int>().ToArray(),false,actor,false);
+                return;
+            }
             if (!string.IsNullOrEmpty(actor))
             {
                 MakeHistoryForUndo(LanguageSettings.Current.Main.Menu.ContextMenu.SetActor + ": " + actor);
@@ -10395,11 +10394,7 @@ namespace Nikse.SubtitleEdit.Forms
                     string actor = form.InputText;
                     if (!string.IsNullOrEmpty(actor))
                     {
-                        foreach (int index in SubtitleListview1.SelectedIndices)
-                        {
-                            _subtitle.Paragraphs[index].Actor = actor;
-                            SubtitleListview1.SetTimeAndText(index, _subtitle.Paragraphs[index], _subtitle.GetParagraphOrDefault(index + 1));
-                        }
+                        SetActor(actor);
                     }
                 }
             }
@@ -10418,6 +10413,12 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void RemoveActors(object sender, EventArgs e)
         {
+            if(ClassicPickersSupported)
+            {
+                ReloadFromSourceView();
+                ApplyClassicPickerChoice(_subtitle,AssistedContent(_subtitle),_subtitle.Header,SubtitleListview1.SelectedIndices.Cast<int>().ToArray(),false,string.Empty,false);
+                return;
+            }
             foreach (int index in SubtitleListview1.SelectedIndices)
             {
                 _subtitle.Paragraphs[index].Actor = null;
@@ -17777,6 +17778,16 @@ namespace Nikse.SubtitleEdit.Forms
                 SetActorVoice(7);
                 e.SuppressKeyPress = true;
             }
+            else if (ClassicShortcutMatches(e.KeyData, _shortcuts.MainListViewSetActor9, nameof(MainShortcuts.MainListViewSetActor9)))
+            {
+                SetActorVoice(8);
+                e.SuppressKeyPress = true;
+            }
+            else if (ClassicShortcutMatches(e.KeyData, _shortcuts.MainListViewSetActor10, nameof(MainShortcuts.MainListViewSetActor10)))
+            {
+                SetActorVoice(9);
+                e.SuppressKeyPress = true;
+            }
             else if (ClassicShortcutMatches(e.KeyData, _shortcuts.MainGeneralToggleMode, nameof(MainShortcuts.MainGeneralToggleMode)) && Configuration.Settings.General.ShowVideoControls)
             {
                 var nextModeIndex = tabControlModes.SelectedIndex + 1;
@@ -19555,16 +19566,7 @@ namespace Nikse.SubtitleEdit.Forms
             var formatType = GetCurrentSubtitleFormat().GetType();
             if (formatType == typeof(AdvancedSubStationAlpha) || formatType == typeof(SubStationAlpha))
             {
-                var actors = new List<string>();
-                foreach (var p in _subtitle.Paragraphs)
-                {
-                    if (!string.IsNullOrEmpty(p.Actor) && !actors.Contains(p.Actor))
-                    {
-                        actors.Add(p.Actor);
-                    }
-
-                    actors.Sort();
-                }
+                var actors = _classicActorOrder.Get(_subtitle);
 
                 if (index >= 0 && index < actors.Count)
                 {
@@ -26846,6 +26848,7 @@ namespace Nikse.SubtitleEdit.Forms
         {
             _shortcuts.SetShortcuts();
             RefreshClassicPaletteShortcut();
+            RefreshClassicCuePickerKeys();
             newToolStripMenuItem.ShortcutKeys = UiUtil.GetKeys(Configuration.Settings.Shortcuts.MainFileNew);
             openToolStripMenuItem.ShortcutKeys = UiUtil.GetKeys(Configuration.Settings.Shortcuts.MainFileOpen);
             toolStripMenuItemOpenKeepVideo.ShortcutKeys = UiUtil.GetKeys(Configuration.Settings.Shortcuts.MainFileOpenKeepVideo);
