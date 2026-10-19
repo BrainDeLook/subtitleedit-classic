@@ -1,5 +1,12 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.43
+
+- Added optional Shot in / Shot out columns through Options / grid context menu → Columns, using stable 5.3 signed cue-minus-cut offsets. Negative values precede the nearest cut; positive values follow it. Values use milliseconds or frames according to the editor time-display mode. The lookup window is at least one second and expands for wider timing-profile zones.
+- Highlighted boundaries that the active Beautify time codes profile would move, preserving inclusive red zones, exclusive green edges and separate in/out gap targets. Frame offsets round cue and cut separately, including fractional frame rates. Timing edits and refills refresh immediately; shot-list, video, frame-rate and profile changes refresh through the editor timer. Missing video/shot data clears values and colors.
+- Both columns support independent visibility, reordering and restart persistence. Existing saved layouts leave them hidden. The display preserves subtitle text, timing, metadata, selection and undo. This increment remains local; no paid APIs are used.
+- Validation: 33 shot-column checks and 1,974 combined regression checks passed. Updating both columns for 10,000 cues took approximately 0.3 seconds. The local EXE was installed with a rollback copy and Settings.xml unchanged.
+
 ## Unreleased — local 4.0.25.42
 
 - Added Options / grid context menu → Columns, adapting the stable 5.3 visibility/order workflow for the existing classic columns. A resizable Russian/English dialog provides checkboxes, Up/Down and Alt+Up/Down, draft-only reset, OK and Cancel. Number, text, original and network visibility stay controlled by the editor; format-dependent actor, region and style columns explain their availability. This does not add the remaining SE5-only column types.

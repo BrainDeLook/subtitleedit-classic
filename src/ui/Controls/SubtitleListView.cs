@@ -12,7 +12,7 @@ using Nikse.SubtitleEdit.Core.Settings;
 
 namespace Nikse.SubtitleEdit.Controls
 {
-    public sealed class SubtitleListView : ListView
+    public sealed partial class SubtitleListView : ListView
     {
         public enum SubtitleColumn
         {
@@ -29,7 +29,9 @@ namespace Nikse.SubtitleEdit.Controls
             TextOriginal,
             Extra,
             Network,
-            Forced
+            Forced,
+            ShotIn,
+            ShotOut
         }
 
         private List<SubtitleColumn> SubtitleColumns { get; }
@@ -80,6 +82,8 @@ namespace Nikse.SubtitleEdit.Controls
         public int ColumnIndexExtra { get; private set; }
         public int ColumnIndexNetwork { get; private set; }
         public int ColumnIndexForced { get; private set; }
+        public int ColumnIndexShotIn { get; private set; }
+        public int ColumnIndexShotOut { get; private set; }
 
         public bool IsOriginalTextColumnVisible => ColumnIndexTextOriginal >= 0;
         private string _lineSeparatorString = " || ";
@@ -464,6 +468,8 @@ namespace Nikse.SubtitleEdit.Controls
             ColumnIndexExtra = GetColumnIndex(SubtitleColumn.Extra);
             ColumnIndexNetwork = GetColumnIndex(SubtitleColumn.Network);
             ColumnIndexForced = GetColumnIndex(SubtitleColumn.Forced);
+            ColumnIndexShotIn = GetColumnIndex(SubtitleColumn.ShotIn);
+            ColumnIndexShotOut = GetColumnIndex(SubtitleColumn.ShotOut);
             ApplyColumnOrder();
         }
 
@@ -1798,12 +1804,17 @@ namespace Nikse.SubtitleEdit.Controls
                     case SubtitleColumn.Network:
                         item.SubItems.Add(string.Empty);
                         break;
+                    case SubtitleColumn.ShotIn:
+                    case SubtitleColumn.ShotOut:
+                        item.SubItems.Add(string.Empty);
+                        break;
                     case SubtitleColumn.Forced:
                         item.SubItems.Add(paragraph.Forced ? "✓" : string.Empty);
                         break;
                 }
             }
 
+            UpdateShotCells(item, paragraph);
             return item;
         }
 
@@ -2040,6 +2051,7 @@ namespace Nikse.SubtitleEdit.Controls
                 }
 
                 SetForced(index, paragraph.Forced);
+                UpdateShotCells(Items[index], paragraph);
 
                 UpdateCpsAndWpm(item, paragraph);
             }

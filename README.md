@@ -6,6 +6,8 @@ A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/Su
 
 English · [Русский](README.ru.md)
 
+The local build adds optional **Shot in / Shot out** in **Options → Columns…**. They show signed start/end offsets from the nearest shot change: negative before, positive after, in milliseconds or frames according to the editor time-display mode. Cells highlight the active timing profile’s adjustment zones. Load a video and generate/import shot changes first; distant boundaries and missing shot data stay blank. Visibility/order persist, and existing layouts keep these columns hidden. This addition is local and is not in the published installer.
+
 ## Classic 4.0.25
 
 The local build adds **Options / subtitle-grid context menu → Columns…** for the existing classic columns: choose visibility, reorder with Up/Down or Alt+Up/Down, reset the draft, then apply with OK. Cancel leaves the layout unchanged. Header dragging and dialog changes persist across restarts and format changes. Original/network columns remain document-managed; format-dependent columns explain when they appear. The Forced toggle and legacy Tools settings stay synchronized. Cue data, original text, selection and undo history are retained. The remaining SE5-only column types are separate work; this addition is local and is not in the published installer.

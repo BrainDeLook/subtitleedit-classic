@@ -24,6 +24,7 @@ namespace Nikse.SubtitleEdit.Forms
                 case C.Start:return tools.ListViewShowColumnStartTime;case C.End:return tools.ListViewShowColumnEndTime;case C.Duration:return tools.ListViewShowColumnDuration;
                 case C.CharactersPerSeconds:return tools.ListViewShowColumnCharsPerSec;case C.WordsPerMinute:return tools.ListViewShowColumnWordsPerMin;case C.Gap:return tools.ListViewShowColumnGap;
                 case C.Actor:return tools.ListViewShowColumnActor || SubtitleListview1.ColumnIndexActor>=0;case C.Region:return tools.ListViewShowColumnRegion;
+                case C.ShotIn:case C.ShotOut:return false;
                 case C.Forced:return ClassicGridAppearance.Load(ClassicGridAppearancePath).ShowForcedColumn;case C.Extra:return true;default:return true;
             }
         }
@@ -35,6 +36,7 @@ namespace Nikse.SubtitleEdit.Forms
                 case C.Number:return general.NumberSymbol;case C.Start:return general.StartTime;case C.End:return general.EndTime;case C.Duration:return general.Duration;
                 case C.Text:return general.Text;case C.TextOriginal:return ClassicAssistedText.L("Оригинал","Original text");case C.Actor:return general.Actor;case C.Region:return general.Region;
                 case C.CharactersPerSeconds:return general.CharsPerSec;case C.WordsPerMinute:return general.WordsPerMin;case C.Gap:return general.Gap;
+                case C.ShotIn:return "Shot in";case C.ShotOut:return "Shot out";
                 case C.Extra:return ClassicAssistedText.L("Стиль / дополнительно","Style / extra");case C.Network:return ClassicAssistedText.L("Сетевой статус","Network status");default:return "Forced";
             }
         }
@@ -44,6 +46,7 @@ namespace Nikse.SubtitleEdit.Forms
             if(column==C.TextOriginal)return ClassicAssistedText.L("Показывается, когда открыт оригинал","Shown while an original subtitle is open");
             if(column==C.Network)return ClassicAssistedText.L("Управляется сетевым сеансом","Managed by the network session");
             if(column==C.Actor || column==C.Region || column==C.Extra)return ClassicAssistedText.L("В форматах, где этот столбец используется","When the subtitle format uses this column");
+            if(column==C.ShotIn || column==C.ShotOut)return ClassicAssistedText.L("От начала / конца до смены плана: − до, + после; мс или кадры. Нужны видео и смены плана.","Start / end minus nearest cut: − before, + after; ms or frames. Requires video and shot changes.");
             return string.Empty;
         }
         private void InitializeClassicColumns()
@@ -98,6 +101,7 @@ namespace Nikse.SubtitleEdit.Forms
                     {
                         case C.Start:SubtitleListview1.ShowStartColumn(ColumnLabel(column));break;case C.End:SubtitleListview1.ShowEndColumn(ColumnLabel(column));break;case C.Duration:SubtitleListview1.ShowDurationColumn(ColumnLabel(column));break;
                         case C.CharactersPerSeconds:SubtitleListview1.ShowCharsSecColumn(ColumnLabel(column));break;case C.WordsPerMinute:SubtitleListview1.ShowWordsMinColumn(ColumnLabel(column));break;case C.Gap:SubtitleListview1.ShowGapColumn(ColumnLabel(column));break;case C.Forced:SubtitleListview1.ShowForcedColumn("Forced");break;
+                        case C.ShotIn:case C.ShotOut:SubtitleListview1.ShowShotColumn(column,ColumnLabel(column));break;
                         case C.Extra:if(format.HasStyleSupport)SubtitleListview1.ShowExtraColumn(ColumnLabel(column));break;
                         case C.Actor:if(format is AdvancedSubStationAlpha || format is SubStationAlpha || format is CsvNuendo || format is PodcastIndexer)SubtitleListview1.ShowActorColumn(ColumnLabel(column));break;
                         case C.Region:if(format is TimedText10)SubtitleListview1.ShowRegionColumn(ColumnLabel(column));break;
@@ -106,8 +110,16 @@ namespace Nikse.SubtitleEdit.Forms
                 SubtitleListview1.Fill(_subtitle,_subtitleOriginal);_selectedIndices=selected.ToList();RestoreSubtitleListviewIndices();
                 if(top>=0 && top<SubtitleListview1.Items.Count)SubtitleListview1.TopItem=SubtitleListview1.Items[top];
                 RefreshClassicForcedAvailability();
+                RefreshClassicShotColumns();
             }
             finally{_applyingClassicColumns=false;}
+        }
+        private void RefreshClassicShotColumns()
+        {
+            if(SubtitleListview1.ColumnIndexShotIn<0 && SubtitleListview1.ColumnIndexShotOut<0)return;
+            SubtitleListview1.UpdateShotChangeOffsets(string.IsNullOrEmpty(_videoFileName)?null:audioVisualizer.ShotChanges,
+                Configuration.Settings.BeautifyTimeCodes.Profile, Configuration.Settings.General.CurrentFrameRate,
+                Configuration.Settings.General.UseTimeFormatHHMMSSFF);
         }
         private void SyncClassicForcedColumnPreference(bool visible)
         {

@@ -26553,6 +26553,7 @@ namespace Nikse.SubtitleEdit.Forms
         private void TimerSlowTick(object sender, EventArgs e)
         {
             _timerSlow.Stop();
+            RefreshClassicShotColumns();
 
             if (Configuration.Settings.General.DebugTranslationSync)
             {
