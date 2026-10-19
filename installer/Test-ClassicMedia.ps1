@@ -1,4 +1,4 @@
-﻿param(
+param(
     [Parameter(Mandatory=$true)][string]$ApplicationDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [string]$FFmpegLocation,
@@ -29,7 +29,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $OutputDirectory 'libmpv-2.dll'))) {
 $sdk=Get-ChildItem 'C:/Program Files/dotnet/sdk' -Directory | Sort-Object { [version]$_.Name } | Select-Object -Last 1
 $framework="$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319"
 $refs=@('/reference:"'+(Join-Path $OutputDirectory 'SubtitleEdit.exe')+'"')
-foreach($name in @('mscorlib','System','System.Core','System.Drawing','System.Windows.Forms','System.Data','System.Xml','System.Xml.Linq','System.Runtime.Serialization','System.Net.Http','System.IO.Compression','System.IO.Compression.FileSystem')) {
+foreach($name in @('mscorlib','System','System.Core','System.Numerics','System.Drawing','System.Windows.Forms','System.Data','System.Xml','System.Xml.Linq','System.Runtime.Serialization','System.Net.Http','System.IO.Compression','System.IO.Compression.FileSystem')) {
  $refs+='/reference:"'+(Join-Path $framework "$name.dll")+'"'
 }
 foreach($dll in Get-ChildItem $OutputDirectory -Filter '*.dll') {
@@ -56,6 +56,9 @@ $tests=@{
     TestClassicActorColumn='TestClassicActorColumn.cs'
     TestClassicExternalChanges='TestClassicExternalChanges.cs'
     TestClassicStyleTransfer='TestClassicStyleTransfer.cs'
+    TestClassicFiveBlocks='TestClassicFiveBlocks.cs'
+    TestClassicFiveBlocksNative='TestClassicFiveBlocksNative.cs'
+    TestClassicFiveBlocksUi='TestClassicFiveBlocksUi.cs'
     TestClassicForcedLines='TestClassicForcedLines.cs'
     TestClassicColumns='TestClassicColumns.cs'
     TestClassicShotColumns='TestClassicShotColumns.cs'
@@ -100,6 +103,14 @@ foreach($name in $tests.Keys) {
     & dotnet "$($sdk.FullName)/Roslyn/bincore/csc.dll" "@$response"
     if($LASTEXITCODE -ne 0){throw "$name compilation failed"}
     Copy-Item "$OutputDirectory/SubtitleEdit.exe.config" "$OutputDirectory/$name.exe.config" -Force
+}
+& "$OutputDirectory/TestClassicFiveBlocks.exe"
+if($LASTEXITCODE -ne 0){throw 'Classic fonts, ASS effects/draw and stable formats regression failed'}
+& "$OutputDirectory/TestClassicFiveBlocksUi.exe" (Join-Path $OutputDirectory 'classic-five-blocks-ui')
+if($LASTEXITCODE -ne 0){throw 'Classic five-block dialog layout and editor transaction regression failed'}
+if($FFmpegLocation){
+    & "$OutputDirectory/TestClassicFiveBlocksNative.exe" $FFmpegLocation
+    if($LASTEXITCODE -ne 0){throw 'Classic native image, spreadsheet, captions, DVD and video-tools regression failed'}
 }
 foreach($mode in @('unit','ui')) {
     & "$OutputDirectory/TestClassicVideoOcr.exe" $mode (Join-Path $OutputDirectory "ocr-$mode")

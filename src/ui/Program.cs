@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Forms;
+using Nikse.SubtitleEdit.Forms;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -14,6 +14,7 @@ namespace Nikse.SubtitleEdit
         [STAThread]
         private static void Main()
         {
+            Nikse.SubtitleEdit.Logic.ClassicFormats.ClassicFormatRegistry.Register();
 #if !DEBUG
             // Add the event handler for handling UI thread exceptions to the event.
             Application.ThreadException += Application_ThreadException;

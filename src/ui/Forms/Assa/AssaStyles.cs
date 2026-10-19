@@ -36,6 +36,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
         public List<NameEdit> RenameActions { get; set; }
         private readonly Timer _previewTimer = new Timer();
         private string _startName;
+        public string UpdatedFooter => _subtitle.Footer;
         private string _editedName;
         private string _header;
         private readonly List<SsaStyle> _currentFileStyles;
@@ -105,6 +106,12 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 GetFonts(subtitle.Footer.SplitToLines());
             }
 
+            var chooseFont = new LinkLabel { AutoSize = true, Text = Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Выбрать шрифт…", "Choose font…"), Location = labelFontName.Location };
+            chooseFont.LinkClicked += (s,e) => { using(var picker = new ClassicFontPicker(comboBoxFontName.Text)) if(picker.ShowDialog(this)==DialogResult.OK) { if(!comboBoxFontName.Items.Contains(picker.SelectedFont))comboBoxFontName.Items.Add(picker.SelectedFont); comboBoxFontName.SelectedItem=picker.SelectedFont; } };
+            labelFontName.Visible=false;groupBoxFont.Controls.Add(chooseFont);chooseFont.BringToFront();
+            var collectorMenu=new ContextMenuStrip();
+            collectorMenu.Items.Add(Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Собрать шрифты…","Collect fonts…"),null,(s,e)=>{using(var collector=new ClassicFontCollector(_subtitle)){if(collector.ShowDialog(this)==DialogResult.OK)_subtitle.Footer=collector.UpdatedFooter;}});
+            comboBoxFontName.ContextMenuStrip=collectorMenu;
             comboBoxFontName.Items.Clear();
             foreach (var x in FontHelper.GetAllSupportedFontFamilies())
             {

@@ -369,6 +369,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         public Main()
         {
+            Nikse.SubtitleEdit.Logic.ClassicFormats.ClassicFormatRegistry.Register();
             if (Configuration.IsRunningOnLinux)
             {
                 NativeMethods.setlocale(NativeMethods.LC_NUMERIC, "C");
@@ -1753,6 +1754,7 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicGridSpelling();
             InitializeClassicCuePickers();
             InitializeClassicExternalChanges();
+            InitializeClassicFiveBlocks();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -3664,7 +3666,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             if (format == null)
             {
-                foreach (var f in SubtitleFormat.GetBinaryFormats(false))
+                foreach (var f in Nikse.SubtitleEdit.Logic.ClassicFormats.ClassicFormatRegistry.Binary(false))
                 {
                     if (f.IsMine(null, fileName))
                     {
@@ -3706,7 +3708,7 @@ namespace Nikse.SubtitleEdit.Forms
             if (format == null)
             {
                 var lines = FileUtil.ReadAllTextShared(fileName, encodingFromFile).SplitToLines();
-                foreach (var f in SubtitleFormat.GetTextOtherFormats())
+                foreach (var f in Nikse.SubtitleEdit.Logic.ClassicFormats.ClassicFormatRegistry.Other())
                 {
                     if (f.IsMine(lines, fileName))
                     {
@@ -18764,7 +18766,7 @@ namespace Nikse.SubtitleEdit.Forms
             else if (mediaPlayer.Chapters?.Length > 0 && ClassicShortcutMatches(e.KeyData, _shortcuts.VideoGoToPrevChapter, nameof(MainShortcuts.VideoGoToPrevChapter)))
             {
                 var cp = mediaPlayer.CurrentPosition - 0.01;
-                foreach (var chapter in mediaPlayer.Chapters.Reverse<MatroskaChapter>())
+                foreach (var chapter in Enumerable.Reverse(mediaPlayer.Chapters))
                 {
                     if (chapter.StartTime < cp)
                     {
@@ -22946,7 +22948,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ImportDvdSubtitle(string fileName)
         {
-            using (var formSubRip = new DvdSubRip(Handle, fileName))
+            using (var formSubRip = new ClassicDvdImport(fileName))
             {
                 if (formSubRip.ShowDialog(this) == DialogResult.OK)
                 {
@@ -22963,11 +22965,13 @@ namespace Nikse.SubtitleEdit.Forms
                                     subs = showSubtitles.SelectedVobSubMergedPacks;
                                 }
 
-                                formSubOcr.Initialize(subs, formSubRip.Palette, Configuration.Settings.VobSubOcr, formSubRip.SelectedLanguage);
+                                formSubOcr.Initialize(subs, formSubRip.Palette, Configuration.Settings.VobSubOcr, showSubtitles.SelectedLanguageString ?? formSubRip.SelectedLanguage);
                                 if (formSubOcr.ShowDialog(this) == DialogResult.OK)
                                 {
+                                    if (!ContinueNewOrExit()) return;
                                     MakeHistoryForUndo(_language.BeforeImportingDvdSubtitle);
-                                    FileNew();
+                                    ResetSubtitle();
+                                    CheckSecondSubtitleReset();
                                     _subtitle.Paragraphs.Clear();
                                     SetCurrentFormat(Configuration.Settings.General.DefaultSubtitleFormat);
                                     foreach (var p in formSubOcr.SubtitleFromOcr.Paragraphs)
@@ -23399,7 +23403,7 @@ namespace Nikse.SubtitleEdit.Forms
 
                 if (format == null)
                 {
-                    var formats = SubtitleFormat.GetBinaryFormats(true).Union(SubtitleFormat.GetTextOtherFormats()).Union(new SubtitleFormat[]
+                    var formats = SubtitleFormat.GetBinaryFormats(true).Union(Nikse.SubtitleEdit.Logic.ClassicFormats.ClassicFormatRegistry.Other()).Union(new SubtitleFormat[]
                     {
                         new TimeCodesOnly1(),
                         new TimeCodesOnly2(),
@@ -23563,7 +23567,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             if (format == null)
             {
-                foreach (var binaryFormat in SubtitleFormat.GetBinaryFormats(false))
+                foreach (var binaryFormat in Nikse.SubtitleEdit.Logic.ClassicFormats.ClassicFormatRegistry.Binary(false))
                 {
                     if (binaryFormat.IsMine(null, fileName))
                     {
@@ -23577,7 +23581,7 @@ namespace Nikse.SubtitleEdit.Forms
             if (format == null)
             {
                 var lines = FileUtil.ReadAllTextShared(fileName, LanguageAutoDetect.GetEncodingFromFile(fileName)).SplitToLines();
-                foreach (var f in SubtitleFormat.GetTextOtherFormats())
+                foreach (var f in Nikse.SubtitleEdit.Logic.ClassicFormats.ClassicFormatRegistry.Other())
                 {
                     if (f.IsMine(lines, fileName))
                     {
@@ -32610,12 +32614,13 @@ namespace Nikse.SubtitleEdit.Forms
 
         public void ApplyAssaStyles(AssaStyles styles)
         {
-            if (_subtitle.Header != styles.Header)
+            if (_subtitle.Header != styles.Header || _subtitle.Footer != styles.UpdatedFooter)
             {
                 MakeHistoryForUndo(styles.Text);
             }
 
             _subtitle.Header = styles.Header;
+            _subtitle.Footer = styles.UpdatedFooter;
             var styleList = AdvancedSubStationAlpha.GetStylesFromHeader(_subtitle.Header);
             if (styles.RenameActions.Count > 0)
             {

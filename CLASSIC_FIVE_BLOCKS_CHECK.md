@@ -1,0 +1,22 @@
+# Local 4.0.25.53: combined verification / общая проверка
+
+These features are adapted into the classic Windows Forms interface from the fixed stable 5.3 source. This is a local build, not a published release. Test on copies of subtitle files. Every editor Apply operation can be undone with Ctrl+Z. Media exports use a separately chosen destination.
+
+## Проверка в русской версии
+
+1. **Шрифты.** Открой ASS → **Инструменты → Собрать шрифты ASS/SSA**. В таблице видны нужные шрифты и отсутствующие файлы. Добавь TTF/OTF в коллекцию, затем встрои шрифт и примени вложения. Сохрани копию ASS и открой её снова. В менеджере стилей ссылка **Выбрать шрифт** открывает вкладки установленных шрифтов и коллекции. При сокращении шрифта сохраняются символы текущего текста; для нового текста может понадобиться полный шрифт.
+2. **ASS.** Выдели одну или несколько реплик → **Инструменты → Расширенные ASS-эффекты**: выбери эффект, посмотри результат и примени; Ctrl+Z возвращает исходник. В **Редактор ASS Draw** добавь фигуру или SVG, поменяй слой/цвет, попробуй текст, масштаб, поворот и отмену. После применения сохрани копию ASS. **Фильтр ASS и скрытые слои** ищет реплики по тексту/стилю/актёру; отмеченные слои скрываются только в MPV. Основная таблица и экспорт сохраняют все данные.
+3. **Форматы.** В основном списке форматов проверь EBU-TT/D, Timed Text IMSC Rosetta, Final Cut Pro XML 1.12–1.14, форматы глав/маркеров. «Сохранить как» → открой полученный файл и сравни текст/тайминги. EZTitles `.ezt` и CANVASs `.sdb` импортируются только для чтения.
+4. **Импорт/экспорт.** **Файл → Импортировать из → Таблица CSV/XLSX/ODS: выбор столбцов**: сопоставь начало/конец/текст/актёра и проверь нижний предпросмотр. Для чисел укажи секунды, миллисекунды, кадры либо доли суток Excel. В **Экспортировать в → CSV/XLSX: выбрать столбцы** меняются порядок и имена столбцов. Сохрани и импортируй обратно, включая многострочный текст. Там же доступны изображения **IMSC / BDN / DVD SUP**: выбери новый каталог результата, проверь PNG и файл метаданных. Для DVD SUP задай 720×576/25 fps либо 720×480/29.97 fps. CEA-608/708 находятся в импорте с выбором канала; DVD — в существующем пункте VOB/IFO, теперь с выбором титула и порядка VOB. Эти два теста нужны только при наличии подходящих файлов.
+5. **Видео.** **Видео → Монтаж, перекодирование, дорожки и главы**. Во вкладке монтажа добавь два интервала в секундах, выбери нужную аудиодорожку и переход. Сохрани новый файл и проверь склейку. Во вкладке профиля попробуй H.264 All-I; аудио отмечается во вкладке дорожек. При remux две отмеченные дорожки должны остаться двумя; одна общая стереодорожка появляется при включении отдельной галочки смешивания. Во вкладке глав измени названия/начала и сохрани новое видео; главы должны появиться в проигрывателе. Для первого теста удобен MKV.
+
+Все операции отмены должны оставлять исходные файлы на месте. Каталог набора изображений должен появиться только после завершения. Платные API для этой проверки не нужны.
+
+## English menu equivalents
+
+- **Tools → ASS/SSA font collector**, **Advanced ASS effects**, **ASS Draw editor**, **ASS filter and hidden layers**.
+- **File → Import → CSV/XLSX/ODS: map columns**, **XML: detect structure**, **CEA-608/708: select channel**, and the existing **VOB/IFO (DVD)** import.
+- **File → Export → CSV/XLSX: choose columns**, **IMSC / BDN / DVD SUP images**.
+- **Video → Cuts, encoding, streams and chapters**. Test cut/join, an editing codec, separate streams versus explicit stereo mixing, and chapter remux on separately saved outputs.
+
+Physical DVD navigation/alternate angles have not been field-tested. MXF VANC and ARIB caption extraction are not claimed. Static image export does not reproduce animated ASS effects; use the libass hard-subtitle export for those.

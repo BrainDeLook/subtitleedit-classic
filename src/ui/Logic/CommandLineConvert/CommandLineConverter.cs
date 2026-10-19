@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.BluRaySup;
+using Nikse.SubtitleEdit.Core.BluRaySup;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.ContainerFormats.Matroska;
 using Nikse.SubtitleEdit.Core.ContainerFormats.Mp4;
@@ -859,7 +859,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                             {
                                 var encoding = LanguageAutoDetect.GetEncodingFromFile(fileName);
                                 var lines = FileUtil.ReadAllTextShared(fileName, encoding).SplitToLines();
-                                foreach (var f in SubtitleFormat.GetTextOtherFormats())
+                                foreach (var f in Nikse.SubtitleEdit.Logic.ClassicFormats.ClassicFormatRegistry.Other())
                                 {
                                     if (f.IsMine(lines, fileName))
                                     {

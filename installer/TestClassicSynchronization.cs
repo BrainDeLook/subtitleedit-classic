@@ -40,7 +40,7 @@ class TestClassicSynchronization
  static Subtitle RefSub(object r)=>(Subtitle)r.GetType().GetField("Subtitle").GetValue(r);
  static List<Func<Bitmap>> RefImages(object r)=>(List<Func<Bitmap>>)r.GetType().GetField("Images").GetValue(r);
  static byte[] Join(params byte[][] parts)=>parts.SelectMany(p=>p).ToArray();
- static byte[] Ebml(uint id,params byte[][] parts){var data=Join(parts);var bytes=BitConverter.GetBytes(id).Reverse().SkipWhile(b=>b==0).ToArray();var size=data.Length<127?new[]{(byte)(128+data.Length)}:new[]{(byte)(64+(data.Length>>8)),(byte)data.Length};return Join(bytes,size,data);}
+ static byte[] Ebml(uint id,params byte[][] parts){var data=Join(parts);var bytes=BitConverter.GetBytes(id).AsEnumerable().Reverse().SkipWhile(b=>b==0).ToArray();var size=data.Length<127?new[]{(byte)(128+data.Length)}:new[]{(byte)(64+(data.Length>>8)),(byte)data.Length};return Join(bytes,size,data);}
  static byte[] DvbSegment(byte type,byte[] data)=>Join(new byte[]{15,type,0,1,(byte)(data.Length>>8),(byte)data.Length},data);
  static void CreateDvbReference(string file)
  {
@@ -49,7 +49,7 @@ class TestClassicSynchronization
   var objects=Join(new byte[]{0,1,0,(byte)(field.Length>>8),(byte)field.Length,(byte)(field.Length>>8),(byte)field.Length},field,field);
   var payload=Join(new byte[]{32,0},DvbSegment(16,new byte[]{5,4,1,0,0,10,0,10}),DvbSegment(17,new byte[]{1,8,0,100,0,20,44,1,0,0,0,1,0,0,0,0}),DvbSegment(18,new byte[]{1,0,1,33,235,128,128,0}),DvbSegment(19,objects),DvbSegment(128,new byte[0]),new byte[]{255});
   var header=Ebml(0x1A45DFA3,Ebml(0x4286,new byte[]{1}),Ebml(0x42F7,new byte[]{1}),Ebml(0x42F2,new byte[]{4}),Ebml(0x42F3,new byte[]{8}),Ebml(0x4282,Encoding.ASCII.GetBytes("matroska")),Ebml(0x4287,new byte[]{4}),Ebml(0x4285,new byte[]{2}));
-  var info=Ebml(0x1549A966,Ebml(0x2AD7B1,new byte[]{15,66,64}),Ebml(0x4489,BitConverter.GetBytes(3000.0).Reverse().ToArray()));
+  var info=Ebml(0x1549A966,Ebml(0x2AD7B1,new byte[]{15,66,64}),Ebml(0x4489,BitConverter.GetBytes(3000.0).AsEnumerable().Reverse().ToArray()));
   var tracks=Ebml(0x1654AE6B,Ebml(0xAE,Ebml(0xD7,new byte[]{1}),Ebml(0x73C5,new byte[]{1}),Ebml(0x83,new byte[]{17}),Ebml(0x86,Encoding.ASCII.GetBytes("S_DVBSUB")),Ebml(0x63A2,new byte[]{0,1,0,1})));
   var cluster=Ebml(0x1F43B675,Ebml(0xE7,new byte[]{0}),Ebml(0xA0,Ebml(0xA1,Join(new byte[]{129,3,232,0},payload)),Ebml(0x9B,new byte[]{3,232})));
   File.WriteAllBytes(file,Join(header,Ebml(0x18538067,info,tracks,cluster)));

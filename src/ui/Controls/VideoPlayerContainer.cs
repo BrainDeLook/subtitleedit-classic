@@ -1,4 +1,5 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using System.Linq;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.ContainerFormats.Matroska;
 using Nikse.SubtitleEdit.Core.Settings;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
@@ -571,6 +572,12 @@ namespace Nikse.SubtitleEdit.Controls
         }
 
         private Subtitle _subtitlePrev;
+        private Subtitle _hiddenLayerDocument;
+        private readonly System.Collections.Generic.HashSet<int> _hiddenAssLayers=new System.Collections.Generic.HashSet<int>();
+        public int[] HiddenAssLayers=>_hiddenAssLayers.ToArray();
+        public int[] GetHiddenAssLayers(Subtitle document)=>ReferenceEquals(document,_hiddenLayerDocument)?HiddenAssLayers:new int[0];
+        public void SetHiddenAssLayers(Subtitle document,System.Collections.Generic.IEnumerable<int> layers)
+        {_hiddenLayerDocument=document;_hiddenAssLayers.Clear();foreach(var layer in layers)_hiddenAssLayers.Add(layer);_mpvSubOldHash=-1;}
         private string _mpvTextOld = string.Empty;
         private int _mpvSubOldHash = -1;
         private string _mpvTextFileName;
@@ -584,7 +591,9 @@ namespace Nikse.SubtitleEdit.Controls
 
             try
             {
+                var hideLayers=ReferenceEquals(subtitle,_hiddenLayerDocument) && (uiFormat is AdvancedSubStationAlpha || uiFormat is SubStationAlpha);
                 subtitle = new Subtitle(subtitle, false);
+                if(hideLayers)subtitle.Paragraphs.RemoveAll(p=>_hiddenAssLayers.Contains(p.Layer));
                 if (SmpteMode)
                 {
                     foreach (var paragraph in subtitle.Paragraphs)

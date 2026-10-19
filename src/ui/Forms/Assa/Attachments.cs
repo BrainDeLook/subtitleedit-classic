@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Logic;
 using System;
@@ -131,7 +131,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
             var content = attachmentContent.Trim();
             if (!string.IsNullOrWhiteSpace(attachmentFileName) && !string.IsNullOrEmpty(content))
             {
-                var bytes = UUEncoding.UUDecode(content);
+                var bytes = ClassicUUEncoding.UUDecode(content);
                 attachments.Add(new AssaAttachment { FileName = attachmentFileName, Bytes = bytes, Category = category, Content = content });
             }
         }
@@ -314,7 +314,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
             foreach (var fileName in openFileDialog1.FileNames)
             {
                 var attachmentFileName = Path.GetFileName(fileName);
-                var attachmentContent = UUEncoding.UUEncode(FileUtil.ReadAllBytesShared(fileName));
+                var attachmentContent = ClassicUUEncoding.UUEncode(FileUtil.ReadAllBytesShared(fileName));
                 var ext = Path.GetExtension(attachmentFileName)?.ToLowerInvariant();
                 if (ext == ".ttf")
                 {

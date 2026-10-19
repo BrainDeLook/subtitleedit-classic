@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
@@ -19,9 +19,17 @@
     <PackageVersion Include="System.Security.AccessControl" Version="6.0.1" />
     <PackageVersion Include="System.Security.Principal.Windows" Version="5.0.0" />
     <PackageVersion Include="Vosk" Version="0.3.38" />
-    <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
+    <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="MSTest" Version="4.1.0" />
+    <PackageVersion Include="HarfBuzzSharp" Version="8.3.1.5" />
+    <PackageVersion Include="HarfBuzzSharp.NativeAssets.Win32" Version="8.3.1.5" />
+    <PackageVersion Include="SkiaSharp" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp.HarfBuzz" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="3.119.4" />
+    <PackageVersion Include="System.Memory" Version="4.6.3" />
+    <PackageVersion Include="System.Buffers" Version="4.6.1" />
+    <PackageVersion Include="System.Numerics.Vectors" Version="4.6.1" />
   </ItemGroup>
 </Project>

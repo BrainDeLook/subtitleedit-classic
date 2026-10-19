@@ -145,7 +145,7 @@ namespace Nikse.SubtitleEdit.Logic
             var logo = options != null && !string.IsNullOrWhiteSpace(options.LogoFileName);
             var stereo = options != null && (options.StereoMode == 1 || options.StereoMode == 2);
             if (!image && !logo && !stereo && (options == null || !options.InputIsAudioOnly))
-                return "-vf \"scale=" + width + ":" + height + ",ass=" + Path.GetFileName(subtitleFileName) + "\"";
+                return "-vf \"scale=" + width + ":" + height + ",ass=" + Path.GetFileName(subtitleFileName) + ClassicFontCollection.FilterOption + "\"";
 
             var filter = source + "scale=" + width + ":" + height;
             if (image)
@@ -158,7 +158,7 @@ namespace Nikse.SubtitleEdit.Logic
                 else filter += "[scaledvideo];" + subtitleSource + "[subtitles];[scaledvideo][subtitles]overlay=eof_action=pass";
             }
             else if (stereo) filter = StereoGraph(filter, null, Path.GetFileName(subtitleFileName), width, height, options);
-            else filter += ",ass=" + Path.GetFileName(subtitleFileName);
+            else filter += ",ass=" + Path.GetFileName(subtitleFileName) + ClassicFontCollection.FilterOption;
             if (logo)
             {
                 extraInputs += " -i \"" + options.LogoFileName + "\"";
@@ -175,7 +175,7 @@ namespace Nikse.SubtitleEdit.Logic
         private static string StereoGraph(string video,string image,string ass,int width,int height,ClassicBurnInOptions options)
         {
             var sources = image != null ? video+",split[v3d1][v3d2];"+image+",split[s3d1][s3d2];"
-                : video+",split=3[v3d1][v3d2][v3d0];[v3d0]format=rgba,colorchannelmixer=rr=0:gg=0:bb=0:aa=0,ass="+ass+":alpha=1,split[s3d1][s3d2];";
+                : video+",split=3[v3d1][v3d2][v3d0];[v3d0]format=rgba,colorchannelmixer=rr=0:gg=0:bb=0:aa=0,ass="+ass+ClassicFontCollection.FilterOption+":alpha=1,split[s3d1][s3d2];";
             var alpha = image != null ? ":eof_action=pass" : ":alpha=premultiplied";
             var depth = Math.Max(-100,Math.Min(100,options.StereoDepth));
             if(options.StereoMode==2)

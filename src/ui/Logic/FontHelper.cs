@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
@@ -49,7 +50,7 @@ namespace Nikse.SubtitleEdit.Logic
         /// </returns>
         public static IEnumerable<FontFamily> GetAllSupportedFontFamilies()
         {
-            return Fonts;
+            return Fonts.Concat(ClassicFontCollection.CollectedFamilies()).GroupBy(f=>f.Name,StringComparer.OrdinalIgnoreCase).Select(g=>g.First()).OrderBy(f=>f.Name);
         }
     }
 }

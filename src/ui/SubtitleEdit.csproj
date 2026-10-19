@@ -23,12 +23,14 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="..\..\licenses\classic-rendering\*.txt" Link="licenses\classic-rendering\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <EmbeddedResource Include="Logic\ClassicOpenRouterTtsModels.json" LogicalName="ClassicOpenRouterTtsModels.json" />
     <EmbeddedResource Include="Logic\ClassicEspeakLicense.txt" LogicalName="ClassicEspeakLicense.txt" />
     <EmbeddedResource Include="Logic\ClassicFinalTtsVoices.json" LogicalName="ClassicFinalTtsVoices.json" />
     <EmbeddedResource Include="Logic\ClassicLocalTtsCatalog.json" LogicalName="ClassicLocalTtsCatalog.json" />
     <EmbeddedResource Include="Logic\SpeechToText\speech-extras.json" LogicalName="ClassicSpeechExtras.json" />
     <Reference Include="System.Security" />
+    <Reference Include="System.Numerics" />
     <EmbeddedResource Include="Logic\VideoOcr\Rules\eng_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.eng.xml" />
     <EmbeddedResource Include="Logic\VideoOcr\Rules\rus_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.rus.xml" />
     <EmbeddedResource Include="Logic\VideoOcr\Rules\ron_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.ron.xml" />
@@ -321,6 +323,15 @@
     <PackageReference Include="System.Security.AccessControl" />
     <PackageReference Include="System.Security.Principal.Windows" />
     <PackageReference Include="Vosk" />
+    <PackageReference Include="HarfBuzzSharp" />
+    <PackageReference Include="HarfBuzzSharp.NativeAssets.Win32" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.HarfBuzz" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" />
+    <PackageReference Include="System.Memory" />
+    <PackageReference Include="System.Buffers" />
+    <PackageReference Include="System.Numerics.Vectors" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Logic\VideoPlayers\DirectShowLib2005.cs" />

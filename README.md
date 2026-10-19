@@ -1,10 +1,12 @@
-﻿# Subtitle Edit Classic
+# Subtitle Edit Classic
 
 A fork of the maintained [Subtitle Edit 4.x legacy branch](https://github.com/SubtitleEdit/subtitleedit/tree/se4-legacy), preserving the original Windows Forms interface.
 
 [Download the classic build](https://github.com/BrainDeLook/subtitleedit-classic/releases/latest) · [Upstream project](https://github.com/SubtitleEdit/subtitleedit) · [GPL-3.0 license](LICENSE.txt)
 
 English · [Русский](README.ru.md)
+
+The local **4.0.25.53** package adds ASS/SSA font collection and trimming, installed/collected font selection, the stable 5.3 advanced ASS effects and Draw tools, separate ASS search/preview layers, additional format registrations, mapped table import/export, DVD title/cell import and CEA-608/708 channel selection. **File → Export** includes IMSC/BDN/DVD SUP images with native shaped text, effects and full-frame/stereo placement. **Video → Cuts, encoding, streams and chapters** provides editing codecs, transitions, separate stream selection, optional stereo mixing and chapter remux. Outputs use chosen destinations and staged writes. See [runtime and verification limits](licenses/CLASSIC_RENDERING.md) and the [combined check guide](CLASSIC_FIVE_BLOCKS_CHECK.md). These changes are local and are not in the published installer.
 
 The local build notices external changes to the open text subtitle when you return to the main window. Clean documents reload automatically; unsaved working/source edits require confirmation. No suppresses another prompt for the same disk revision. Video, selected audio, position/pause, original reference, encoding, selection and video timing settings are retained. Empty, missing, unreadable or incomplete files leave the editor intact for retry. Own saves update the baseline. Detection uses timestamp/size on activation, has no extra setting, and excludes converted imports and image documents. A successful reload resets working edit history like reopening. This addition is local and is not in the published installer.
 

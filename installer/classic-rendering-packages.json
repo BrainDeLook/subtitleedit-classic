@@ -1,0 +1,56 @@
+[
+  {
+    "package": "harfbuzzsharp",
+    "version": "8.3.1.5",
+    "sha256": "4D8B590D0311421EA7AF39F99673C2220E97DBD4CF58A37FBBFD7145924C914B",
+    "url": "https://api.nuget.org/v3-flatcontainer/harfbuzzsharp/8.3.1.5/harfbuzzsharp.8.3.1.5.nupkg"
+  },
+  {
+    "package": "harfbuzzsharp.nativeassets.win32",
+    "version": "8.3.1.5",
+    "sha256": "940856FEF8C9373754E5443E21E7F00C716C91E44E6D062D3FFCE4C63BAB2BCD",
+    "url": "https://api.nuget.org/v3-flatcontainer/harfbuzzsharp.nativeassets.win32/8.3.1.5/harfbuzzsharp.nativeassets.win32.8.3.1.5.nupkg"
+  },
+  {
+    "package": "skiasharp",
+    "version": "3.119.4",
+    "sha256": "E32A449D31945C0B9D169EB5BC676E1E3F589AAB69888E49D703FDC1C384C176",
+    "url": "https://api.nuget.org/v3-flatcontainer/skiasharp/3.119.4/skiasharp.3.119.4.nupkg"
+  },
+  {
+    "package": "skiasharp.harfbuzz",
+    "version": "3.119.4",
+    "sha256": "C94B7AEC7C6246B255EE8C88ECBDBC2B286E295605D694AEC76B47A94B4CAECB",
+    "url": "https://api.nuget.org/v3-flatcontainer/skiasharp.harfbuzz/3.119.4/skiasharp.harfbuzz.3.119.4.nupkg"
+  },
+  {
+    "package": "skiasharp.nativeassets.win32",
+    "version": "3.119.4",
+    "sha256": "5A5698B1B4E1FDC9FFE9868DF6874DB5FA69F21A4DE76BA71A01A542E9B43391",
+    "url": "https://api.nuget.org/v3-flatcontainer/skiasharp.nativeassets.win32/3.119.4/skiasharp.nativeassets.win32.3.119.4.nupkg"
+  },
+  {
+    "package": "system.buffers",
+    "version": "4.6.1",
+    "sha256": "B00451E91D016FBEC091AD1E361F3A7015E1D91D4047F7E48A74455B2A673D79",
+    "url": "https://api.nuget.org/v3-flatcontainer/system.buffers/4.6.1/system.buffers.4.6.1.nupkg"
+  },
+  {
+    "package": "system.memory",
+    "version": "4.6.3",
+    "sha256": "26078AEB758C9AE985E8BF851F973026061DA6A5EB4837204D0C2D2204C72955",
+    "url": "https://api.nuget.org/v3-flatcontainer/system.memory/4.6.3/system.memory.4.6.3.nupkg"
+  },
+  {
+    "package": "system.numerics.vectors",
+    "version": "4.6.1",
+    "sha256": "2BC500A86DCB02F2032D6D877F9E2D6E9E4A79080E57239B4198679D4031F2C7",
+    "url": "https://api.nuget.org/v3-flatcontainer/system.numerics.vectors/4.6.1/system.numerics.vectors.4.6.1.nupkg"
+  },
+  {
+    "package": "system.runtime.compilerservices.unsafe",
+    "version": "6.1.2",
+    "sha256": "5F6A7F53AF3465F92BEB6DA873EBE0E496206C313313B98BADEE4355A6B25937",
+    "url": "https://api.nuget.org/v3-flatcontainer/system.runtime.compilerservices.unsafe/6.1.2/system.runtime.compilerservices.unsafe.6.1.2.nupkg"
+  }
+]

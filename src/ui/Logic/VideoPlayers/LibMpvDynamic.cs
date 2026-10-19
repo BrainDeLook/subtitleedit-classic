@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using System;
 using System.Collections.Generic;
@@ -716,6 +716,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
 
             if (!string.IsNullOrEmpty(videoFileName))
             {
+                _mpvSetOptionString(_mpvHandle, GetUtf8Bytes("sub-fonts-dir"), GetUtf8Bytes(ClassicFontCollection.Folder));
                 _mpvInitialize.Invoke(_mpvHandle);
                 SetVideoOwner(ownerControl);
 

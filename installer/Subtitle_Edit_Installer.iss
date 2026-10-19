@@ -1,4 +1,4 @@
-﻿;* Subtitle Edit - Installer script
+;* Subtitle Edit - Installer script
 ;*
 ;* Copyright (C) 2010-2016 XhmikosR
 ;*
@@ -350,6 +350,8 @@ Source: {#bindir}\SubtitleEdit.exe;                DestDir: {app};              
 ; Keep all managed/native dependencies produced by the current legacy build.
 Source: {#bindir}\*.dll;                          DestDir: {app};                                    Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
 Source: {#bindir}\SubtitleEdit.exe.config;         DestDir: {app};                                    Flags: ignoreversion skipifsourcedoesntexist; Components: main
+Source: ..\CLASSIC_FIVE_BLOCKS_CHECK.md;           DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: ..\licenses\CLASSIC_RENDERING.md;           DestDir: {app}\licenses;                           Flags: ignoreversion; Components: main
 Source: ..\CLASSIC_CHANGELOG.md;                   DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: ..\README.md;                             DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: ..\README.ru.md;                          DestDir: {app};                                    Flags: ignoreversion; Components: main
@@ -363,6 +365,11 @@ Source: {#bindir}\UtfUnknown.dll;                  DestDir: {app};              
 Source: {#bindir}\Vosk.dll;                        DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\NCalc.dll;                       DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\x86\7zxa.dll;                    DestDir: {app}\x86;                                Flags: ignoreversion; Components: main
+Source: ..\licenses\classic-rendering\*.txt;         DestDir: {app}\licenses\classic-rendering;          Flags: ignoreversion; Components: main
+Source: {#bindir}\x64\libSkiaSharp.dll;             DestDir: {app}\x64;                                Flags: ignoreversion; Components: main
+Source: {#bindir}\x86\libSkiaSharp.dll;             DestDir: {app}\x86;                                Flags: ignoreversion; Components: main
+Source: {#bindir}\x64\libHarfBuzzSharp.dll;         DestDir: {app}\x64;                                Flags: ignoreversion; Components: main
+Source: {#bindir}\x86\libHarfBuzzSharp.dll;         DestDir: {app}\x86;                                Flags: ignoreversion; Components: main
 Source: {#bindir}\x64\7zxa.dll;                    DestDir: {app}\x64;                                Flags: ignoreversion; Components: main
 Source: ..\src\ui\DLLs\Interop.QuartzTypeLib.dll;  DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\Newtonsoft.Json.dll;             DestDir: {app};                                    Flags: ignoreversion; Components: main
