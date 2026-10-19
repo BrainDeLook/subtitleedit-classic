@@ -1,5 +1,10 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.48
+
+- Fixed the dedicated grid spelling popup opening in the upper-left corner. It now opens at the right-click screen position independently of the unattached menu builder. Keyboard opening retains the selected cue anchor; the Standard subtitle menu command retains the original click position.
+- Added native WinForms positioning checks for repeated clicks and the standard-menu fallback in both interface languages, without displaying test menus or moving the user's cursor. All 47 popup checks and 2,213 combined regression checks passed. Installed local 4.0.25.48 with verified checksums, a rollback EXE and Settings.xml unchanged. This fix remains local; no paid APIs are used.
+
 ## Unreleased — local 4.0.25.47
 
 - Right-clicking a misspelled grid word now opens a dedicated spelling popup with a bold word-specific heading, top-level native suggestions and shared word-list actions. Its final Standard subtitle menu command opens the normal cue context menu at the original grid location with a bypass that prevents reopening the spelling popup. Correct words and other cells keep the standard menu. Keyboard context actions use the same routing; original references remain read-only.

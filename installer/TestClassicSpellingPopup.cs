@@ -16,6 +16,27 @@ using C = Nikse.SubtitleEdit.Controls.SubtitleListView.SubtitleColumn;
 [assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8")]
 class TestClassicSpellingPopup
 {
+    // Run the native Show positioning path without displaying a menu or moving the user's cursor.
+    sealed class PositionProbe : ToolStripDropDownMenu
+    {
+        public Point RequestedLocation;
+        public bool ShowRequested;
+        protected override void SetVisibleCore(bool visible)
+        {
+            if(visible){RequestedLocation=Location;ShowRequested=true;return;}
+            base.SetVisibleCore(false);
+        }
+    }
+    sealed class ContextPositionProbe : ContextMenuStrip
+    {
+        public Point RequestedLocation;
+        public bool ShowRequested;
+        protected override void SetVisibleCore(bool visible)
+        {
+            if(visible){RequestedLocation=Location;ShowRequested=true;return;}
+            base.SetVisibleCore(false);
+        }
+    }
     const BindingFlags F = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     static int checks;
     static object Field(object o, string n) => o.GetType().GetField(n, F).GetValue(o);
@@ -70,6 +91,29 @@ class TestClassicSpellingPopup
             var standard=(ContextMenuStrip)Field(main,"contextMenuStripListView");Check(!standard.Items.Contains(block),"Standard menu does not contain a nested spelling block: "+language);
             popup.Size=popup.GetPreferredSize(Size.Empty);popup.PerformLayout();
             using(var image=new Bitmap(Math.Max(1,popup.Width),Math.Max(1,popup.Height))){popup.DrawToBitmap(image,new Rectangle(Point.Empty,image.Size));image.Save(Path.Combine(root,"spelling-popup-"+language+".png"));}
+            var working=Screen.PrimaryScreen.WorkingArea;
+            var target=new Point(working.Left+working.Width/4,working.Top+working.Height/4);
+            using(var probe=new PositionProbe())
+            {
+                probe.Items.Add("Correction");block.DropDown=probe;probe.OwnerItem=block;
+                Check(probe.OwnerItem==block,"Placement fixture reproduces the unattached builder owner: "+language);
+                Call(main,"ShowGridSpellingPopup",grid.PointToClient(target));
+                Check(probe.ShowRequested && probe.RequestedLocation==target,"Native popup Show uses the click screen point: "+language);
+                Check(probe.OwnerItem==null,"Standalone spelling popup has no submenu anchor: "+language);
+                var second=new Point(target.X+90,target.Y+70);
+                Call(main,"ShowGridSpellingPopup",grid.PointToClient(second));
+                Check(probe.RequestedLocation==second,"Repeated opening follows a different click point: "+language);
+                block.DropDown=popup;
+            }
+            using(var probe=new ContextPositionProbe())
+            {
+                probe.Items.Add("Standard menu");Set(main,"contextMenuStripListView",probe);
+                Set(main,"_gridSpellingMenuPoint",grid.PointToClient(target));Call(main,"OpenStandardGridMenu");
+                await Task.Delay(30);
+                Check(probe.ShowRequested && probe.RequestedLocation==target,"Standard-menu fallback retains the original click point: "+language);
+                Check(!(bool)Field(main,"_gridSpellBypass"),"Standard-menu bypass resets after positioning: "+language);
+                Set(main,"contextMenuStripListView",standard);
+            }
             // Hide this test window before invoking asynchronous popup routing; no native menus appear on the user's desktop.
             main.Hide();Call(grid,"OnKeyDown",new KeyEventArgs(Keys.Apps));var opening=new System.ComponentModel.CancelEventArgs();Call(standard,"OnOpening",opening);
             Check(opening.Cancel,"Right-click/keyboard on an error routes away from the standard menu: "+language);

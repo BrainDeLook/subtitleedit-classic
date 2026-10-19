@@ -115,9 +115,17 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 if(IsDisposed || !Visible || _gridSpellBypass || !_gridSpellEnabled || SubtitleListview1.GridSpelling==null)return;
                 if(!original && _subtitle.GetParagraphOrDefault(row)?.Text!=hit.Source)return;
-                _gridSpellContext.DropDown.Show(SubtitleListview1,point);
+                ShowGridSpellingPopup(point);
                 _gridSpellContext.DropDownItems.OfType<ToolStripMenuItem>().FirstOrDefault(i=>i.Enabled && i.Tag as string=="suggestion")?.Select();
             }));
+        }
+        private void ShowGridSpellingPopup(Point point)
+        {
+            // This menu is shown independently, not below the unattached builder item.
+            // An OwnerItem makes WinForms reposition it at that item's (0, 0) bounds.
+            var popup=_gridSpellContext.DropDown;
+            popup.OwnerItem=null;
+            popup.Show(SubtitleListview1.PointToScreen(point));
         }
         private void BuildGridSpellMenu(ClassicGridSpellHit hit,int row,bool original)
         {
