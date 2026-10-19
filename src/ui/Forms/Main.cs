@@ -1752,6 +1752,7 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicColumns();
             InitializeClassicGridSpelling();
             InitializeClassicCuePickers();
+            InitializeClassicExternalChanges();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -4111,6 +4112,7 @@ namespace Nikse.SubtitleEdit.Forms
                 _changeSubtitleHash = GetFastSubtitleHash();
                 _converted = false;
                 ResetHistory();
+                RememberClassicExternalStamp();
                 SetListViewStateImages();
                 SetUndockedWindowsTitle();
 
@@ -5435,6 +5437,8 @@ namespace Nikse.SubtitleEdit.Forms
                 }
 
                 _changeSubtitleHash = GetFastSubtitleHash();
+                _converted = false;
+                RememberClassicExternalStamp();
                 return DialogResult.OK;
             }
             catch (Exception exception)

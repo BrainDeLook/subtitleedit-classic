@@ -54,6 +54,7 @@ $tests=@{
     TestClassicSpellingPopup='TestClassicSpellingPopup.cs'
     TestClassicCuePickers='TestClassicCuePickers.cs'
     TestClassicActorColumn='TestClassicActorColumn.cs'
+    TestClassicExternalChanges='TestClassicExternalChanges.cs'
     TestClassicForcedLines='TestClassicForcedLines.cs'
     TestClassicColumns='TestClassicColumns.cs'
     TestClassicShotColumns='TestClassicShotColumns.cs'
@@ -207,6 +208,12 @@ if ($FFmpegLocation) {
     if($LASTEXITCODE -ne 0){throw "Classic actor/style pickers, session order, assignment, shortcuts and undo regression failed"}
     & "$OutputDirectory/TestClassicActorColumn.exe" (Join-Path $OutputDirectory "classic-actor-column")
     if($LASTEXITCODE -ne 0){throw "Classic Actor column visibility on real subtitle opening and restart regression failed"}
+    if($AudioSelectionSample){
+        & "$OutputDirectory/TestClassicExternalChanges.exe" (Join-Path $OutputDirectory "classic-external-changes") $AudioSelectionSample $FFmpegLocation
+    }else{
+        & "$OutputDirectory/TestClassicExternalChanges.exe" (Join-Path $OutputDirectory "classic-external-changes")
+    }
+    if($LASTEXITCODE -ne 0){throw "Classic external subtitle changes, conflict decisions, retained editor/media state and native reload regression failed"}
     & "$OutputDirectory/TestClassicForcedLines.exe" (Join-Path $OutputDirectory "classic-forced-lines")
     if($LASTEXITCODE -ne 0){throw "Classic forced marks, persistence, undo, grid and subset export regression failed"}
     & "$OutputDirectory/TestClassicColumns.exe" (Join-Path $OutputDirectory "classic-columns")
