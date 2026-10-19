@@ -134,6 +134,15 @@ namespace Nikse.SubtitleEdit.Forms
                 SubtitleListview1.HideColumn(C.Extra);SubtitleListview1.HideColumn(C.Actor);
             }
             SubtitleListview1.UseWebVttMetadata=webVtt;
+            // Opening another ASS/SSA file can leave the format combo unchanged, so
+            // MakeFormatChange is not guaranteed to restore the physical actor column.
+            if(!webVtt)
+            {
+                var supportsActor=format is AdvancedSubStationAlpha || format is SubStationAlpha || format is CsvNuendo || format is PodcastIndexer;
+                var showActor=_classicColumns==null?Configuration.Settings.Tools.ListViewShowColumnActor:_classicColumns.Single(p=>p.Key==C.Actor.ToString()).Visible;
+                if(supportsActor && showActor)SubtitleListview1.ShowActorColumn(format is CsvNuendo?LanguageSettings.Current.General.Character:ColumnLabel(C.Actor));
+                else if(!supportsActor || _classicColumns!=null)SubtitleListview1.HideColumn(C.Actor);
+            }
             if(_classicColumns==null)return;
             if(webVtt)
             {
@@ -168,6 +177,12 @@ namespace Nikse.SubtitleEdit.Forms
             var tools=Configuration.Settings.Tools;var values=new Dictionary<C,bool>{{C.Start,tools.ListViewShowColumnStartTime},{C.End,tools.ListViewShowColumnEndTime},{C.Duration,tools.ListViewShowColumnDuration},{C.CharactersPerSeconds,tools.ListViewShowColumnCharsPerSec},{C.WordsPerMinute,tools.ListViewShowColumnWordsPerMin},{C.Gap,tools.ListViewShowColumnGap},{C.Actor,tools.ListViewShowColumnActor},{C.Region,tools.ListViewShowColumnRegion}};
             foreach(var p in _classicColumns)if(values.TryGetValue((C)Enum.Parse(typeof(C),p.Key),out var visible))p.Visible=visible;
             ApplyClassicColumns(_classicColumns,true);
+        }
+        private void SetClassicActorColumnVisibility(bool visible)
+        {
+            var preferences=CaptureClassicColumns();
+            preferences.Single(p=>p.Key==C.Actor.ToString()).Visible=visible;
+            ApplyClassicColumns(preferences,true);
         }
         private void SaveClassicColumnDrag(ColumnReorderedEventArgs args)
         {

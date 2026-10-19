@@ -1,5 +1,11 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.50
+
+- Fixed an enabled Actor column disappearing when opening ASS/SSA, including opening a file whose format already matches the editor. Column restoration now runs in the common format/open path, independently of MakeFormatChange, and retains explicit hidden preferences. Empty actor fields do not suppress an enabled column. WebVTT voice aliases and unsupported formats retain their own behavior.
+- The legacy column-header Actor toggle now applies and saves the shared logical column preference, so the visible column, Settings.xml flag and custom layout cannot disagree. Subtitle data, selection, column order and editor history are retained.
+- Reproduced the first ASS-open failure against 4.0.25.49 before the fix. All 284 affected checks passed: 32 actual file-opening/restart cases plus the 118-column, 55-format-column and 79-picker regressions. Covered same-format ASS/SSA reloads, empty actors, SRT/WebVTT transitions, explicit hiding, header toggles and the legacy setting without a custom layout in Russian/English. This fix remains local; no paid APIs are used.
+
 ## Unreleased — local 4.0.25.49
 
 - Adapted the stable 5.3 actor and ASS/SSA style pickers as one complete Classic workflow. Tools → Actors and styles and the existing grid Actor/Style submenus open searchable, resizable pickers with usage counts, current-value markers, 1–9/0 selection, arrows/Enter, double-click and Escape. A matching name precedes the create-new row; numeric keys remain text while filtering.

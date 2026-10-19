@@ -9132,22 +9132,9 @@ namespace Nikse.SubtitleEdit.Forms
                     };
                     contextMenuStripLvHeaderActorToolStripMenuItem.Click += (sender2, e2) =>
                     {
-                        SubtitleListview1.BeginUpdate();
-                        Configuration.Settings.Tools.ListViewShowColumnActor = contextMenuStripLvHeaderActorToolStripMenuItem.Checked;
-                        if (Configuration.Settings.Tools.ListViewShowColumnActor)
-                        {
-                            SubtitleListview1.ShowActorColumn(actorTitle);
-                        }
-                        else
-                        {
-                            SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.Actor);
-                        }
-
-                        SaveSubtitleListviewIndices();
-                        UiUtil.InitializeSubtitleFont(SubtitleListview1);
-                        SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                        RestoreSubtitleListviewIndices();
-                        SubtitleListview1.EndUpdate();
+                        try{SetClassicActorColumnVisibility(contextMenuStripLvHeaderActorToolStripMenuItem.Checked);}
+                        catch(Exception ex)when(ex is IOException || ex is UnauthorizedAccessException)
+                        {contextMenuStripLvHeaderActorToolStripMenuItem.Checked=Configuration.Settings.Tools.ListViewShowColumnActor;ShowStatus(ex.Message);}
                     };
                     cm.Items.Add(contextMenuStripLvHeaderActorToolStripMenuItem);
                 }
