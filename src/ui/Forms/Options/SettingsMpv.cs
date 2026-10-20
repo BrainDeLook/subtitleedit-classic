@@ -34,9 +34,16 @@ namespace Nikse.SubtitleEdit.Forms.Options
             return Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor == 1;
         }
 
+        private static bool ApprovedModernMpv(byte[] bytes)
+        {
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+                return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", "").Equals("ce99ee7a9cab0ada2f696b04132def67b0978157d5f4a1a7966d04c92aebbfec", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void ButtonDownloadClick(object sender, EventArgs e)
         {
             _downloadUrl = "https://github.com/SubtitleEdit/support-files/releases/download/libmpv-2025-01-25/libmpv2-" + IntPtr.Size * 8 + ".zip";
+            if (IntPtr.Size == 8) _downloadUrl = "https://github.com/SubtitleEdit/support-files/releases/download/libmpv-2026-08-14b/libmpv2-win64.zip";
             if (IsWindows7())
             {
                 _downloadUrl = "https://github.com/SubtitleEdit/support-files/releases/download/libmpv-2024-06-09/libmpv2-" + IntPtr.Size * 8 + ".zip";
@@ -97,7 +104,7 @@ namespace Nikse.SubtitleEdit.Forms.Options
                 "a6d6ee7b2a1173a77ee07e046d6f9875842d88ee41a8a935ff5f906300553a704c0b39ae8a1a42eb7c7b1dc06b4e6e9d28d62a2d93384b70ce45de9d9ac8f8d7", // Win7, 32-bit
                 "ae62aa72a7678199c8470cbec38f94e930469332f90a2da77dab1d89ef86e3ba71a0d5258cbf1fe8680e84736ea123ebdc5737a93384de1106fba6c0b78ea560", // Win7, 64-bit
             };
-            if (!validHashes.Contains(hash))
+            if (!validHashes.Contains(hash) && !ApprovedModernMpv(downloadStream.ToArray()))
             {
                 MessageBox.Show("libmpv SHA-512 hash does not match!");
                 DialogResult = DialogResult.Cancel;

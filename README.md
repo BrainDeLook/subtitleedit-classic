@@ -1,4 +1,10 @@
-# Subtitle Edit Classic
+﻿# Subtitle Edit Classic
+
+## Stable 4.0.28
+
+Version 4.0.28 includes implementations for all nine consolidated 5.3 audit findings: shortcut sequences, waveform modes, frame numbers/clocks, batch workflows, `seconv`, ACE-Step music, an experimental FFmpeg player/timeline, caption authoring and runtime pins. See [implementation and verification boundaries](LOCAL_53_INTEGRATION.md) and [Russian check instructions](LOCAL_53_CHECK.ru.md). Large-model inference, paid APIs and every upstream workflow are not certified by this local validation.
+
+Version 4.0.28 groups menus by task while retaining Classic command instances and shortcuts. Tools separates timing, text, quality, ASS, AI and file operations; Video separates sources, recognition, speech/music, exports and playback. Import/export formats have dedicated categories. **Options → Subtitle list** and the column-header context menu share column choices, formatting, spelling and links to the existing appearance/highlighting pages. Forced marking, column visibility and exporting remain distinct. No settings migration or reset is required.
 
 Version-specific sections below retain the history of earlier releases; the current 4.0.27 capabilities are described first.
 

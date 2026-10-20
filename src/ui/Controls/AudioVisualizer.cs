@@ -97,12 +97,23 @@ namespace Nikse.SubtitleEdit.Controls
         private bool _firstMove = true;
         private double _currentVideoPositionSeconds = -1;
         private WavePeakData _wavePeaks;
+        public bool FastRenderer { get; set; }
         private Subtitle _subtitle;
         private bool _noClear;
         private double _gapAtStart = -1;
         private const int WM_MOUSEHWHEEL = 0x020E;
 
         private SpectrogramData _spectrogram;
+        private Bitmap _spectrogramViewport;
+        private int _spectrogramViewportLeft, _spectrogramViewportColumns;
+        private bool _spectrogramViewportCombined;
+        private float _spectrogramViewportAlpha;
+
+        private void ClearSpectrogramViewport()
+        {
+            _spectrogramViewport?.Dispose();
+            _spectrogramViewport = null;
+        }
         private const int SpectrogramDisplayHeight = 128;
 
         public delegate void ParagraphEventHandler(object sender, ParagraphEventArgs e);
@@ -191,6 +202,12 @@ namespace Nikse.SubtitleEdit.Controls
             }
         }
 
+        private bool _showShotChanges = true;
+        public bool ShowShotChanges
+        {
+            get => _showShotChanges;
+            set { if (_showShotChanges == value) return; _showShotChanges = value; Invalidate(); }
+        }
         private List<double> _shotChanges = new List<double>();
 
         /// <summary>
@@ -613,6 +630,9 @@ namespace Nikse.SubtitleEdit.Controls
                     using (var penNormal = new Pen(Color.FromArgb(this.WaveformAlpha, Color)))
                     using (var penSelected = new Pen(Color.FromArgb(this.WaveformAlpha, SelectedColor))) // selected paragraph
                     {
+                        using (var normalPath = new GraphicsPath())
+                        using (var selectedPath = new GraphicsPath())
+                        {
                         var isSelectedHelper = new IsSelectedHelper(_allSelectedParagraphs, _wavePeaks.SampleRate);
                         var baseHeight = (int)(_wavePeaks.HighestPeak / _verticalZoomFactor);
                         var halfWaveformHeight = waveformHeight / 2;
@@ -652,7 +672,10 @@ namespace Nikse.SubtitleEdit.Controls
                             var yMax = calculateY(max);
                             var yMin = Math.Max(calculateY(min), yMax + 0.1F);
                             var pen = isSelectedHelper.IsSelected(pos0) ? penSelected : penNormal;
-                            graphics.DrawLine(pen, x, yMax, x, yMin);
+                            if (FastRenderer) { var path = pen == penSelected ? selectedPath : normalPath; path.StartFigure(); path.AddLine(x, yMax, x, yMin); }
+                            else graphics.DrawLine(pen, x, yMax, x, yMin);
+                        }
+                        if (FastRenderer) { graphics.DrawPath(penNormal, normalPath); graphics.DrawPath(penSelected, selectedPath); }
                         }
                     }
                 }
@@ -681,8 +704,9 @@ namespace Nikse.SubtitleEdit.Controls
                     }
                 }
 
+                // Visibility does not change cached markers or snapping.
                 // shot changes
-                if (_shotChanges != null)
+                if (ShowShotChanges && _shotChanges != null)
                 {
                     try
                     {
@@ -2385,6 +2409,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         private void InitializeSpectrogram(SpectrogramData spectrogram)
         {
+            ClearSpectrogramViewport();
             if (_spectrogram != null)
             {
                 _spectrogram.Dispose();
@@ -2425,55 +2450,76 @@ namespace Nikse.SubtitleEdit.Controls
             Invalidate();
         }
 
-        private void DrawSpectrogram(Graphics graphics, int height) // Add transparency parameter
+        private void DrawSpectrogram(Graphics graphics, int height)
         {
-            var width = (int)Math.Round((EndPositionSeconds - _startPositionSeconds) / _spectrogram.SampleDuration);
-            using (var bmpCombined = new Bitmap(width, _spectrogram.FftSize / 2))
-            using (var gfxCombined = Graphics.FromImage(bmpCombined))
+            var columns = (int)Math.Round((EndPositionSeconds - _startPositionSeconds) / _spectrogram.SampleDuration);
+            var left = (int)Math.Round(_startPositionSeconds / _spectrogram.SampleDuration);
+            var displayHeight = CombineSpectrogramAndWaveform ? height : (_showWaveform ? SpectrogramDisplayHeight : Height);
+            if (columns <= 0 || Width <= 0 || displayHeight <= 0)
             {
-                var left = (int)Math.Round(_startPositionSeconds / _spectrogram.SampleDuration);
-                var offset = 0;
-                var imageIndex = left / _spectrogram.ImageWidth;
-                while (offset < width && imageIndex < _spectrogram.Images.Count)
-                {
-                    var x = (left + offset) % _spectrogram.ImageWidth;
-                    var w = Math.Min(_spectrogram.ImageWidth - x, width - offset);
-                    gfxCombined.DrawImage(_spectrogram.Images[imageIndex], offset, 0, new Rectangle(x, 0, w, bmpCombined.Height), GraphicsUnit.Pixel);
-                    offset += w;
-                    imageIndex++;
-                }
+                return;
+            }
 
-                if (CombineSpectrogramAndWaveform)
+            // The playhead and current cue change much more often than the viewport.
+            // Cache the scaled layer too: scaling it on every paint blocks the UI thread.
+            if (_spectrogramViewport == null || _spectrogramViewportLeft != left ||
+                _spectrogramViewportColumns != columns || _spectrogramViewport.Width != Width ||
+                _spectrogramViewport.Height != displayHeight ||
+                _spectrogramViewportCombined != CombineSpectrogramAndWaveform ||
+                _spectrogramViewportAlpha != SpectrogramAlpha)
+            {
+                ClearSpectrogramViewport();
+                using (var combined = new Bitmap(columns, _spectrogram.FftSize / 2))
+                using (var sourceGraphics = Graphics.FromImage(combined))
                 {
-                    var destRect = new Rectangle(0, Height - height, Width, height);
-
-                    // Create ImageAttributes
-                    using (ImageAttributes imageAttributes = new ImageAttributes())
+                    var offset = 0;
+                    var imageIndex = left / _spectrogram.ImageWidth;
+                    while (offset < columns && imageIndex < _spectrogram.Images.Count)
                     {
-                        // Create a color matrix for transparency
-                        float[][] colorMatrixElements =
+                        var x = (left + offset) % _spectrogram.ImageWidth;
+                        var w = Math.Min(_spectrogram.ImageWidth - x, columns - offset);
+                        sourceGraphics.DrawImage(_spectrogram.Images[imageIndex], offset, 0,
+                            new Rectangle(x, 0, w, combined.Height), GraphicsUnit.Pixel);
+                        offset += w;
+                        imageIndex++;
+                    }
+
+                    var viewport = new Bitmap(Width, displayHeight, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                    try
+                    {
+                        using (var target = Graphics.FromImage(viewport))
                         {
-                            new float[] { 1, 0, 0, 0, 0 },
-                            new float[] { 0, 1, 0, 0, 0 },
-                            new float[] { 0, 0, 1, 0, 0 },
-                            new float[] { 0, 0, 0, this.SpectrogramAlpha, 0 },
-                            new float[] { 0, 0, 0, 0, 1 }
-                        };
-                        ColorMatrix colorMatrix = new ColorMatrix(colorMatrixElements);
-
-                        // Set the color matrix in ImageAttributes
-                        imageAttributes.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-
-                        // Draw the image with transparency
-                        graphics.DrawImage(bmpCombined, destRect, 0, 0, bmpCombined.Width, bmpCombined.Height, GraphicsUnit.Pixel, imageAttributes);
+                            var destination = new Rectangle(0, 0, Width, displayHeight);
+                            if (CombineSpectrogramAndWaveform)
+                            {
+                                using (var attributes = new ImageAttributes())
+                                {
+                                    var matrix = new ColorMatrix { Matrix33 = SpectrogramAlpha };
+                                    attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+                                    target.DrawImage(combined, destination, 0, 0, combined.Width, combined.Height,
+                                        GraphicsUnit.Pixel, attributes);
+                                }
+                            }
+                            else
+                            {
+                                target.DrawImage(combined, destination);
+                            }
+                        }
+                        _spectrogramViewport = viewport;
+                    }
+                    catch
+                    {
+                        viewport.Dispose();
+                        throw;
                     }
                 }
-                else
-                {
-                    var displayHeight = _showWaveform ? SpectrogramDisplayHeight : Height;
-                    graphics.DrawImage(bmpCombined, new Rectangle(0, Height - displayHeight, Width, displayHeight));
-                }
+                _spectrogramViewportLeft = left;
+                _spectrogramViewportColumns = columns;
+                _spectrogramViewportCombined = CombineSpectrogramAndWaveform;
+                _spectrogramViewportAlpha = SpectrogramAlpha;
             }
+
+            graphics.DrawImageUnscaled(_spectrogramViewport, 0, Height - displayHeight);
         }
 
         private double GetAverageVolumeForNextMilliseconds(int sampleIndex, int milliseconds)

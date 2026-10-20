@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.SubtitleFormats;
+using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using System;
 using System.Globalization;
 
@@ -227,6 +227,7 @@ namespace Nikse.SubtitleEdit.Core.Common
 
         public string ToHHMMSSFF()
         {
+            if (Configuration.Settings.General.StoreTimesOnVideoFrames) return FrameNumberTime.FormatClock(TotalMilliseconds);
             string s;
             var ts = TimeSpan;
             var frames = Math.Round(ts.Milliseconds / (BaseUnit / Configuration.Settings.General.CurrentFrameRate));
@@ -325,6 +326,9 @@ namespace Nikse.SubtitleEdit.Core.Common
                 return "-";
             }
 
+            if (Configuration.Settings?.General.UseAbsoluteFrameNumbers == true)
+                return SubtitleFormat.MillisecondsToFrames(TotalMilliseconds).ToString(CultureInfo.InvariantCulture);
+
             if (Configuration.Settings?.General.UseTimeFormatHHMMSSFF == true)
             {
                 return ToHHMMSSFF();
@@ -339,6 +343,9 @@ namespace Nikse.SubtitleEdit.Core.Common
             {
                 return "-";
             }
+
+            if (Configuration.Settings?.General.UseAbsoluteFrameNumbers == true)
+                return SubtitleFormat.MillisecondsToFrames(TotalMilliseconds).ToString(CultureInfo.InvariantCulture);
 
             if (Configuration.Settings?.General.UseTimeFormatHHMMSSFF == true)
             {

@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Controls;
+﻿using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AudioToText;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.BluRaySup;
@@ -1755,6 +1755,10 @@ namespace Nikse.SubtitleEdit.Forms
             InitializeClassicCuePickers();
             InitializeClassicExternalChanges();
             InitializeClassicFiveBlocks();
+            InitializeClassicCustomShortcuts();
+            InitializeClassicWaveformModes();
+            InitializeClassicFrameModes();
+            InitializeClassicFfmpeg();
             toolStripMenuItemImportSubIdx.Text = _language.Menu.File.ImportOcrVobSubSubtitle;
             toolStripButtonGetFrameRate.ToolTipText = _language.GetFrameRateFromVideoFile;
             toolStripMenuItemImportBluRaySup.Text = _language.Menu.File.ImportBluRaySupFile;
@@ -2187,6 +2191,7 @@ namespace Nikse.SubtitleEdit.Forms
             DvdSubtitleLanguage.Language.CultureName = LanguageSettings.Current.General.CultureName;
             DvdSubtitleLanguage.Language.LanguageNames = DvdSubtitleLanguages.GetLanguages();
             DvdSubtitleLanguage.Initialize();
+            InitializeClassicNavigation();
         }
 
         private void SetWaveFormNotLoadedText(LanguageStructure.Waveform languageWaveform)
@@ -5762,7 +5767,9 @@ namespace Nikse.SubtitleEdit.Forms
             ShowSettings();
         }
 
-        private void ShowSettings()
+        private void ShowSettings() => ShowSettings(null);
+
+        private void ShowSettings(Action<Options.Settings> selectPage)
         {
             SaveSubtitleListviewIndices();
             FixFfmpegWrongPath();
@@ -5782,6 +5789,8 @@ namespace Nikse.SubtitleEdit.Forms
                                              Configuration.Settings.General.SubtitleListViewFontSize;
 
             bool oldUseTimeFormatHHMMSSFF = Configuration.Settings.General.UseTimeFormatHHMMSSFF;
+            bool oldAbsoluteFrames = Configuration.Settings.General.UseAbsoluteFrameNumbers;
+            bool oldStoreVideoFrames = Configuration.Settings.General.StoreTimesOnVideoFrames;
 
             string oldSyntaxColoring = Configuration.Settings.Tools.ListViewSyntaxColorDurationSmall.ToString() +
                                        Configuration.Settings.Tools.ListViewSyntaxColorDurationBig +
@@ -5818,6 +5827,7 @@ namespace Nikse.SubtitleEdit.Forms
                     toolStripButtonSpellCheck.Image, toolStripButtonNetflixQualityCheck.Image, toolStripButtonBeautifyTimeCodes.Image, toolStripButtonSettings.Image, toolStripButtonHelp.Image,
                     toolStripButtonSourceView.Image);
 
+                selectPage?.Invoke(settings);
                 if (settings.ShowDialog(this) == DialogResult.Cancel)
                 {
                     return; // settings update canceled
@@ -6024,7 +6034,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             audioVisualizer.Invalidate();
 
-            if (oldUseTimeFormatHHMMSSFF != Configuration.Settings.General.UseTimeFormatHHMMSSFF)
+            if (oldUseTimeFormatHHMMSSFF != Configuration.Settings.General.UseTimeFormatHHMMSSFF || oldAbsoluteFrames != Configuration.Settings.General.UseAbsoluteFrameNumbers || oldStoreVideoFrames != Configuration.Settings.General.StoreTimesOnVideoFrames)
             {
                 RefreshTimeCodeMode();
             }
@@ -8964,228 +8974,8 @@ namespace Nikse.SubtitleEdit.Forms
             if (coordinates.Y < 19 || (hitTest.Item != null && hitTest.Item.Index == 0 && coordinates.Y < hitTest.Item.Position.Y))
             {
                 e.Cancel = true;
-                var cm = new ContextMenuStrip();
-                UiUtil.FixFonts(cm);
-                var contextMenuStripLvHeaderResizeToolStripMenuItem = new ToolStripMenuItem(LanguageSettings.Current.Main.Menu.ContextMenu.SizeAllColumnsToFit);
-                contextMenuStripLvHeaderResizeToolStripMenuItem.Click += (sender2, e2) => { SubtitleListview1.AutoSizeColumns(); };
-                cm.Items.Add(contextMenuStripLvHeaderResizeToolStripMenuItem);
-
-                var tss = new ToolStripSeparator();
-                UiUtil.FixFonts(tss);
-                cm.Items.Add(tss);
-
-                // Start time
-                var contextMenuStripLvHeaderStartTimeToolStripMenuItem = new ToolStripMenuItem(LanguageSettings.Current.General.StartTime)
-                {
-                    CheckOnClick = true,
-                    Checked = Configuration.Settings.Tools.ListViewShowColumnStartTime
-                };
-                contextMenuStripLvHeaderStartTimeToolStripMenuItem.Click += (sender2, e2) =>
-                {
-                    SubtitleListview1.BeginUpdate();
-                    Configuration.Settings.Tools.ListViewShowColumnStartTime = contextMenuStripLvHeaderStartTimeToolStripMenuItem.Checked;
-                    if (Configuration.Settings.Tools.ListViewShowColumnStartTime)
-                    {
-                        SubtitleListview1.ShowStartColumn(LanguageSettings.Current.General.StartTime);
-                    }
-                    else
-                    {
-                        SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.Start);
-                    }
-
-                    SaveSubtitleListviewIndices();
-                    UiUtil.InitializeSubtitleFont(SubtitleListview1);
-                    SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                    RestoreSubtitleListviewIndices();
-                    SubtitleListview1.EndUpdate();
-                };
-                cm.Items.Add(contextMenuStripLvHeaderStartTimeToolStripMenuItem);
-
-
-                // End time
-                var contextMenuStripLvHeaderEndTimeToolStripMenuItem = new ToolStripMenuItem(LanguageSettings.Current.General.EndTime)
-                {
-                    CheckOnClick = true,
-                    Checked = Configuration.Settings.Tools.ListViewShowColumnEndTime
-                };
-                contextMenuStripLvHeaderEndTimeToolStripMenuItem.Click += (sender2, e2) =>
-                {
-                    SubtitleListview1.BeginUpdate();
-                    Configuration.Settings.Tools.ListViewShowColumnEndTime = contextMenuStripLvHeaderEndTimeToolStripMenuItem.Checked;
-                    if (Configuration.Settings.Tools.ListViewShowColumnEndTime)
-                    {
-                        SubtitleListview1.ShowEndColumn(LanguageSettings.Current.General.EndTime);
-                    }
-                    else
-                    {
-                        SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.End);
-                    }
-
-                    SaveSubtitleListviewIndices();
-                    UiUtil.InitializeSubtitleFont(SubtitleListview1);
-                    SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                    RestoreSubtitleListviewIndices();
-                    SubtitleListview1.EndUpdate();
-                };
-                cm.Items.Add(contextMenuStripLvHeaderEndTimeToolStripMenuItem);
-
-                // Duration
-                var contextMenuStripLvHeaderDurationToolStripMenuItem = new ToolStripMenuItem(LanguageSettings.Current.General.Duration)
-                {
-                    CheckOnClick = true,
-                    Checked = Configuration.Settings.Tools.ListViewShowColumnDuration
-                };
-                contextMenuStripLvHeaderDurationToolStripMenuItem.Click += (sender2, e2) =>
-                {
-                    SubtitleListview1.BeginUpdate();
-                    Configuration.Settings.Tools.ListViewShowColumnDuration = contextMenuStripLvHeaderDurationToolStripMenuItem.Checked;
-                    if (Configuration.Settings.Tools.ListViewShowColumnDuration)
-                    {
-                        SubtitleListview1.ShowDurationColumn(LanguageSettings.Current.General.Duration);
-                    }
-                    else
-                    {
-                        SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.Duration);
-                    }
-
-                    SaveSubtitleListviewIndices();
-                    UiUtil.InitializeSubtitleFont(SubtitleListview1);
-                    SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                    RestoreSubtitleListviewIndices();
-                    SubtitleListview1.EndUpdate();
-                };
-                cm.Items.Add(contextMenuStripLvHeaderDurationToolStripMenuItem);
-
-                // CPS
-                var contextMenuStripLvHeaderCpsToolStripMenuItem = new ToolStripMenuItem(LanguageSettings.Current.General.CharsPerSec)
-                {
-                    CheckOnClick = true,
-                    Checked = Configuration.Settings.Tools.ListViewShowColumnCharsPerSec
-                };
-                contextMenuStripLvHeaderCpsToolStripMenuItem.Click += (sender2, e2) =>
-                {
-                    SubtitleListview1.BeginUpdate();
-                    Configuration.Settings.Tools.ListViewShowColumnCharsPerSec = contextMenuStripLvHeaderCpsToolStripMenuItem.Checked;
-                    if (Configuration.Settings.Tools.ListViewShowColumnCharsPerSec)
-                    {
-                        SubtitleListview1.ShowCharsSecColumn(LanguageSettings.Current.General.CharsPerSec);
-                    }
-                    else
-                    {
-                        SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.CharactersPerSeconds);
-                    }
-
-                    SaveSubtitleListviewIndices();
-                    UiUtil.InitializeSubtitleFont(SubtitleListview1);
-                    SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                    RestoreSubtitleListviewIndices();
-                    SubtitleListview1.EndUpdate();
-                };
-                cm.Items.Add(contextMenuStripLvHeaderCpsToolStripMenuItem);
-
-                // WPM
-                var contextMenuStripLvHeaderWpmToolStripMenuItem = new ToolStripMenuItem(LanguageSettings.Current.General.WordsPerMin)
-                {
-                    CheckOnClick = true,
-                    Checked = Configuration.Settings.Tools.ListViewShowColumnWordsPerMin
-                };
-                contextMenuStripLvHeaderWpmToolStripMenuItem.Click += (sender2, e2) =>
-                {
-                    SubtitleListview1.BeginUpdate();
-                    Configuration.Settings.Tools.ListViewShowColumnWordsPerMin = contextMenuStripLvHeaderWpmToolStripMenuItem.Checked;
-                    if (Configuration.Settings.Tools.ListViewShowColumnWordsPerMin)
-                    {
-                        SubtitleListview1.ShowWordsMinColumn(LanguageSettings.Current.General.WordsPerMin);
-                    }
-                    else
-                    {
-                        SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.WordsPerMinute);
-                    }
-
-                    SaveSubtitleListviewIndices();
-                    UiUtil.InitializeSubtitleFont(SubtitleListview1);
-                    SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                    RestoreSubtitleListviewIndices();
-                    SubtitleListview1.EndUpdate();
-                };
-                cm.Items.Add(contextMenuStripLvHeaderWpmToolStripMenuItem);
-
-                // GAP
-                var contextMenuStripLvHeaderGapToolStripMenuItem = new ToolStripMenuItem(LanguageSettings.Current.General.Gap)
-                {
-                    CheckOnClick = true,
-                    Checked = Configuration.Settings.Tools.ListViewShowColumnGap
-                };
-                contextMenuStripLvHeaderGapToolStripMenuItem.Click += (sender2, e2) =>
-                {
-                    SubtitleListview1.BeginUpdate();
-                    Configuration.Settings.Tools.ListViewShowColumnGap = contextMenuStripLvHeaderGapToolStripMenuItem.Checked;
-                    if (Configuration.Settings.Tools.ListViewShowColumnGap)
-                    {
-                        SubtitleListview1.ShowGapColumn(LanguageSettings.Current.General.Gap);
-                    }
-                    else
-                    {
-                        SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.Gap);
-                    }
-
-                    SaveSubtitleListviewIndices();
-                    UiUtil.InitializeSubtitleFont(SubtitleListview1);
-                    SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                    RestoreSubtitleListviewIndices();
-                    SubtitleListview1.EndUpdate();
-                };
-                cm.Items.Add(contextMenuStripLvHeaderGapToolStripMenuItem);
-
-                if (formatType == typeof(AdvancedSubStationAlpha) || formatType == typeof(SubStationAlpha) || formatType == typeof(CsvNuendo) || formatType == typeof(PodcastIndexer))
-                {
-                    // ACTOR
-                    var actorTitle = formatType == typeof(CsvNuendo) ? LanguageSettings.Current.General.Character : LanguageSettings.Current.General.Actor;
-                    var contextMenuStripLvHeaderActorToolStripMenuItem = new ToolStripMenuItem(actorTitle)
-                    {
-                        CheckOnClick = true,
-                        Checked = Configuration.Settings.Tools.ListViewShowColumnActor
-                    };
-                    contextMenuStripLvHeaderActorToolStripMenuItem.Click += (sender2, e2) =>
-                    {
-                        try{SetClassicActorColumnVisibility(contextMenuStripLvHeaderActorToolStripMenuItem.Checked);}
-                        catch(Exception ex)when(ex is IOException || ex is UnauthorizedAccessException)
-                        {contextMenuStripLvHeaderActorToolStripMenuItem.Checked=Configuration.Settings.Tools.ListViewShowColumnActor;ShowStatus(ex.Message);}
-                    };
-                    cm.Items.Add(contextMenuStripLvHeaderActorToolStripMenuItem);
-                }
-
-                if (formatType == typeof(TimedText10))
-                {
-                    // REGION
-                    var contextMenuStripLvHeaderRegionToolStripMenuItem = new ToolStripMenuItem(LanguageSettings.Current.General.Region)
-                    {
-                        CheckOnClick = true,
-                        Checked = Configuration.Settings.Tools.ListViewShowColumnRegion
-                    };
-                    contextMenuStripLvHeaderRegionToolStripMenuItem.Click += (sender2, e2) =>
-                    {
-                        SubtitleListview1.BeginUpdate();
-                        Configuration.Settings.Tools.ListViewShowColumnRegion = contextMenuStripLvHeaderRegionToolStripMenuItem.Checked;
-                        if (Configuration.Settings.Tools.ListViewShowColumnRegion)
-                        {
-                            SubtitleListview1.ShowRegionColumn(LanguageSettings.Current.General.Region);
-                        }
-                        else
-                        {
-                            SubtitleListview1.HideColumn(SubtitleListView.SubtitleColumn.Region);
-                        }
-
-                        SaveSubtitleListviewIndices();
-                        UiUtil.InitializeSubtitleFont(SubtitleListview1);
-                        SubtitleListview1.Fill(_subtitle, _subtitleOriginal);
-                        RestoreSubtitleListviewIndices();
-                        SubtitleListview1.EndUpdate();
-                    };
-                    cm.Items.Add(contextMenuStripLvHeaderRegionToolStripMenuItem);
-                }
-
-                cm.Show(SubtitleListview1, coordinates);
+                var menu = CreateClassicHeaderMenu();
+                menu.Show(SubtitleListview1, coordinates);
                 return;
             }
 
@@ -17123,6 +16913,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         internal void MainKeyDown(object sender, KeyEventArgs e)
         {
+            if (HandleClassicCustomShortcut(e)) return;
+            if (_paletteAction == null && ClassicRightAlt) return;
             if (_paletteAction == null)
             {
                 if (e.KeyCode == Keys.LWin)
@@ -18369,7 +18161,9 @@ namespace Nikse.SubtitleEdit.Forms
             }
             else if (e.Modifiers == (Keys.Control | Keys.Alt | Keys.Shift) && e.KeyCode == Keys.F) // Toggle HHMMSSFF / HHMMSSMMM
             {
-                Configuration.Settings.General.UseTimeFormatHHMMSSFF = !Configuration.Settings.General.UseTimeFormatHHMMSSFF;
+                var mode = Configuration.Settings.General.UseAbsoluteFrameNumbers ? 0 : Configuration.Settings.General.UseTimeFormatHHMMSSFF ? 2 : 1;
+                Configuration.Settings.General.UseTimeFormatHHMMSSFF = mode == 1;
+                Configuration.Settings.General.UseAbsoluteFrameNumbers = mode == 2;
                 RefreshTimeCodeMode();
                 e.SuppressKeyPress = true;
             }
@@ -18551,6 +18345,7 @@ namespace Nikse.SubtitleEdit.Forms
                 {
                     libMpv.GetPreviousFrame();
                 }
+                else if (mediaPlayer.VideoPlayer is ClassicFfmpegPlayer ffmpeg) ffmpeg.StepFrame(-1);
                 else
                 {
                     MoveVideoSeconds(-1.0 / Configuration.Settings.General.CurrentFrameRate);
@@ -18564,6 +18359,7 @@ namespace Nikse.SubtitleEdit.Forms
                 {
                     libMpv.GetNextFrame();
                 }
+                else if (mediaPlayer.VideoPlayer is ClassicFfmpegPlayer ffmpeg) ffmpeg.StepFrame(1);
                 else
                 {
                     MoveVideoSeconds(1.0 / Configuration.Settings.General.CurrentFrameRate);
@@ -27185,7 +26981,7 @@ namespace Nikse.SubtitleEdit.Forms
                     GetPropertiesAndDoAction(pluginFileName, out var name, out var text, out var version, out var description, out var actionType, out var shortcut, out var mi);
                     if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(actionType) && mi != null)
                     {
-                        var item = new ToolStripMenuItem { Text = text, Tag = pluginFileName };
+                        var item = new ToolStripMenuItem { Text = text, Tag = pluginFileName, Name = "classicPlugin_" + name };
                         UiUtil.FixFonts(item);
 
                         if (!string.IsNullOrEmpty(shortcut))

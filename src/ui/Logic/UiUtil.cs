@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Controls;
+using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Enums;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
@@ -204,6 +204,7 @@ namespace Nikse.SubtitleEdit.Logic
         public static VideoPlayer GetVideoPlayer()
         {
             var gs = Configuration.Settings.General;
+            if (gs.VideoPlayer == "FFmpeg") return new ClassicFfmpegPlayer();
 
             if (Configuration.IsRunningOnLinux)
             {

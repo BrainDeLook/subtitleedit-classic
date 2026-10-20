@@ -1,4 +1,5 @@
-﻿using Nikse.SubtitleEdit.Core.Cea708;
+using System.Linq;
+using Nikse.SubtitleEdit.Core.Cea708;
 using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Collections.Generic;
@@ -222,6 +223,12 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             subtitle.Renumber();
         }
 
+        public static System.Collections.Generic.List<Nikse.SubtitleEdit.Core.Cea708.CcData> GetAllCcData(string ancData)
+        {
+            var bytes = HexStringToByteArray(GetHex(ancData));
+            if (bytes.Length < 10) return new System.Collections.Generic.List<Nikse.SubtitleEdit.Core.Cea708.CcData>();
+            return new Smpte291M(bytes).CcDataSectionCcData.CcData.ToList();
+        }
         public static string GetText(int lineIndex, string input, bool flush, CommandState state)
         {
             var hexString = GetHex(input);

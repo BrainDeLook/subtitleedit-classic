@@ -201,6 +201,8 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public string FFmpegLocation { get; set; }
         public string FFmpegSceneThreshold { get; set; }
         public bool UseTimeFormatHHMMSSFF { get; set; }
+        public bool UseAbsoluteFrameNumbers { get; set; }
+        public bool StoreTimesOnVideoFrames { get; set; }
         public int SplitBehavior { get; set; }
         public bool SplitRemovesDashes { get; set; }
         public int ClearStatusBarAfterSeconds { get; set; }

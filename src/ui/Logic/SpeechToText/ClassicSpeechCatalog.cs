@@ -94,7 +94,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             Path.Combine(Root, "Engines", engine.Family, PinnedVersion(engine), variant);
 
         public static string PinnedVersion(SpeechEngine engine) => engine.Family == "crisp" ? "0.8.43" :
-            engine.Family == "qwen" ? "0.1.8" : engine.Family == "cpp" ? "1.9.3" : "1.0.1";
+            engine.Family == "qwen" ? "0.1.8" : engine.Family == "cpp" ? "1.9.5" : "1.0.1-build103";
 
         public static string RuntimeUrl(SpeechEngine engine, string variant)
         {
@@ -105,8 +105,8 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             }
             if (engine.Family == "qwen")
                 return "https://github.com/niksedk/qwen3-asr.cpp/releases/download/v0.1.8/qwen3-asr-cpp-win64" + (variant == "vulkan" ? "-vulkan" : "") + ".zip";
-            if (engine.Family == "cpp") return "https://github.com/SubtitleEdit/support-files/releases/download/whispercpp-193/whisper-vulkan-x64.zip";
-            if (engine.Family == "whisperx") return "https://github.com/SubtitleEdit/support-files/releases/download/whisperx-standalone-101/whisperx-standalone-windows-x64.7z";
+            if (engine.Family == "cpp") return "https://github.com/SubtitleEdit/support-files/releases/download/whispercpp-195/whisper-vulkan-x64.zip";
+            if (engine.Family == "whisperx") return "https://github.com/SubtitleEdit/support-files/releases/download/whisperx-standalone-103/whisperx-standalone-windows-x64.7z";
             throw new ArgumentException("Unknown speech engine");
         }
 

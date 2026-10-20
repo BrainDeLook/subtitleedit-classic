@@ -69,9 +69,10 @@ namespace Nikse.SubtitleEdit.Logic
         public static readonly string[] Names = { "OpenAI-compatible", "llama.cpp", "NVIDIA", "API Route", "Perplexity", "Lara", "CrispASR MADLAD", "llama.cpp advanced", "Ollama advanced", "LM Studio advanced" };
         public override string ToString() => Name;
         public ClassicNewTranslator(string id, HttpMessageHandler handler = null) { _handler=handler; Id = id; Name = Names[Array.IndexOf(Ids, id)]; }
-        public void Initialize()
+        public void Initialize() => Initialize(ClassicTranslationSettings.Load(Id));
+        public void Initialize(ClassicTranslationSettings settings)
         {
-            _chat?.Dispose(); _http?.Dispose(); _settings = ClassicTranslationSettings.Load(Id); _chat = new ClassicAiClient(_settings.Api,_handler);
+            _chat?.Dispose(); _http?.Dispose(); _settings = settings ?? throw new ArgumentNullException(nameof(settings)); _chat = new ClassicAiClient(_settings.Api,_handler);
             _http = new HttpClient(_handler??new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(_settings.Api.TimeoutSeconds) }; _context.Clear(); _advancedHistory.Clear(); Error=null;
         }
         public List<TranslationPair> GetSupportedSourceLanguages() => Id == "madlad" ? ClassicMadladLanguages.List() : Id == "lara" ? ClassicProviderLanguages.Lara() : ChatGptTranslate.ListLanguages();

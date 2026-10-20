@@ -157,9 +157,9 @@ namespace Nikse.SubtitleEdit.Core.Forms
                     sbWord.Append(ch);
                 }
             }
-            S1 = string.Join(string.Empty, sbS1.ToString().Trim().ToCharArray().Reverse());
+            S1 = string.Join(string.Empty, sbS1.ToString().Trim().ToCharArray().AsEnumerable().Reverse());
             S1 = RemoveEmptyTags(S1);
-            S2 = AddWordBefore(string.Join(string.Empty, sbWord.ToString().Trim().ToCharArray().Reverse()), S2);
+            S2 = AddWordBefore(string.Join(string.Empty, sbWord.ToString().Trim().ToCharArray().AsEnumerable().Reverse()), S2);
             S2 = AutoBreakIfNeeded(S2);
         }
 

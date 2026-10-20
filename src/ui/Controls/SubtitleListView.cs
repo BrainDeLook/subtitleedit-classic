@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic;
 using System;
 using System.Collections.Generic;
@@ -2204,7 +2204,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void UpdateFrames(Subtitle subtitle)
         {
-            if (Configuration.Settings?.General.UseTimeFormatHHMMSSFF == true)
+            if (Configuration.Settings?.General.UseTimeFormatHHMMSSFF == true || Configuration.Settings?.General.UseAbsoluteFrameNumbers == true)
             {
                 BeginUpdate();
                 for (int i = 0; i < subtitle.Paragraphs.Count; i++)

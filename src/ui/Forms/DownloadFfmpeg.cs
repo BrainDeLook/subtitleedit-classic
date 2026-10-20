@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Http;
 using Nikse.SubtitleEdit.Logic;
 using System;
@@ -56,8 +56,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void DownloadFfmpeg_Shown(object sender, EventArgs e)
         {
-            var url = "https://github.com/SubtitleEdit/support-files/releases/download/ffmpeg-v8/ffmpeg.zip";
-            if (IntPtr.Size == 32)
+            var url = ClassicRuntimePins.FfmpegUrl;
+            if (IntPtr.Size == 4)
             {
                 url = "https://github.com/SubtitleEdit/support-files/releases/download/ffmpeg-v8/ffmpeg-win32.zip";
             }
@@ -68,8 +68,9 @@ namespace Nikse.SubtitleEdit.Forms
 
             if (_title.Contains("ffprobe", StringComparison.OrdinalIgnoreCase))
             {
+                // ffmpeg902.zip contains only ffmpeg.exe; keep the separate probe package.
                 url = "https://github.com/SubtitleEdit/support-files/releases/download/ffmpeg-v8/ffprobe.zip";
-                if (IntPtr.Size == 32)
+                if (IntPtr.Size == 4)
                 {
                     url = "https://github.com/SubtitleEdit/support-files/releases/download/ffmpeg-v8/ffprobe-win32.zip";
                 }
@@ -135,7 +136,7 @@ namespace Nikse.SubtitleEdit.Forms
                 "b7fba2d49212660d67652f4ffb5760fdc5c7c4732fa08af630bd2674fd90a9dc5de05cad543204f3846813bb566c708addb8d72b8b5c6c9ff973522b2fe25037", // ffmpeg for Windows 7 
             };
             var hash = Utilities.GetSha512Hash(downloadStream.ToArray());
-            if (!sha512Hashes.Contains(hash))
+            if (!sha512Hashes.Contains(hash) && !ClassicRuntimePins.ApprovedFfmpeg(downloadStream.ToArray()))
             {
                 MessageBox.Show("ffmpeg SHA 512 hash does not match - download aborted!"); ;
                 DialogResult = DialogResult.Cancel;

@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.AudioToText;
+using Nikse.SubtitleEdit.Core.AudioToText;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Http;
 using Nikse.SubtitleEdit.Logic;
@@ -15,7 +15,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 {
     public sealed partial class WhisperDownload : Form
     {
-        private const string DownloadUrl64Cpp = "https://github.com/SubtitleEdit/support-files/releases/download/whispercpp-182/whisper-blas-bin-x64.zip";
+        private const string DownloadUrl64Cpp = ClassicRuntimePins.WhisperCpuUrl;
         private const string DownloadUrl32Cpp = "https://github.com/SubtitleEdit/support-files/releases/download/whispercpp-182/whisper-blas-bin-win32.zip";
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly string _whisperChoice;
@@ -72,7 +72,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         };
 
 
-        private const string DownloadUrl64CppCuBlas = "https://github.com/SubtitleEdit/support-files/releases/download/whispercpp-180/whisper-cublas-11.8.0-bin-x64.7z";
+        private const string DownloadUrl64CppCuBlas = ClassicRuntimePins.WhisperCudaUrl;
 
         private static readonly string[] Sha512HashesCppCuBlas =
         {
@@ -297,7 +297,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
                 hashes = Sha512HashesCpp;
             }
 
-            if (!hashes.Contains(hash))
+            if (!hashes.Contains(hash) && !((_whisperChoice == WhisperChoice.Cpp || _whisperChoice == WhisperChoice.CppCuBlas) && ClassicRuntimePins.ApprovedWhisper(downloadStream.ToArray())))
             {
                 MessageBox.Show("Whisper SHA-512 hash does not match!"); ;
                 DialogResult = DialogResult.Cancel;

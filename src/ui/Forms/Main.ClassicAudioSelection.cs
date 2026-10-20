@@ -31,7 +31,8 @@ namespace Nikse.SubtitleEdit.Forms
   private void ApplyClassicOpeningAudio()
   {
    if(!_classicPendingAudioIndex.HasValue)return;var index=_classicPendingAudioIndex.Value;_classicPendingAudioIndex=null;
-   if(mediaPlayer.VideoPlayer is LibMpvDynamic mpv){mpv.AudioTrackNumber=index;_videoAudioTrackNumber=mpv.AudioTrackNumber;}
+   if(mediaPlayer.VideoPlayer is ClassicFfmpegPlayer ff){ff.AudioTrackNumber=index;_videoAudioTrackNumber=index;}
+   else if(mediaPlayer.VideoPlayer is LibMpvDynamic mpv){mpv.AudioTrackNumber=index;_videoAudioTrackNumber=mpv.AudioTrackNumber;}
    else if(mediaPlayer.VideoPlayer is LibVlcDynamic vlc){var tracks=vlc.GetAudioTracks().Where(t=>t.TrackNumber>=0).ToList();if(index>=0 && index<tracks.Count){vlc.AudioTrackNumber=tracks[index].TrackNumber;_videoAudioTrackNumber=tracks[index].TrackNumber;}}
   }
   private void BeginClassicWaveform(string file,int index)

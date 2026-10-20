@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Windows.Forms;
 
@@ -11,7 +11,7 @@ namespace Nikse.SubtitleEdit.Forms
         {
             if(_classicVideoOcrMenu==null)
             {
-                _classicVideoOcrMenu=new ToolStripMenuItem();
+                _classicVideoOcrMenu=new ToolStripMenuItem { Name="classicVideoOcr" };
                 _classicVideoOcrMenu.Click+=ToolStripMenuItemImportOcrHardSubClick;
                 toolStripMenuItemVideo.DropDownItems.Add(_classicVideoOcrMenu);
             }

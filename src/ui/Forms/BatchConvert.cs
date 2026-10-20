@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Controls;
+﻿using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.BluRaySup;
 using Nikse.SubtitleEdit.Core.Common;
@@ -58,6 +58,8 @@ namespace Nikse.SubtitleEdit.Forms
             public SubtitleFormat SourceFormat { get; set; }
             public List<IBinaryParagraphWithPosition> BinaryParagraphs { get; set; }
             public string TargetFileName { get; set; }
+            public Subtitle TranslationIdentity { get; set; }
+            public ThreadDoWorkParameter Copy() => (ThreadDoWorkParameter)MemberwiseClone();
 
             public ThreadDoWorkParameter(
                 bool fixCommonErrors,
@@ -86,6 +88,7 @@ namespace Nikse.SubtitleEdit.Forms
                 BeautifyTimeCodes = beautifyTimeCodes;
                 Item = item;
                 Subtitle = subtitle;
+                TranslationIdentity = subtitle;
                 Format = format;
                 Encoding = encoding;
                 Language = language;
@@ -747,6 +750,7 @@ namespace Nikse.SubtitleEdit.Forms
             _autoTranslatorEngines.AddRange(ClassicNewTranslator.Ids.Select(id=>new ClassicNewTranslator(id)));
             InitializeClassicBatchTranslation();
             InitializeClassicBatchErrors();
+            InitializeClassicBatch53();
             nikseComboBoxEngine.Items.Clear();
             nikseComboBoxEngine.Items.AddItems(_autoTranslatorEngines.Select(p => p.Name));
             nikseComboBoxEngine.SelectedIndex = 0;
@@ -1316,8 +1320,10 @@ namespace Nikse.SubtitleEdit.Forms
             _abort = false;
 
             listViewInputFiles.BeginUpdate();
+            _batch53PriorStatuses.Clear();
             foreach (ListViewItem item in listViewInputFiles.Items)
             {
+                _batch53PriorStatuses[item] = item.SubItems[3].Text;
                 item.SubItems[3].Text = "-";
             }
 
@@ -1329,6 +1335,7 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 ListViewItem item = listViewInputFiles.Items[index];
                 var fileName = item.Text;
+                if (SkipClassicBatchItem(item)) { item.SubItems[3].Text = LanguageSettings.Current.BatchConvert.FilterSkipped; index++; IncrementAndShowProgress(); continue; }
                 try
                 {
                     var binaryParagraphs = new List<IBinaryParagraphWithPosition>();
@@ -1669,7 +1676,7 @@ namespace Nikse.SubtitleEdit.Forms
                                         }
                                     };
                                     vobSubOcr.FileName = Path.GetFileName(fileName);
-                                    vobSubOcr.InitializeBatch(bluRaySubtitles, Configuration.Settings.VobSubOcr, fileName, false, _ocrLanguage, _ocrEngine, _cancellationTokenSource.Token);
+                                    vobSubOcr.InitializeBatch(bluRaySubtitles, Configuration.Settings.VobSubOcr, fileName, false, _batch53.OcrLanguage(fileName, _ocrLanguage), _ocrEngine, _cancellationTokenSource.Token);
                                     sub = vobSubOcr.SubtitleFromOcr;
                                 }
                             }
@@ -1694,7 +1701,7 @@ namespace Nikse.SubtitleEdit.Forms
                                         lastProgress = progress;
                                     }
                                 };
-                                vobSubOcr.InitializeBatch(fileName, Configuration.Settings.VobSubOcr, false, _ocrEngine, _ocrLanguage, _cancellationTokenSource.Token);
+                                vobSubOcr.InitializeBatch(fileName, Configuration.Settings.VobSubOcr, false, _ocrEngine, _batch53.OcrLanguage(fileName, _ocrLanguage), _cancellationTokenSource.Token);
                                 sub = vobSubOcr.SubtitleFromOcr;
                             }
                         }
@@ -1762,7 +1769,7 @@ namespace Nikse.SubtitleEdit.Forms
                                                 item.SubItems[3].Text = $"OCR: {progress}";
                                             };
                                             var language = programMapTableParser.GetSubtitleLanguage(id);
-                                            language = string.IsNullOrEmpty(language) ? _ocrLanguage : language;
+                                            language = _batch53.OcrLanguage(fileName, string.IsNullOrEmpty(language) ? _ocrLanguage : language);
                                             vobSubOcr.FileName = Path.GetFileName(fileName);
                                             vobSubOcr.InitializeBatch(tsBinaryParagraphs, Configuration.Settings.VobSubOcr, fileName, false, language, _ocrEngine, _cancellationTokenSource.Token);
                                             subtitle = vobSubOcr.SubtitleFromOcr;
@@ -1809,8 +1816,9 @@ namespace Nikse.SubtitleEdit.Forms
 
                                         var preExt = TsToBluRaySup.GetFileNameEnding(programMapTableParser, id);
                                         var dummy = 0;
-                                        var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, string.Empty, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt);
-                                        if(saved) { RecordClassicBatchErrors(parameter.Subtitle,GetCurrentSubtitleFormat(),fileName+preExt); tsConvertedCount++; }
+                                        PrepareClassicTsSave(parameter, preExt);
+                                        var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, parameter.TargetFileName, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp);
+                                        if(saved) { RecordClassicBatchErrors(parameter.Subtitle,GetCurrentSubtitleFormat(),fileName+preExt); tsConvertedCount++; SaveClassicTsVariants(parameter); }
                                     }
                                 }
                             }
@@ -1863,8 +1871,9 @@ namespace Nikse.SubtitleEdit.Forms
                                         binaryParagraphs);
                                     ApplyFixesStep2(parameter, Configuration.Settings.Tools.BatchConvertFixRtlMode);
 
-                                    var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, string.Empty, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt);
-                                    if(saved) { RecordClassicBatchErrors(parameter.Subtitle,GetCurrentSubtitleFormat(),fileName+preExt); tsConvertedCount++; }
+                                    PrepareClassicTsSave(parameter, preExt);
+                                        var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, parameter.TargetFileName, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp);
+                                    if(saved) { RecordClassicBatchErrors(parameter.Subtitle,GetCurrentSubtitleFormat(),fileName+preExt); tsConvertedCount++; SaveClassicTsVariants(parameter); }
                                 }
                             }
 
@@ -1968,6 +1977,7 @@ namespace Nikse.SubtitleEdit.Forms
                                 {
                                     var res = RunAutoTranslate(parameter.Subtitle);
                                     parameter.Subtitle = res.Subtitle;
+                                    parameter.TranslationIdentity = res.Subtitle;
 
                                     var newFileName = FileNameHelper.GetFileNameWithTargetLanguage(parameter.FileName, null, null, parameter.Format, res.Source.TwoLetterIsoLanguageName, res.Target.TwoLetterIsoLanguageName);
                                     parameter.TargetFileName = newFileName;
@@ -2016,7 +2026,7 @@ namespace Nikse.SubtitleEdit.Forms
             public TranslationPair Target { get; set; }
         }
 
-        private TranslateResult RunAutoTranslate(Subtitle subtitle)
+        private TranslateResult RunAutoTranslateOne(Subtitle subtitle)
         {
             var translatedSubtitle = new Subtitle(subtitle);
             foreach (var paragraph in translatedSubtitle.Paragraphs)
@@ -2046,6 +2056,7 @@ namespace Nikse.SubtitleEdit.Forms
                 target = targetItem;
             }
 
+            if (_batch53Target != null) target = _batch53Target;
             if(_autoTranslator is ClassicNewTranslator modern)
                 return new TranslateResult{Source=source,Target=target,Subtitle=RunClassicBatchTranslation(subtitle,modern,source.Code,target.Code)};
 
@@ -2837,6 +2848,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private bool CheckSkipFilter(string fileName, SubtitleFormat format, Subtitle sub)
         {
+            if (_batch53.Filter == "forced" && _batch53.Skip(fileName, sub, format)) return true;
             bool skip = false;
             if (comboBoxFilter.SelectedIndex == 1)
             {
@@ -3028,7 +3040,7 @@ namespace Nikse.SubtitleEdit.Forms
             p.Subtitle.Renumber();
         }
 
-        private void ThreadWorkerCompleted(ThreadDoWorkParameter p)
+        private void ThreadWorkerCompletedOne(ThreadDoWorkParameter p)
         {
             CommandLineConverter.BatchConvertProgress progressCallback = null;
             if (p.Item.Index + 2 < listViewInputFiles.Items.Count)
@@ -3069,6 +3081,7 @@ namespace Nikse.SubtitleEdit.Forms
                     p.Subtitle.Header = _ebuGeneralInformation.ToString();
                 }
 
+                _batch53.Apply(p.Subtitle, p.Format, _cancellationTokenSource.Token);
                 var targetFormat = p.ToFormat;
                 if (targetFormat == LanguageSettings.Current.ExportCustomText.Title)
                 {
@@ -3104,7 +3117,7 @@ namespace Nikse.SubtitleEdit.Forms
                     {
                         dir = Path.GetDirectoryName(p.FileName);
                     }
-                    var success = CommandLineConverter.BatchConvertSave(targetFormat, TimeSpan.Zero, GetCurrentEncoding(p.FileName), dir, p.TargetFileName, _count, ref _converted, ref _errors, _allFormats, p.FileName, p.Subtitle, p.SourceFormat, binaryParagraphs, overwrite, -1, null, null, null, null, false, progressCallback, null, null, null, null, null, null, _preprocessingSettings, _cancellationTokenSource.Token);
+                    var success = CommandLineConverter.BatchConvertSave(targetFormat, TimeSpan.Zero, GetCurrentEncoding(p.FileName), dir, p.TargetFileName, _count, ref _converted, ref _errors, _allFormats, p.FileName, p.Subtitle, p.SourceFormat, binaryParagraphs, overwrite, -1, null, null, null, null, false, progressCallback, null, null, null, null, null, null, _preprocessingSettings, _cancellationTokenSource.Token, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp);
                     if (success)
                     {
                         RecordClassicBatchErrors(p.Subtitle,p.Format,string.IsNullOrWhiteSpace(p.TargetFileName)?p.FileName:p.TargetFileName);

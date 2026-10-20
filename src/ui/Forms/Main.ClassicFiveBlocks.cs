@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 using System.Linq;
 using Nikse.SubtitleEdit.Core.Common;
@@ -41,6 +41,12 @@ namespace Nikse.SubtitleEdit.Forms
         private void InitializeClassicFiveBlocks()
         {
             ClassicFontCollection.LoadCollected();
+            if (FindClassicMenu(menuStrip1.Items, "classicBackgroundMusic") == null)
+            {
+            var music = new ToolStripMenuItem(ClassicAssistedText.L("Создать фоновую музыку…", "Generate background music…")) { Name = "classicBackgroundMusic" };
+            music.Click += (s,e) => { if (RequireFfmpegOk()) using(var form = new ClassicBackgroundMusic(_videoFileName, _videoInfo?.TotalSeconds ?? 60)) form.ShowDialog(this); };
+            toolStripMenuItemVideo.DropDownItems.Add(music);
+            }
             if(_classicFontCollector==null)
             {
                 _classicFontCollector=new ToolStripMenuItem {Name="classicFontCollector"};

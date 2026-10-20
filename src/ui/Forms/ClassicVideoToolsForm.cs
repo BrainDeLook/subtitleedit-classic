@@ -82,7 +82,11 @@ namespace Nikse.SubtitleEdit.Forms
         private async Task AddExternal(string file)
         {
             _operation = new CancellationTokenSource(); Busy(true);
-            try { var info = await ClassicMediaJobs.Probe(file, _operation.Token); foreach (var stream in info.Streams.Where(s => s.Type == "video" || s.Type == "audio" || s.Type == "subtitle")) _streams.Items.Add(new ClassicMappedStream { File = file, Stream = stream }, true); }
+            try {
+                if (new[] { ".scc", ".mcc" }.Contains(Path.GetExtension(file).ToLowerInvariant()))
+                    _streams.Items.Add(new ClassicMappedStream { File = file, Stream = new ClassicMediaStream { Index = 0, Type = "subtitle", Codec = Path.GetExtension(file).Equals(".scc", StringComparison.OrdinalIgnoreCase) ? "eia_608" : "CEA-608/708", Title = Path.GetFileName(file) } }, true);
+                else { var info = await ClassicMediaJobs.Probe(file, _operation.Token); foreach (var stream in info.Streams.Where(s => s.Type == "video" || s.Type == "audio" || s.Type == "subtitle")) _streams.Items.Add(new ClassicMappedStream { File = file, Stream = stream }, true); }
+            }
             catch (OperationCanceledException) { } catch (Exception ex) { MessageBox.Show(this, ex.Message, Text); }
             finally { _operation.Dispose(); _operation = null; Busy(false); if (_closing) Close(); }
         }
@@ -103,7 +107,7 @@ namespace Nikse.SubtitleEdit.Forms
         private async Task Run()
         {
             if (_operation != null || _info == null) return; _cuts.EndEdit(); _chapters.EndEdit();
-            using (var d = new SaveFileDialog { Filter = "Matroska|*.mkv|MP4|*.mp4|QuickTime|*.mov", FileName = Path.GetFileNameWithoutExtension(_path.Text) + "_edited" })
+            using (var d = new SaveFileDialog { Filter = "Matroska|*.mkv|MP4|*.mp4|QuickTime|*.mov|MPEG captions (video/audio will be converted)|*.mpg", FileName = Path.GetFileNameWithoutExtension(_path.Text) + "_edited" })
             {
                 if (d.ShowDialog(this) != DialogResult.OK) return;
                 _operation = new CancellationTokenSource(); Busy(true); _status.Text = L("Обработка…", "Processing…");

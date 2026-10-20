@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Controls;
+using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Enums;
@@ -149,6 +149,7 @@ namespace Nikse.SubtitleEdit.Forms.Options
                 "File type associations"});
 
             Init();
+            InitializeClassicFfmpegOption();
             _loading = false;
 
             _oldSettings = Core.Settings.Settings.CustomSerialize(Configuration.Settings);
@@ -669,7 +670,8 @@ namespace Nikse.SubtitleEdit.Forms.Options
             comboBoxTimeCodeMode.Items.Clear();
             comboBoxTimeCodeMode.Items.Add(language.TimeCodeModeHHMMSSMS);
             comboBoxTimeCodeMode.Items.Add(language.TimeCodeModeHHMMSSFF);
-            comboBoxTimeCodeMode.SelectedIndex = gs.UseTimeFormatHHMMSSFF ? 1 : 0;
+            comboBoxTimeCodeMode.Items.Add(gs.Language.StartsWith("ru") ? "Номера кадров" : "Frame numbers");
+            comboBoxTimeCodeMode.SelectedIndex = gs.UseAbsoluteFrameNumbers ? 2 : gs.UseTimeFormatHHMMSSFF ? 1 : 0;
             labelTimeCodeMode.Text = language.TimeCodeMode;
             comboBoxTimeCodeMode.Left = labelTimeCodeMode.Left + labelTimeCodeMode.Width + 4;
 
@@ -2266,6 +2268,7 @@ namespace Nikse.SubtitleEdit.Forms.Options
             if (comboBoxTimeCodeMode.Visible)
             {
                 gs.UseTimeFormatHHMMSSFF = comboBoxTimeCodeMode.SelectedIndex == 1;
+                gs.UseAbsoluteFrameNumbers = comboBoxTimeCodeMode.SelectedIndex == 2;
             }
 
             gs.SplitBehavior = comboBoxSplitBehavior.SelectedIndex;
@@ -2275,7 +2278,8 @@ namespace Nikse.SubtitleEdit.Forms.Options
             gs.AllowEditOfOriginalSubtitle = checkBoxAllowEditOfOriginalSubtitle.Checked;
             gs.PromptDeleteLines = checkBoxPromptDeleteLines.Checked;
 
-            if (radioButtonVideoPlayerMPV.Checked)
+            if (_classicFfmpegRadio?.Checked == true) gs.VideoPlayer = "FFmpeg";
+            else if (radioButtonVideoPlayerMPV.Checked)
             {
                 gs.VideoPlayer = "MPV";
             }

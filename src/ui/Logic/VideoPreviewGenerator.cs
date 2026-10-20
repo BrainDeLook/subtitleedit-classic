@@ -393,7 +393,7 @@ namespace Nikse.SubtitleEdit.Logic
                 StartInfo =
                 {
                     FileName = GetFfmpegLocation(),
-                    Arguments = $"-i \"{videoFileName}\" -vf \"select=1\" -vsync vfr \"{outputFileName}\"",
+                    Arguments = $"-i \"{videoFileName}\" -vf \"select=1\" -fps_mode vfr \"{outputFileName}\"",
                     UseShellExecute = false,
                     CreateNoWindow = true
                 }

@@ -1,4 +1,4 @@
-;* Subtitle Edit - Installer script
+﻿;* Subtitle Edit - Installer script
 ;*
 ;* Copyright (C) 2010-2016 XhmikosR
 ;*
@@ -350,6 +350,11 @@ Source: {#bindir}\SubtitleEdit.exe;                DestDir: {app};              
 ; Keep all managed/native dependencies produced by the current legacy build.
 Source: {#bindir}\*.dll;                          DestDir: {app};                                    Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
 Source: {#bindir}\SubtitleEdit.exe.config;         DestDir: {app};                                    Flags: ignoreversion skipifsourcedoesntexist; Components: main
+Source: {#bindir}\seconv.exe;                     DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: {#bindir}\seconv.exe.config;              DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: ..\LOCAL_53_INTEGRATION.md;               DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: ..\LOCAL_53_CHECK.ru.md;                  DestDir: {app};                                    Flags: ignoreversion; Components: main
+
 Source: ..\CLASSIC_FIVE_BLOCKS_CHECK.md;           DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: ..\licenses\CLASSIC_RENDERING.md;           DestDir: {app}\licenses;                           Flags: ignoreversion; Components: main
 Source: ..\CLASSIC_CHANGELOG.md;                   DestDir: {app};                                    Flags: ignoreversion; Components: main

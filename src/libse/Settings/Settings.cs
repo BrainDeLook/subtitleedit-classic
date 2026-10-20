@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Enums;
 using System;
 using System.Collections.Generic;
@@ -1477,6 +1477,10 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 settings.General.FFmpegSceneThreshold = subNode.InnerText.Trim();
             }
 
+            subNode = node.SelectSingleNode("UseAbsoluteFrameNumbers");
+            if (subNode != null) settings.General.UseAbsoluteFrameNumbers = Convert.ToBoolean(subNode.InnerText);
+            subNode = node.SelectSingleNode("StoreTimesOnVideoFrames");
+            if (subNode != null) settings.General.StoreTimesOnVideoFrames = Convert.ToBoolean(subNode.InnerText);
             subNode = node.SelectSingleNode("UseTimeFormatHHMMSSFF");
             if (subNode != null)
             {
@@ -9130,6 +9134,8 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 xmlWriter.WriteElementString("FFmpegUseCenterChannelOnly", settings.General.FFmpegUseCenterChannelOnly.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("FFmpegLocation", settings.General.FFmpegLocation);
                 xmlWriter.WriteElementString("FFmpegSceneThreshold", settings.General.FFmpegSceneThreshold);
+                xmlWriter.WriteElementString("UseAbsoluteFrameNumbers", settings.General.UseAbsoluteFrameNumbers.ToString(CultureInfo.InvariantCulture));
+                xmlWriter.WriteElementString("StoreTimesOnVideoFrames", settings.General.StoreTimesOnVideoFrames.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("UseTimeFormatHHMMSSFF", settings.General.UseTimeFormatHHMMSSFF.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("SplitBehavior", settings.General.SplitBehavior.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("SplitRemovesDashes", settings.General.SplitRemovesDashes.ToString(CultureInfo.InvariantCulture));

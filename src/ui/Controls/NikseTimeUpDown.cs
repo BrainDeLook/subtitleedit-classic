@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic;
 using System;
 using System.Collections.Generic;
@@ -19,6 +19,7 @@ namespace Nikse.SubtitleEdit.Controls
         public enum TimeMode
         {
             HHMMSSMS,
+            AbsoluteFrames,
             HHMMSSFF
         }
 
@@ -50,6 +51,7 @@ namespace Nikse.SubtitleEdit.Controls
         {
             get
             {
+                if (!_forceHHMMSSFF && Configuration.Settings?.General.UseAbsoluteFrameNumbers == true) return TimeMode.AbsoluteFrames;
                 if (_forceHHMMSSFF || Configuration.Settings?.General.UseTimeFormatHHMMSSFF == true)
                 {
                     return TimeMode.HHMMSSFF;
@@ -353,7 +355,12 @@ namespace Nikse.SubtitleEdit.Controls
                 milliseconds += Configuration.Settings.General.CurrentVideoOffsetInMs;
             }
 
-            if (Mode == TimeMode.HHMMSSMS)
+            if (Mode == TimeMode.AbsoluteFrames)
+            {
+                _maskedTextBox.Mask = "";
+                _maskedTextBox.Text = Core.SubtitleFormats.SubtitleFormat.MillisecondsToFrames(milliseconds).ToString(CultureInfo.InvariantCulture);
+            }
+            else if (Mode == TimeMode.HHMMSSMS)
             {
                 mask = GetMask(milliseconds);
                 if (_maskedTextBox.Mask != mask)
@@ -371,7 +378,7 @@ namespace Nikse.SubtitleEdit.Controls
                 {
                     _maskedTextBox.Mask = mask;
                 }
-                _maskedTextBox.Text = tc.ToString().Substring(0, 9) + $"{Core.SubtitleFormats.SubtitleFormat.MillisecondsToFrames(tc.Milliseconds):00}";
+                _maskedTextBox.Text = tc.ToHHMMSSFF();
             }
 
             _dirty = false;
@@ -402,6 +409,11 @@ namespace Nikse.SubtitleEdit.Controls
                     return new TimeCode(_initialTotalMilliseconds);
                 }
 
+                if (Mode == TimeMode.AbsoluteFrames)
+                {
+                    if (!int.TryParse(_maskedTextBox.Text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var frames) || Math.Abs((long)frames) > Core.SubtitleFormats.SubtitleFormat.MillisecondsToFrames(TimeCode.MaxTimeTotalMilliseconds)) return new TimeCode(_initialTotalMilliseconds);
+                    return new TimeCode(Core.SubtitleFormats.SubtitleFormat.FramesToMilliseconds(frames) - (UseVideoOffset ? Configuration.Settings.General.CurrentVideoOffsetInMs : 0));
+                }
                 var startTime = _maskedTextBox.Text;
                 var isNegative = startTime.StartsWith('-');
                 startTime = startTime.TrimStart('-').Replace(' ', '0');
@@ -469,6 +481,7 @@ namespace Nikse.SubtitleEdit.Controls
                         }
 
                         var tc = new TimeCode(hours, minutes, seconds, milliseconds);
+                        if (Configuration.Settings.General.StoreTimesOnVideoFrames && int.TryParse(times[3], out var rawFrame)) tc.TotalMilliseconds = FrameNumberTime.ParseClock(hours, minutes, seconds, rawFrame);
 
                         if (UseVideoOffset)
                         {
@@ -511,7 +524,12 @@ namespace Nikse.SubtitleEdit.Controls
                     v.TotalMilliseconds += Configuration.Settings.General.CurrentVideoOffsetInMs;
                 }
 
-                if (Mode == TimeMode.HHMMSSMS)
+                if (Mode == TimeMode.AbsoluteFrames)
+                {
+                    _maskedTextBox.Mask = "";
+                    _maskedTextBox.Text = Core.SubtitleFormats.SubtitleFormat.MillisecondsToFrames(v.TotalMilliseconds).ToString(CultureInfo.InvariantCulture);
+                }
+                else if (Mode == TimeMode.HHMMSSMS)
                 {
                     _maskedTextBox.Mask = GetMask(v.TotalMilliseconds);
                     _maskedTextBox.Text = v.ToString();
@@ -540,7 +558,7 @@ namespace Nikse.SubtitleEdit.Controls
                 AddValue(0);
                 e.Handled = false;
             }
-            else if (char.IsDigit(e.KeyChar) || e.KeyChar == (char)Keys.Back)
+            else if (char.IsDigit(e.KeyChar) || e.KeyChar == (char)Keys.Back || Mode == TimeMode.AbsoluteFrames && e.KeyChar == '-')
             {
                 e.Handled = false;
                 Invalidate();

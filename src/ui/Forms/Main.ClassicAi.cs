@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
@@ -10,7 +10,7 @@ namespace Nikse.SubtitleEdit.Forms
     {
         private void InitializeClassicAiMenu()
         {
-            if (toolsToolStripMenuItem.DropDownItems.ContainsKey("classicAiReview")) return;
+            if (FindClassicMenu(menuStrip1.Items, "classicAiReview") != null) return;
             var review = new ToolStripMenuItem(VoiceReferenceRu ? "AI-проверка субтитров…" : "AI subtitle review…") { Name = "classicAiReview" };
             var assistant = new ToolStripMenuItem(VoiceReferenceRu ? "AI-помощник текущей строки…" : "Current-line AI assistant…") { Name = "classicAiAssistant" };
             review.Click += (s,e) => OpenClassicAiReview(false);

@@ -1,4 +1,26 @@
-# Subtitle Edit Classic changelog
+﻿# Subtitle Edit Classic changelog
+
+## 4.0.28
+
+- Eight custom shortcut sequences with command, insertion and replacement steps, scopes and AltGr support.
+- Speech-only waveform caching, optional fast waveform rendering, independent shot-marker visibility and exact frame-number/time-code modes.
+- Batch presets, translation into multiple target languages, additional filters, ASS style/font options, per-file OCR languages and output timestamp preservation.
+- The separate `seconv.exe` command-line converter, included in the installer, with JSON reporting, modern translation/OCR routes and image exports.
+- ACE-Step background-music generation and selected-track audio/video mixing. Models download on demand.
+- An experimental FFmpeg player and actor/layer timeline with seeking, trimming, zoom and Undo.
+- CEA-608/708 caption authoring/remux paths and refreshed runtime download pins, including FFmpeg 9.0.2.
+
+### Interface and playback fixes
+
+- Tools, Video, import/export and subtitle context menus are grouped by task. Save, Save As and forced-only export stay together.
+- Right-clicking a column header provides the shared column, formatting and spelling settings plus direct access to existing appearance/error-highlighting pages. Context and general settings use the same preferences.
+- Forced marking, Forced-column visibility and forced-only export remain separate actions. Existing custom command IDs are retained after menu reorganization.
+- The track timeline avoids full redraws during normal playback. Spectrogram rendering caches the scaled viewport instead of rebuilding it for each playhead update.
+
+### Validation and compatibility
+
+The release checks cover native integration/media behavior, batch conversion, real CLI outputs, 325 retained named menu entries, shared settings, Russian/English switching and spectrogram pixel equivalence. Paid services, physical DVD hardware, every GPU decoder and fresh inference with all large models are outside this validation. Classic remains a Windows/.NET Framework application; this is not a full cross-platform 5.3 rewrite.
+
 
 ## 4.0.27
 

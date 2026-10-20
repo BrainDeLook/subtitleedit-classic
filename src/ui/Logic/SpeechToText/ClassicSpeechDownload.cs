@@ -23,8 +23,8 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             ["crispasr-windows-x86_64-cuda.zip"] = "94c292069a339e76109e17cc7218b17ceeb70eabf15eb8e1b1afdf7b9ee2b1b0",
             ["qwen3-asr-cpp-win64.zip"] = "ad9c196aa52ceb42a3f46946644e4145fc7e297c84fa54e4cdf7fd9c22556300",
             ["qwen3-asr-cpp-win64-vulkan.zip"] = "a9971a24ba08765568c8a83a547924e42f15bd576b2cf594f6757fff66baf244",
-            ["whisper-vulkan-x64.zip"] = "2b3829c69c64b3bbd117ef3fa3ae1de2574cab36a4a572199bf3c291404ff1cc",
-            ["whisperx-standalone-windows-x64.7z"] = "439776243a3040693e9a2767a3efb4b8dd7549244bb6695ce0ef7209e5456bf3"
+            ["whisper-vulkan-x64.zip"] = "89f2c36455939ad42e08b2107bd6b47105b6d9c1a2b0916cbb500ec27deb520a",
+            ["whisperx-standalone-windows-x64.7z"] = "ec1d0e9eff0c2abfbb7331ee321618823b247190323d38aa577f228262c9254d"
         };
         public static async Task DownloadFileAsync(string url, string destination, bool isGguf,
             CancellationToken cancel, IProgress<SpeechProgress> progress)

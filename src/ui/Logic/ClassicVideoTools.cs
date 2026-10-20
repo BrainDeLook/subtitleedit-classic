@@ -63,6 +63,13 @@ namespace Nikse.SubtitleEdit.Logic
         }
         public static Task Remux(string input, string output, IList<ClassicMappedStream> streams, bool mix, CancellationToken token)
         {
+            if (ClassicCaptionRemux.IsMpeg(output)) return ClassicCaptionRemux.Write(input, output, streams, mix, token);
+            var captions = streams.Where(s => s.Stream.Type == "subtitle" && new[] { ".scc", ".mcc" }.Contains(Path.GetExtension(s.File).ToLowerInvariant())).ToList();
+            if (captions.Count > 0 && (!Path.GetExtension(output).Equals(".mov", StringComparison.OrdinalIgnoreCase) || captions.Any(s => Path.GetExtension(s.File).Equals(".mcc", StringComparison.OrdinalIgnoreCase)))) throw new ArgumentException("SCC requires QuickTime MOV or MPEG output; MCC requires MPEG output.");
+            return RemuxStreams(input, output, streams, mix, token);
+        }
+        public static Task RemuxStreams(string input, string output, IList<ClassicMappedStream> streams, bool mix, CancellationToken token, bool mpeg2 = false)
+        {
             if (streams.Count == 0) throw new ArgumentException("Select streams to include.");
             foreach (var stream in streams) ClassicMediaJobs.CheckOutput(stream.File, output);
             var files = streams.Select(s => s.File).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
@@ -80,6 +87,7 @@ namespace Nikse.SubtitleEdit.Logic
                 filter.Append("amix=inputs=").Append(audio.Count).Append(":duration=longest:normalize=1[mixed]");
                 args.Append(" -filter_complex ").Append(Q(filter.ToString())).Append(" -map \"[mixed]\" -c:a aac -ac 2 -b:a 192k -metadata:s:a:0 title=\"Stereo mix\"");
             }
+            if (mpeg2) args.Append(" -c:v mpeg2video -q:v 2 -c:a mp2 -b:a 192k -f vob");
             return Run(input, output, args.ToString(), token);
         }
         public static string ChapterMetadata(IEnumerable<ClassicVideoChapter> chapters, double duration)

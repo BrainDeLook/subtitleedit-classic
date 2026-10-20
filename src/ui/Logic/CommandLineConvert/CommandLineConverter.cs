@@ -1382,7 +1382,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
         internal static bool BatchConvertSave(string targetFormat, TimeSpan offset, TextEncoding targetEncoding, string outputFolder, string targetFileName, int count, ref int converted, ref int errors,
                                               List<SubtitleFormat> formats, string fileName, Subtitle sub, SubtitleFormat format, IList<IBinaryParagraphWithPosition> binaryParagraphs, bool overwrite, int pacCodePage,
                                               double? targetFrameRate, ICollection<string> multipleReplaceImportFiles, List<string> actions = null,
-                                              Point? resolution = null, bool autoDetectLanguage = false, BatchConvertProgress progressCallback = null, string ebuHeaderFile = null, string assaStyleFile = null, string ocrEngine = null, string preExt = null, int? renumber = null, double? adjustDurationMs = null, PreprocessingSettings preprocessingSettings = null, CancellationToken cancellationToken = default)
+                                              Point? resolution = null, bool autoDetectLanguage = false, BatchConvertProgress progressCallback = null, string ebuHeaderFile = null, string assaStyleFile = null, string ocrEngine = null, string preExt = null, int? renumber = null, double? adjustDurationMs = null, PreprocessingSettings preprocessingSettings = null, CancellationToken cancellationToken = default, bool preserveSourceTimestamp = false)
         {
             if (string.IsNullOrWhiteSpace(preExt))
             {
@@ -1449,7 +1449,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                 }
 
                 var targetFormatFound = false;
-                string outputFileName;
+                string outputFileName = null;
 
                 if (binaryParagraphs != null && binaryParagraphs.Count > 0 && !HasImageTarget(targetFormat))
                 {
@@ -2165,6 +2165,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                     errors++;
                     return false;
                 }
+                if (success && preserveSourceTimestamp && File.Exists(outputFileName) && File.Exists(fileName)) File.SetLastWriteTimeUtc(outputFileName, File.GetLastWriteTimeUtc(fileName));
                 converted++;
                 return success;
             }

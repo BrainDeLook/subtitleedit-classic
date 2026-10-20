@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -21,7 +21,7 @@ namespace Nikse.SubtitleEdit.Forms
         {
             if(_classicImproveTimeCodesMenu==null)
             {
-                _classicImproveTimeCodesMenu=new ToolStripMenuItem();toolsToolStripMenuItem.DropDownItems.Add(_classicImproveTimeCodesMenu);
+                _classicImproveTimeCodesMenu=new ToolStripMenuItem { Name="classicImproveTimeCodes" };toolsToolStripMenuItem.DropDownItems.Add(_classicImproveTimeCodesMenu);
                 _classicImproveTimeCodesMenu.Click+=(s,e)=>
                 {
                     if(_subtitle.Paragraphs.Count==0 || _videoInfo==null || !File.Exists(_videoFileName)){MessageBox.Show(Configuration.Settings.General.Language.StartsWith("ru") ? "Открой субтитры и локальное видео или аудио." : "Open subtitles and a local video/audio file.");return;}

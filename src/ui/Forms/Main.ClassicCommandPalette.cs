@@ -14,7 +14,7 @@ namespace Nikse.SubtitleEdit.Forms
     {
         private string _paletteAction;
         private ToolStripMenuItem _paletteMenuItem;
-        private bool ClassicShortcutMatches(Keys pressed, Keys assigned, string action) => _paletteAction == null ? pressed == assigned : _paletteAction == action;
+        private bool ClassicShortcutMatches(Keys pressed, Keys assigned, string action) => _paletteAction == null ? !ClassicRightAlt && pressed == assigned : _paletteAction == action;
 
         private void InitializeClassicCommandPalette()
         {
@@ -128,14 +128,14 @@ namespace Nikse.SubtitleEdit.Forms
         {
             foreach (var menu in items.OfType<ToolStripMenuItem>())
             {
-                if (menu == _paletteMenuItem || !menu.Available) continue;
+                if (menu == _paletteMenuItem || !menu.Available || _classicNavigationAliases.Contains(menu)) continue;
                 var name = ClassicCommandPalette.Clean(menu.Text);
                 if (menu.HasDropDownItems) { AddClassicPaletteMenus(menu.DropDownItems, group.Length == 0 ? name : group + " → " + name, commands); continue; }
                 if (string.IsNullOrWhiteSpace(name)) continue;
                 // Menu-only actions include modern Classic additions and installed plugins.
                 var existing = commands.FirstOrDefault(c => c.Name == name && c.Group == group);
                 if (existing != null) continue;
-                commands.Add(new ClassicPaletteCommand { Id = "menu:" + (string.IsNullOrEmpty(menu.Name) ? group + "/" + name : menu.Name), Name = name, Group = group, Shortcut = menu.ShortcutKeys == Keys.None ? menu.ShortcutKeyDisplayString ?? "" : new KeysConverter().ConvertToString(menu.ShortcutKeys), Enabled = PaletteMenuEnabled(menu), Execute = () => { if (!PaletteMenuEnabled(menu) || menu.IsDisposed) return false; menu.PerformClick(); return true; } });
+                commands.Add(new ClassicPaletteCommand { Id = ClassicNavigationCommandId(menu, group, name), Name = name, Group = group, Shortcut = menu.ShortcutKeys == Keys.None ? menu.ShortcutKeyDisplayString ?? "" : new KeysConverter().ConvertToString(menu.ShortcutKeys), Enabled = PaletteMenuEnabled(menu), Execute = () => { if (!PaletteMenuEnabled(menu) || menu.IsDisposed) return false; menu.PerformClick(); return true; } });
             }
         }
         private void ShowClassicCommandPalette()
