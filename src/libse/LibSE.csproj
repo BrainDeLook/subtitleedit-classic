@@ -24,6 +24,10 @@
 		<Compile Remove="Forms\FixCommonErrors\HelperContinuation.cs" />
 	</ItemGroup>
 
+	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+		<PackageReference Include="System.Memory" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<Compile Update="Properties\Resources.Designer.cs">
 			<AutoGen>True</AutoGen>
