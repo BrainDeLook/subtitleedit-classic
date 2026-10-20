@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -103,4 +103,3 @@ class TestSpectrogramViewport
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
     }
 }
-

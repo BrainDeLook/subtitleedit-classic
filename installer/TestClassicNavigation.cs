@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.Common;
@@ -16,6 +17,9 @@ class TestClassicNavigation
 {
     const BindingFlags B = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     static int checks;
+    [DllImport("kernel32.dll")] static extern IntPtr GetCurrentProcess();
+    [DllImport("kernel32.dll")] static extern bool TerminateProcess(IntPtr process, uint code);
+    static void Finish(uint code) { Console.Out.Flush(); Console.Error.Flush(); TerminateProcess(GetCurrentProcess(), code); }
     static object Get(object o, string n) => o.GetType().GetField(n, B).GetValue(o);
     static void Set(object o, string n, object v) => o.GetType().GetField(n, B).SetValue(o, v);
     static object Call(object o, string n, params object[] args) => o.GetType().GetMethods(B).First(m => m.Name == n && m.GetParameters().Length == args.Length).Invoke(o, args);
@@ -146,13 +150,11 @@ class TestClassicNavigation
                 Check(saved.Single(p => p.Key == "Layer").Visible && saved.Single(p => p.Key == "ShotIn").Visible, "column choices survive restart");
             }
             Console.WriteLine("PASS TOTAL " + checks);
-            // Some native settings helpers retain foreground workers after the form
-            // is disposed. All fixture scopes have finished; terminate the test host.
-            Environment.Exit(0);
+            // End only this isolated host after all owned form scopes and assertions.
+            // It does not use the editor's normal Application.Run shutdown loop.
+            Finish(0);
             return 0;
         }
-        catch (Exception ex) { Console.Error.WriteLine(ex); Environment.Exit(1); return 1; }
+        catch (Exception ex) { Console.Error.WriteLine(ex); Finish(1); return 1; }
     }
 }
-
-

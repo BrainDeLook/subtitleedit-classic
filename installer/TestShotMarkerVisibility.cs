@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -19,4 +19,3 @@ class TestShotMarkerVisibility {
  using(var main=new Main()){var flags=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;var menu=(ToolStripMenuItem)typeof(Main).GetField("optionsToolStripMenuItem",flags).GetValue(main);var found=menu.DropDownItems.Find("classicShotChangeVisibility",true);Check(found.Length==1,"one marker toggle is wired in the waveform menu");var toggle=(ToolStripMenuItem)found[0];var wave=(AudioVisualizer)typeof(Main).GetField("audioVisualizer",flags).GetValue(main);Check(!toggle.Checked&&!wave.ShowShotChanges,"hidden preference is restored on startup");toggle.Checked=true;Check(wave.ShowShotChanges,"menu checkbox updates native waveform");}
  return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }
-

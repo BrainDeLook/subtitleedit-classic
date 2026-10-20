@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory=$true)][string]$ApplicationDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [Parameter(Mandatory=$true)][string]$FFmpegLocation
@@ -49,4 +49,3 @@ Run-ReleaseTest (Compile-ReleaseTest 'TestSpectrogramViewport') @($audio,(Join-P
 & python (Join-Path $PSScriptRoot 'LocalNineCliTests.py') (Join-Path $ApplicationDirectory 'seconv.exe') (Join-Path $OutputDirectory 'cli')
 if($LASTEXITCODE -ne 0){throw 'Installed seconv tests failed'}
 Write-Output 'Classic 5.3 integration and navigation release checks passed; no paid API calls.'
-
