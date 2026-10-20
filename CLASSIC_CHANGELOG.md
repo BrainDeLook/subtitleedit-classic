@@ -1,4 +1,11 @@
-﻿# Subtitle Edit Classic changelog
+# Subtitle Edit Classic changelog
+
+[English README](README.md) · [Русский README](README.ru.md) · [Release downloads](https://github.com/BrainDeLook/subtitleedit-classic/releases)
+
+This file records changes made by the Classic fork. Version numbers refer to this fork, independently of upstream Subtitle Edit 5.x. The upstream historical log remains in [Changelog.txt](Changelog.txt).
+
+Local development entries below are historical snapshots: the 4.0.25.x increments are included in stable 4.0.27. Their original validation notes describe what was tested at that stage, rather than the current feature inventory. For current coverage, see the README and [5.3 integration report](LOCAL_53_INTEGRATION.md).
+
 
 ## 4.0.28
 
@@ -30,7 +37,7 @@ The release checks cover native integration/media behavior, batch conversion, re
 - Release validation also checks the currently installed stable version and a dynamically generated future version, so the update test remains valid after version bumps.
 - Local validation: the general regression passed 3,030 checks. The final broadcast/filter binary passed 30 checks on x64 and 30 on x86; ASS event replacement/Undo passed 12 checks; local install/rollback/path rejection passed three scenarios. Paid API calls and physical DVD-drive tests were excluded.
 
-## Unreleased — local 4.0.25.55
+## Development snapshot — local 4.0.25.55
 
 - Adapted stable 5.3 MXF SMPTE 436M VANC caption decoding with separate CEA-608 channels and CEA-708 services. MXF metadata supplies the edit rate; video/audio essence is skipped rather than decoded. The existing text/image MXF import is retained. Invalid or truncated KLV lengths are rejected, and background import supports cancellation.
 - Added ARIB STD-B24 transport-stream caption import with named PID/language tracks, profile A/C selection from PMT descriptors and program-clock timing. The streaming reader supports 188-byte TS, 192-byte M2TS and 204-byte framing, bounds PES buffering and rejects broken framing. CEA video captions can be listed alongside ARIB tracks. Updated the B36 file reader and text decoder for `.1hd`, `.2hd`, `.1sd` and `.2sd`.
@@ -38,12 +45,12 @@ The release checks cover native integration/media behavior, batch conversion, re
 - ASS text/style/actor filters can now hide nonmatching rows in the main editor without changing document indices. A visible counter and Clear filter button restore the complete grid. Selection, native keyboard navigation, edits, list rebuilds and saving retain the underlying cue identity and all filtered-out data. Filters are session-only and reset when the document is replaced.
 - DVD testing remains based on generated files and sector/subpicture fixtures. Physical drives, menus and alternate-angle discs are not required for this increment and are not claimed as field-tested. Paid APIs are excluded from validation.
 
-## Unreleased — local 4.0.25.54
+## Development snapshot — local 4.0.25.54
 
 - Fixed advanced ASS effects and drawing replacement retaining the removed cue in the edit controls. Changing selection could overwrite the first generated event with the original text and full duration, causing overlapping events and apparent playback loops. The editor now detaches the old cue before replacement and selects the generated result with refreshed text and timing controls.
 - Added a regression reproducing the reported word-flip sequence, checking event text/times after selection changes, actor retention and single-step Undo. The test fails on the previous build.
 
-## Unreleased — local 4.0.25.53
+## Development snapshot — local 4.0.25.53
 
 - Added an ASS/SSA font collector with missing-font detection, folder collection, font attachment import/replacement and HarfBuzz-based glyph trimming. Fixed byte loss in legacy attachment UU encoding. The style manager applies header and attachment changes together through editor Undo; its font chooser separates installed faces and the Subtitle Edit collection. Collected fonts are available to MPV, hard-subtitle export and the new image renderer.
 - Adapted the stable 5.3 advanced ASS effect catalog and ASS Draw geometry, SVG import and shape library. Draw includes point editing, transforms, undo/redo, text boxes with wrapping/shrink-to-fit and rotation, colors, outlines, eraser clipping and persistent custom shapes. Effects preview through MPV and use the script resolution. Added a separate ASS text/style/actor search window and session-only hidden layers for MPV preview; subtitle data and exports remain intact.
@@ -54,26 +61,26 @@ The release checks cover native integration/media behavior, batch conversion, re
 - Validation: the complete local regression run passed 2,936 assertions. Two hidden-window native activation assertions were skipped because the desktop refused activation; direct external reload and native MPV state retention passed. A separate x86 run passed 211 checks, and package installation/rollback/path rejection passed three fixture scenarios.
 - Added pinned managed/native dependencies, installer entries and redistribution notices. Dedicated checks cover actual font trimming, attachment bytes, all effect/shape generators, format round trips, Russian/English layouts, editor Undo, native image files, spreadsheet round trips, captions, DVD subpictures and FFmpeg exports. Physical DVD navigation/alternate-angle combinations, MXF VANC and ARIB caption extraction remain unverified or outside this increment. This package remains local; it is not a published stable release.
 
-## Unreleased — local 4.0.25.52
+## Development snapshot — local 4.0.25.52
 
 - Adapted stable 5.3 ASS/SSA style import and library transfer conflicts: Overwrite, Keep both or Cancel, with an operation-scoped answer for all conflicts. Matching ignores name casing; overwrite retains the target name and position, while Keep both allocates an available `_2`, `_3` suffix. Cancelling discards the entire transfer. Library categories and their default flags are retained.
 - File and library transfers share the same workflow. ASS/SSA imports convert native alignment values. Multiple selected styles can move up, down, to top or bottom together, including Ctrl+Up/Down, while retaining their relative order and selection. Applied file style changes support ordinary editor Undo.
 - Validation: 104 dedicated checks cover real ASS/SSA files, Russian/English dialogs, formatting round trips, conflict decisions, library isolation, reordered headers and editor Apply/Undo. This increment remains local; no paid APIs are used.
 
-## Unreleased — local 4.0.25.51
+## Development snapshot — local 4.0.25.51
 
 - Adapted stable 5.3 external subtitle change detection. Returning to the main window compares the open text subtitle's timestamp and size, without a live watcher or an extra setting. Clean work reloads automatically; unsaved working/source edits require confirmation, with No selected by default. Declining acknowledges only that disk revision, so a later external change can ask again. Network sessions, modal dialogs, active open/save operations, converted imports and image-based documents are excluded or deferred.
 - Opening and saving remember the file stamp immediately, including a new save path, so Classic's own saves do not trigger reload prompts. The deactivate fallback covers other valid file paths. Missing, empty, locked, oversized and unparseable files leave the current document and its remembered stamp available for retry. Parsing runs on a separate document in the background; file and editor snapshots are checked again before applying. Parser diagnostics are excluded from editable-content snapshots.
 - Successful reload retains the original reference, current encoding, selected cues and scroll position, video/player instance, selected audio track, waveform/shot state, video offset and SMPTE setting. Disk times receive the offset exactly once. The parsed format, headers, cue metadata and persisted marks are restored without converting markup or the original reference. Reload establishes a clean disk baseline and resets working edit history, as reopening does. Closing during reading discards the pending result.
 - Validation: all 70 feature checks and 2,394 combined regression checks passed, including actual external ASS/SRT writes, clean reload, Yes/No and repeated refusal, source drafts, empty/deleted/locked/corrupt files and recovery, converted/different-file guards, concurrent local edits, offset/reference/selection retention, real own-save and new-save-path writes, format changes and main-window activation in Russian/English. Real muted MPV retains its second audio track, pause state and playback position during reload. This increment remains local; no paid APIs are used.
 
-## Unreleased — local 4.0.25.50
+## Development snapshot — local 4.0.25.50
 
 - Fixed an enabled Actor column disappearing when opening ASS/SSA, including opening a file whose format already matches the editor. Column restoration now runs in the common format/open path, independently of MakeFormatChange, and retains explicit hidden preferences. Empty actor fields do not suppress an enabled column. WebVTT voice aliases and unsupported formats retain their own behavior.
 - The legacy column-header Actor toggle now applies and saves the shared logical column preference, so the visible column, Settings.xml flag and custom layout cannot disagree. Subtitle data, selection, column order and editor history are retained.
 - Reproduced the first ASS-open failure against 4.0.25.49 before the fix. All 284 affected checks passed: 32 actual file-opening/restart cases plus the 118-column, 55-format-column and 79-picker regressions. Covered same-format ASS/SSA reloads, empty actors, SRT/WebVTT transitions, explicit hiding, header toggles and the legacy setting without a custom layout in Russian/English. This fix remains local; no paid APIs are used.
 
-## Unreleased — local 4.0.25.49
+## Development snapshot — local 4.0.25.49
 
 - Adapted the stable 5.3 actor and ASS/SSA style pickers as one complete Classic workflow. Tools → Actors and styles and the existing grid Actor/Style submenus open searchable, resizable pickers with usage counts, current-value markers, 1–9/0 selection, arrows/Enter, double-click and Escape. A matching name precedes the create-new row; numeric keys remain text while filtering.
 - Actors start alphabetically per document, retain their shortcut positions during editing/Undo, and append newly encountered names. Alt+Up/Down or arrow buttons reorder the picker draft; applying adopts that session order. Delete/Remove actor clears only selected cues. Legacy actor slots, the context menu and the picker share the same order; restored actor slots 9 and 10 to named command dispatch. Actor creation/removal now also uses ordinary editor Undo.
@@ -82,19 +89,19 @@ The release checks cover native integration/media behavior, batch conversion, re
 - Assignment checks document/content/header snapshots, preserves unselected cues, text, timing, layers, forced flags and the original reference, and is disabled for formats without ASS/SSA styles/actors. Names that could corrupt comma-separated subtitle records are rejected. Picker drafts and assignment cancel without document changes; actor order is session-only. Startup availability reads the initialized format without invoking the format getter while controls are being populated.
 - Validation: 79 feature checks and 2,292 combined regression checks passed, covering real ASS/SSA serialization, actor ordering and creation, multi-cue assignment, header/actor Undo and Redo, original isolation, stale-result rejection, shortcut persistence/conflicts and native dispatch from text/waveform focus, plus Russian/English minimum-size rendering. Installed local 4.0.25.49 with verified checksums, a rollback EXE and Settings.xml unchanged. This increment remains local; no paid APIs are used.
 
-## Unreleased — local 4.0.25.48
+## Development snapshot — local 4.0.25.48
 
 - Fixed the dedicated grid spelling popup opening in the upper-left corner. It now opens at the right-click screen position independently of the unattached menu builder. Keyboard opening retains the selected cue anchor; the Standard subtitle menu command retains the original click position.
 - Added native WinForms positioning checks for repeated clicks and the standard-menu fallback in both interface languages, without displaying test menus or moving the user's cursor. All 47 popup checks and 2,213 combined regression checks passed. Installed local 4.0.25.48 with verified checksums, a rollback EXE and Settings.xml unchanged. This fix remains local; no paid APIs are used.
 
-## Unreleased — local 4.0.25.47
+## Development snapshot — local 4.0.25.47
 
 - Right-clicking a misspelled grid word now opens a dedicated spelling popup with a bold word-specific heading, top-level native suggestions and shared word-list actions. Its final Standard subtitle menu command opens the normal cue context menu at the original grid location with a bypass that prevents reopening the spelling popup. Correct words and other cells keep the standard menu. Keyboard context actions use the same routing; original references remain read-only.
 - Bundled the full Russian Hunspell dictionary from LibreOffice, with unchanged source files, upstream copyright/redistribution notice and pinned source/checksums. The installer adds ru_RU only when no local copy exists; user words, proper names, selected dictionary and other settings are retained. Portable builds include the same dictionary files. Russian is available to both grid and existing classic spell checking; automatic language detection and explicit ru_RU/en_US selection are supported.
 - Verified real Russian inflections, typo detection and suggestions, markup-safe correction with Undo/Redo, popup structure and rendering, normal-menu bypass, read-only references, both interface languages and Russian/English dictionary switching. This increment remains local; no paid APIs are used.
 - Validation: 35 popup/Russian checks, 97 existing complete spelling-workflow checks and 2,201 combined regression checks passed. Local 4.0.25.47 and the full Russian dictionary were installed together, with checksums verified, a rollback EXE and Settings.xml unchanged.
 
-## Unreleased — local 4.0.25.46
+## Development snapshot — local 4.0.25.46
 
 - Adapted the complete grid live-spelling workflow: separate persistent enable/disable and automatic/manual dictionary selection under Spell check, a resizable settings dialog with the existing dictionary downloader, wavy underlines in all four grid-formatting modes, and mouse / Apps / Shift+F10 context actions. Checking works independently of the edit-box live-spelling and syntax-color settings. Missing dictionaries are reported without blocking subtitle editing.
 - Native Hunspell suggestions replace only the selected working word through ordinary editor Undo/Redo. Source mappings retain HTML/ASS tags even when styling splits a word, and handle decoded entities, RTL, selection and clipping. Stale menu snapshots cannot modify changed text; original-column menus are read-only. Display caches and source mappings never modify subtitle content.
@@ -102,27 +109,27 @@ The release checks cover native integration/media behavior, batch conversion, re
 - Checking is restricted to displayed text and cached by dictionary/word-list state; cache size and rendered length are bounded. Subtitle edits, language/settings changes, word-list actions and refresh after external dialogs invalidate the appropriate display state. Russian/English settings, restart, cancel, independent toggles, keyboard menus, source protection, actual English Hunspell and UTF-8 Cyrillic fixtures are covered. This increment remains local; no paid APIs are used.
 - Returning from dictionary downloads retries newly available dictionaries without an extra toggle. Validation: 97 complete-workflow checks and 2,166 combined regression checks passed, including missing/malformed dictionaries and recovery. The entire increment was installed once as local 4.0.25.46 with a rollback EXE and Settings.xml unchanged.
 
-## Unreleased — local 4.0.25.45
+## Development snapshot — local 4.0.25.45
 
 - Completed the remaining stable 5.3 grid-column display types: optional Teletext for EBU STL shows the stored row (1–23) and L/C/R alignment; missing/invalid rows stay blank unless the cue explicitly specifies alignment. A valid row without an explicit alignment displays C. Other formats hide the column while retaining its preference.
 - Adapted the Style and Actor column preferences to WebVTT class/voice aliases, including numbered WebVTT. Class names come from cue tags, preserve order and remove duplicates; voice displays the first voice tag. Existing text/voice/style edits refresh the derived values. Ordinary ASS style/actor fields resume when leaving WebVTT. Header insertion keeps existing rows aligned; format transitions, visibility and ordering retain the shared preferences.
 - Derived metadata is display-only and does not write into Paragraph.Extra/Actor or change cue text/timing. WebVTT parses cache by cue text with weak references. Added Russian/English column explanations and binary EBU STL / text WebVTT test fixtures. This increment remains local; no paid APIs are used.
 - Validation: 55 format-column checks and 2,069 combined regression checks passed, including real binary STL export/readback, WebVTT round trips, existing voice edits, duplicate classes, row/alignment boundaries, format transitions, visibility, restart and minimum-size layouts.
 
-## Unreleased — local 4.0.25.44
+## Development snapshot — local 4.0.25.44
 
 - Added optional Layer and Pixel width through Options / grid context menu → Columns. Layer displays ASS stacking order and updates through the existing single/multiple-cue layer editors; other formats hide it while retaining the saved preference. SSA Marked is not treated as an ASS layer. Pixel width displays the widest stripped line, using the classic measurement font, size and bold settings, and highlights values above the configured width limit when width syntax coloring is enabled. This is a text-width estimate, not a renderer for ASS positioning or effects.
 - Both columns retain independent visibility/order across restarts and format changes. Existing layouts leave the new keys hidden. Width calculations cache by cue text and measurement font with weak cue references; edits invalidate the cache, settings changes refresh values, and hidden columns do no measurement. Cue text, timing and metadata remain unchanged. This increment remains local; no paid APIs are used.
 - Binary EBU STL retains the text-width column; VobSub index files hide both new text metadata columns. Validation: 40 feature checks and 2,014 combined regression checks passed, including font changes, width limits, layer commands, ASS/SRT transitions, persistence and Russian/English minimum-size layouts. Cached width refresh for 10,000 cues took approximately 13 ms.
 
-## Unreleased — local 4.0.25.43
+## Development snapshot — local 4.0.25.43
 
 - Added optional Shot in / Shot out columns through Options / grid context menu → Columns, using stable 5.3 signed cue-minus-cut offsets. Negative values precede the nearest cut; positive values follow it. Values use milliseconds or frames according to the editor time-display mode. The lookup window is at least one second and expands for wider timing-profile zones.
 - Highlighted boundaries that the active Beautify time codes profile would move, preserving inclusive red zones, exclusive green edges and separate in/out gap targets. Frame offsets round cue and cut separately, including fractional frame rates. Timing edits and refills refresh immediately; shot-list, video, frame-rate and profile changes refresh through the editor timer. Missing video/shot data clears values and colors.
 - Both columns support independent visibility, reordering and restart persistence. Existing saved layouts leave them hidden. The display preserves subtitle text, timing, metadata, selection and undo. This increment remains local; no paid APIs are used.
 - Validation: 33 shot-column checks and 1,974 combined regression checks passed. Updating both columns for 10,000 cues took approximately 0.3 seconds. The local EXE was installed with a rollback copy and Settings.xml unchanged.
 
-## Unreleased — local 4.0.25.42
+## Development snapshot — local 4.0.25.42
 
 - Added Options / grid context menu → Columns, adapting the stable 5.3 visibility/order workflow for the existing classic columns. A resizable Russian/English dialog provides checkboxes, Up/Down and Alt+Up/Down, draft-only reset, OK and Cancel. Number, text, original and network visibility stay controlled by the editor; format-dependent actor, region and style columns explain their availability. This does not add the remaining SE5-only column types.
 - Saved logical keys separately from native ListView indexes. Header dragging is remembered, and disappearing/reappearing format or original columns retain their place. Applying a layout keeps cue selection, scroll position, text/metadata, original text and undo history intact. Hidden columns stay hidden when format handlers try to show them. The Forced switch and legacy Tools visibility settings update the same preferences; changing grid formatting retains them. Invalid/duplicate keys normalize safely and failed preference writes leave the active layout unchanged.
@@ -130,11 +137,11 @@ The release checks cover native integration/media behavior, batch conversion, re
 - Validation includes all eight Start/End/Duration visibility combinations, header dragging, ASS/SRT transitions, original and Forced coexistence, restart, legacy-settings synchronization, reset/cancel/save failure, exact source retention and Russian/English minimum-size forms. This increment remains local; no paid APIs are used.
 - Validation: 118 column-workflow checks and 1,941 combined regression checks passed. The local EXE was installed with a rollback copy and Settings.xml unchanged.
 
-## Unreleased — local 4.0.25.41
+## Development snapshot — local 4.0.25.41
 
 - Moved File → Save forced lines as directly below Save as, alongside the other save commands.
 
-## Unreleased — local 4.0.25.40
+## Development snapshot — local 4.0.25.40
 
 - Adapted the complete stable 5.3 forced-narrative workflow: Edit and grid context-menu Toggle forced, a persistent optional Forced column, and File → Save forced lines as. A mixed selection is marked uniformly; an entirely marked selection is cleared. Only selected working cues change, in one ordinary Undo step. Marking makes the column visible; its visibility and the grid-formatting mode are saved without resetting each other.
 - Adapted the stable `.SE.bookmarks` sidecar schema for both bookmarks and forced marks, including time-key matching, frame-rounding tolerance, duplicate start times and legacy index-only bookmarks. Existing bookmark editing and saving now retain forced marks. Undo/Redo updates the sidecar, and forced-only edits participate in the editor's unsaved-change hash. Untitled documents never create a relative sidecar. Sidecar writes are atomic and preserve the old file on failure.
@@ -142,19 +149,19 @@ The release checks cover native integration/media behavior, batch conversion, re
 - Source-view reparsing retains Forced marks by start time, including active video offsets and edited dialogue, without falling back to the next row when a marked cue is deleted. Russian/English checks cover selected and mixed toggles, column insertion/hiding/refill, persistence and normal File Open/Save, source-view edits, bookmark coexistence, undo/redo, unsaved-change detection, locked sidecars, source isolation and SRT/ASS export/reopening. This increment remains local; no paid APIs are used.
 - Validation: 86 forced-workflow checks and 1,823 combined regression checks passed. The local EXE was installed with a rollback copy and Settings.xml unchanged.
 
-## Unreleased — local 4.0.25.39
+## Development snapshot — local 4.0.25.39
 
 - Fixed clipped italic glyphs in the formatted subtitle grid. Styled fragments retain their text advance while drawing with glyph overhang; clipping is enforced at the cell boundary instead of at each fragment boundary. A small DPI-scaled leading inset protects the first glyph. Source text, selection colors and existing formatting modes are unchanged.
 - Added pixel-coverage checks against an unclipped native reference for Latin/Cyrillic italic text at three font sizes, plus a cell-boundary clipping check. These run with the existing formatting, source-retention and persistence tests. This fix remains local.
 
-## Unreleased — local 4.0.25.38
+## Development snapshot — local 4.0.25.38
 
 - Added a stable 5.3-style display-only formatting selector under Options → Subtitle grid formatting: Show tags (the existing default), Show formatting, Hide tags, and Show formatting and remaining tags. The working and original text columns render HTML/ASS bold, italic, underline, strikeout, primary color, font name and bounded font size. Nonvisual ASS commands, including complete transitions, remain visible in the last mode. Unsupported commands are not simulated as video effects.
 - Preserved source markup in ListView subitems and subtitle paragraphs, so selecting, editing, copying and saving continue to use the original text. Mode changes invalidate only the display, keep selection and timing intact, and persist separately from Settings.xml. Russian/English menu labels refresh without duplicate commands. Invalid settings fall back to the legacy tag view.
 - Kept classic error backgrounds and selection colors; low-contrast requested text colors fall back to the normal foreground. Drawing is clipped to each cell, fonts are disposed after drawing, and parsed display runs use a bounded cache. Nested HTML, ASS resets, transitions, entities, malformed tags, long override blocks, line separators and supplementary characters have dedicated checks. Real WinForms screenshots and persistence tests cover the working/original columns and light/dark backgrounds. No paid APIs are used; this increment remains local.
 - Validation: 56 feature checks and 1,730 checks across the combined regression run passed. The final audio-selection check used the retained eight-second Turkish/English source clip because the original desktop video was no longer available. The local EXE was installed with its previous version backed up and Settings.xml unchanged.
 
-## Unreleased — local 4.0.25.37
+## Development snapshot — local 4.0.25.37
 
 - Adapted the stable 5.3 statistics dashboard through the existing File → Statistics and selected-lines entry points. A new Overview tab shows subtitle/word/character totals and summed cue duration, minimum/average/maximum timing and pacing ranges with meters, profile-limit counters and a two-CPS histogram with optimal/maximum markers and a final 28+ overflow bin. Checks include too many physical lines, CPS/WPM, short/long duration, overlong/overwide physical lines and short gaps. Gap ranges retain signed overlaps; meter drawing alone clamps negative fractions.
 - Kept the complete classic text statistics and frequency reports in Details and Most used words and lines tabs, adding separate copy buttons. The resizable dashboard uses an explicit scroll layout above a fixed footer; all sections remain accessible at the minimum Russian/English window size. The same full snapshot, including histogram bins and denominator/sample counts, is exported to UTF-8 text with a suggested `_statistics.txt` name and a saved-file confirmation. The legacy NFO choice and full-report Ctrl+C remain available.
@@ -162,7 +169,7 @@ The release checks cover native integration/media behavior, batch conversion, re
 - The dashboard reports invalid/missing or zero durations explicitly rather than inventing infinite speed samples; source text, cue IDs, styles, actors and history are retained by calculating from a copy. The total duration is a sum of cue durations, including intentional overlaps, rather than the overall video span. Statistical checks show active rule limits independently of grid-colouring visibility.
 - Validation covers known totals/ranges, CPS bins/overflow and markers, empty/zero-duration/missing-time cues, all-negative gaps, denominator correctness, line-count checks, repeated-word/line counts, complete exported reports, source isolation, minimum-size scrolling and Russian/English tabs. A 10,000-cue fixture is processed without sampling. No paid APIs are used; this increment remains local.
 
-## Unreleased — local 4.0.25.36
+## Development snapshot — local 4.0.25.36
 
 - Adapted the complete stable 5.3 List errors workflow through the existing classic Tools entry and configurable Ctrl+F8 binding. The read-only report has counted category filters, a total/affected-cue summary, one row per error, cue times, precise threshold/directional details and source text. It checks duration, CPS, physical line length, pixel width, line count, overlaps and gaps using classic syntax-colouring switches and active limits. EBU teletext width is distinguished from open-subtitling STL. Classic words-per-minute and missing-time-code diagnoses are retained as additional categories.
 - Go to, Enter and double-click navigate to the exact source cue and seek the existing player. A stale row cannot select a changed cue. Home/End select the first/last report row; Escape closes. Reports use copied cue metadata and do not edit the subtitle or its undo history. Russian/English forms resize with wrapping category buttons and a fixed footer; coloured dots retain readable category text.
@@ -170,7 +177,7 @@ The release checks cover native integration/media behavior, batch conversion, re
 - Batch convert now retains diagnostic snapshots only for successfully saved text outputs, including OCR/transport-stream text paths, with separate source/track file names and totals. A dedicated List errors button sits beside Convert without overlapping the progress bar; starting another run clears old results and disables the report until conversion finishes. Unrecognized bitmap-only text is not presented as an OCR quality diagnosis. Failed saves are excluded.
 - Validation covers error thresholds and disabled checks, both sides of gap/overlap boundaries, classic-only diagnoses, teletext/open STL, source isolation, exact/stale editor navigation, filtered report files, OOXML parts and literal spreadsheet text, HTML/CSV escaping, real two-file batch output, report reset and Russian/English minimum-size layouts. This increment remains local; no paid APIs are used.
 
-## Unreleased — local 4.0.25.35
+## Development snapshot — local 4.0.25.35
 
 - Adapted the stable 5.3 continuation merge, actor-label conversion and Unicode replacement tools to classic WinForms. Tools now offers continuation candidates with maximum gap/visible-text limits, checked application, select-all/invert and a complete resulting-cue preview. Sentence endings, ellipses, multilingual punctuation, dialog dashes and music markers use shared rules. Classic additionally preserves independent overlapping cues and differing actor/style/layer boundaries. Consecutively selected boundaries form a chain with the first start, final end and first cue metadata. Speech preparation uses the same engine with its existing 500 ms / 500-character defaults and non-speech exclusions.
 - Updated Convert actors with the stable converter: reconstruct bracketed labels broken over a physical line break, split two speakers into separate actor cues, retain subsequent text with its colon-labelled speaker, leave unsupported three-speaker colon cues intact, preserve malformed-bracket text and clear actor metadata when moving a name into text. Corrected ASS/SSA colour detection and RGB HTML colours. The classic preview now applies exactly its checked conversions, including initially unchecked non-name labels; a two-speaker split is atomic. From/to, casing, colour and only-names options persist; a selected-subtitles-only switch limits the editor action without affecting other cues.
@@ -178,75 +185,75 @@ The release checks cover native integration/media behavior, batch conversion, re
 - Added independent Batch convert actions for continuation merge, actor conversion and Unicode control removal, with persisted options and shared processing. These actions prevent bitmap-to-bitmap shortcuts from bypassing text recognition. The matching command-line actions use the same merge and actor engines. General Unicode removal remains a reviewed interactive action; control removal only strips the existing editor's directional controls.
 - New editor actions use one ordinary undo step and reject stale result snapshots. Validation covers complete batch output files, actor selection and split atomicity, settings persistence, Unicode and replacement edge cases, source isolation, editor Undo and Russian/English resizable forms. No paid services are tested. This increment is local and is not a published stable release.
 
-## Unreleased — local 4.0.25.34
+## Development snapshot — local 4.0.25.34
 
 - Adapted the stable 5.3 assisted split and assisted move workflow as one classic editing block. Grid context-menu and Tools entries offer up to five ranked split points and six context-aware word, sentence-fragment, balancing or within-cue moves. The stable candidate generators, proportional split timing, continuation handling and HTML/ASS word-move implementation are adapted to .NET Framework without replacing the classic dependency DLLs. Decimal numbers, addresses, tags, completed sentences and dialog boundaries are handled by the candidate rules.
 - Every card holds an exact result snapshot with text, time codes, character counts and reading speed. Numbered titles or digit/numpad keys apply it; Escape discards it. Long candidate lists scroll above a fixed footer in resizable Russian/English windows. Optional shortcuts are persisted separately, unassigned by default and checked against existing editor and palette bindings. The normal command palette also discovers the new Tools actions.
 - Apply validates both working and original source snapshots before creating one normal editor undo step. Split preserves the first cue ID, allocates a new second cue and reveals it; editable original text is split at its own language boundary with synchronized times. Read-only originals remain untouched. Moves apply both sides and their proportional boundary together while retaining outer time bounds, actors, styles and other cue metadata. Within-cue moves retain timing. Fixed split tag closure to follow actual HTML nesting order, including mixed font/italic/bold tags.
 - Validation covers punctuation ranking, dialog dashes, decimal/address exclusion, word retention, HTML/ASS state, tiny durations, positive gaps, original-reference isolation, previous/next and within-cue moves, exact editor application and Undo, stale-source rejection, shortcut persistence/conflicts, digit selection and Russian/English resizable layouts. Existing classic media, speech, OCR, translation, comparison and synchronization regressions remain enabled. This increment remains local; no paid APIs are used.
 
-## Unreleased — local 4.0.25.33
+## Development snapshot — local 4.0.25.33
 
 - Adapted the stable 5.3 Visual sync, Point sync and Point sync via other subtitle workflow to the classic forms. Visual sync and the point-time picker reuse matching cached editor audio, support draggable waveform separators with remembered heights, and retain the selected player audio track. Visual sync links separator heights across panes and preserves ASS header/format context. Its manual dialog applies offset and speed from a frozen input copy without changing cue identity or metadata. Fine seek commands respect configured timing shortcuts before built-in 100/500/1000 ms steps; Shift+plus/minus changes waveform vertical zoom. One-second buttons, verification playback, text search and help remain available.
 - The point-time picker accepts manual values without a video, does not let the playback timer overwrite a focused input, and remembers its size. Point lists remain sorted, replace existing anchors when repointed and support context-menu/Delete/Backspace removal. Apply retains anchors and is idempotent; empty or invalid anchors cannot be committed. Piecewise transforms preserve intentional overlaps and reject out-of-range times or reversed anchors before altering the working copy. The existing main-editor undo and original-subtitle timing paths are retained.
 - Reference browsing now belongs to the synchronization window. Text and selected MKV/MP4 subtitle tracks are supported, including SUP and embedded PGS/VobSub/DVB image references without OCR. Image references have bounded thumbnail caching, adjustable row height and a separate image viewer with arrow navigation. Text search is disabled for image references. Both grids display local Gap after badges at 3/6/12/25 seconds; reference replacement clears its anchors and image resources. A separate video-point action covers lines absent from the reference. Unsupported MP4 layouts use a cancellable FFmpeg remux of the selected subtitle stream, with temporary-file cleanup, rather than silently choosing another stream.
 - Added Russian/English form and timing checks, plain-text and two-track MKV/MP4 fixtures, generated SUP/PGS/VobSub image fixtures and real MPV checks for the selected audio track in all three video panes. These checks join the existing media/speech/OCR/translation regression suite. No paid APIs are used; this increment remains local.
 
-## Unreleased — local 4.0.25.32
+## Development snapshot — local 4.0.25.32
 
 - Completed the remaining documented stable 5.3 Compare workflow in the classic window. F2, double-click on either pane or Edit opens a current-cue text/timing panel in the same window. Ctrl+Enter saves one working-copy undo step, Escape cancels the draft and Ctrl+Z in the text box retains ordinary typing undo. Invalid/reversed times are rejected; reference text/timing can be taken separately into the draft. Actors, styles and cue IDs are retained. Reference-only rows and externally loaded current files remain read-only. Compare-level mutation actions are suspended during a draft; editor Apply still validates the original source and creates one normal editor undo step.
 - Added All, Differences and Text differences views with independent counts; persistent ignore-numbering; load the current file's saved disk version as reference; violet working-edit marks; and a clickable overview of all aligned rows that retains differences outside the active filter. Existing tolerance, ASS/HTML formatting, whitespace and line-break options feed the same alignment/count logic. Empty files and identical text with changed timing now receive accurate summaries, rather than the old misleading no-similarity warning. Changed-word percentage is retained.
 - Fixed HTML export after alignment tags changed: resolve source paragraphs through the pair map, retain missing rows, encode names/text, preserve line breaks, sync markers and edit colors, and declare UTF-8. Kept the classic paired lists, rich-text difference previews and export action. Footer options/status are laid out separately so the longer summary cannot cover formatting options; time columns are initialized consistently for both opening paths.
 - Validation: complete edit/save/cancel/invalid-time/undo/apply scenarios, current/reference isolation and metadata, all view counts, number-only filtering, ASS/HTML and whitespace handling, saved-file vs unsaved-current comparison, whole-file navigation, HTML rows/line breaks, empty state, and Russian/English minimum-size editor/footer layouts. Prior sync-point/alignment/transfer tests and the full media/speech/translation/OCR regression are retained. No paid APIs are used. This increment remains local.
 
-## Unreleased — local 4.0.25.31
+## Development snapshot — local 4.0.25.31
 
 - Ported the stable v5.3.0 CompareAligner to .NET Framework, retaining its content/timing anchors, fuzzy matching, bounded dynamic programming and large-file fallback. Missing cues now realign in retimed files and translations can align by timing without matching text. Time-format equality is cached per alignment to avoid repeated frame-display formatting.
 - Added session-only manual sync points to classic Compare through a second toolbar and per-side context menus. Pick a current cue and a reference cue in either order; the pinned pair splits independent alignment segments and has a visible link marker. The newest pair replaces crossing/shared-line anchors. Default timing sync shifts the current cue and following cues up to the next point, preserving durations and metadata; disabling Shift current timing performs pairing only. Read-only comparisons always pair without changing timing. Out-of-range shifts are rejected atomically.
 - Point creation/removal/clearing, cue deletion and timing shifts share local undo snapshots. Removing points retains pending timing edits; Undo restores both content and anchors. Escape cancels a half-picked pair. Loading a different reference clears its anchors while retaining valid current-file undo, and replacing the current file resets the view state. Apply uses the existing editor change guard and undo path; anchors remain in the comparison session and are not saved into subtitle files.
 - Validation: upstream-derived missing/retimed cue and repeated/fuzzy text cases; 3,000-line bilingual alignment; segment boundaries, crossing anchors, pair-only/read-only operation, deletion/restoration of linked cues, remove/clear undo, two-step picking and cancellation, reference replacement, negative-time rejection, Apply isolation and Russian/English minimum-size controls. Existing transfer, metadata, timing-tolerance and editor-undo checks are retained. Full regression runs use no paid services. This increment remains local.
 
-## Unreleased — local 4.0.25.30
+## Development snapshot — local 4.0.25.30
 
 - Adapted stable 5.3 Compare actions to the classic two-pane window: persisted millisecond time tolerance, signed start/end deltas, reference text/timing/both transfer, insertion of reference-only cues, deletion of current-only cues and local undo. F8/Shift+F8 navigate differences, Alt+Left takes text and timing, Ctrl+Z undoes a working-copy edit. Aligned rows retain explicit source indices through filtering; missing-line insertion uses the full alignment rather than only visible rows.
 - The current file is edited on a copy. Apply validates the original editor content and filename, creates a normal editor undo entry and retains current-file metadata. Close discards unapplied edits. Replacing or reloading the left file switches merging off. Timing-only/text-only transfer does not replace actors/styles. This increment retains the existing classic alignment engine; manual pair/sync points and inline editing remain pending.
 - A blocked or pending Beautify preview now says it has not been calculated instead of incorrectly reporting no changes.
 - Validation: actual aligned/filtered cue transfer, hidden following-row insertion, deletion and undo, empty reference, tolerance boundaries and real difference counts, source/reference isolation, editor Apply/Undo, repeated Apply, concurrent-change rejection and Russian/English minimum-size windows. Full existing media/speech/translation/OCR regression is run without paid requests. This increment remains local.
 
-## Unreleased — local 4.0.25.29
+## Development snapshot — local 4.0.25.29
 
 - Adapted stable 5.3's live Beautify time codes workflow to the classic tool: synchronized Original/Beautified timelines, cached editor waveform reuse, previous/next/first/last change navigation, original cue numbers, old/new times and signed millisecond/frame deltas. The stats line reports the cue/change counts, frame rate, exact-time-code mode and active shot changes. Reason hints are inferred from the result (frame/shot alignment, gaps, duration limits or other profile rules), not an engine trace.
 - Preview calculations run in the background on a copy of the subtitle, with debounced refresh after profile/settings changes. Apply returns the displayed result through the existing main-window undo path; stale/missing-input previews cannot be applied. Cancel and closing during processing retain the editor's source. Shared waveform controls gain an opt-in read-only mode; ordinary editor dragging remains unchanged. Gap warnings also inspect the final adjacent pair.
 - Without audio peaks, the tool explicitly shows cue timelines only. Load waveform extracts the selected audio track with FFmpeg, shares peaks between both views and removes its owned temporary files. Both whole-subtitle and selected-lines entries forward the editor's current peaks/audio selection. The window is resizable with scrollable legacy settings and a separate footer; closing cancels preview/audio work and waits for cleanup.
 - Validation: actual beautifier/preview equivalence, source/metadata retention, exact displayed-result application, invalidation, change navigation and cue numbering, zoom synchronization, read-only views, cancellation on 10,000 cues and Russian/English normal/minimum-size layouts. A generated two-audio-track MKV verifies that waveform extraction uses the selected sounding track instead of the silent first track. Existing media/speech/translation/OCR regressions are also run. This increment remains local; no paid requests are used.
 
-## Unreleased — local 4.0.25.28
+## Development snapshot — local 4.0.25.28
 
 - Adapted stable 5.3's command palette to the classic main window: Edit → Command palette, default Ctrl+Shift+K. The catalog combines the current main menus with named main/grid/waveform shortcut actions, including actions without assigned keys and menu-only Classic additions. Text-box-only actions and the palette itself are excluded. Existing action handlers retain their guards and undo behavior; named dispatch does not modify key assignments.
 - Added localized name/group/shortcut search, all-word matching in any order, initials and ranked results. Successful actions are remembered in session only (last ten), including distinct IDs for dynamically generated menu entries. Enter/double-click/Run chooses an action; arrows and PageUp/PageDown navigate, Escape cancels and the configured Help key opens the pinned stable documentation. Actions run after the palette closes.
 - The palette's Shortcut button provides a separate persistent binding or menu-only operation, preserving the legacy Settings.xml schema. Existing assignments are checked for conflicts; an occupied default Ctrl+Shift+K is left with its original command. Media-dependent named actions and unavailable menu commands are disabled where their context is absent. The classic window resizes without hiding footer controls.
 - Validation: actual main-window execution of an unassigned next-line command, ordinary assigned-key routing, merge/undo with text and actors restored, conflict rejection and shortcut persistence; ranking, initials, group/key search, recent-history limits, disabled actions, no-match state, keyboard navigation, cancellation and Russian/English normal/minimum-size windows. Existing media/speech/translation/OCR regressions are also run. Paid API requests are not used. This increment remains local.
 
-## Unreleased — local 4.0.25.27
+## Development snapshot — local 4.0.25.27
 
 - Adapted stable 5.3 custom Beautify time codes profiles to the classic profile editor: Save as profile, load named entries alongside Default/Netflix/SDI, and delete individual custom profiles. Overwrite and deletion require confirmation. The separate, atomically written Classic profile library retains all timing fields, including hidden per-section shot-change behaviors, without changing the legacy Settings.xml schema. Explicitly saved library entries survive cancelling the current editor, matching stable 5.3.
 - Profile editing now uses a working copy: presets, named profiles and Simple mode do not change the active engine profile until the parent editor's OK. Loading suppresses general-gap propagation and resets zone constraints before restoring values, preventing one profile from clamping another's smaller zones or overwriting independent gaps.
 - Validation: full-value JSON round trips, Unicode/case-insensitive names, overwrite/deletion, backup files, corrupt-library preservation, named entries in the actual Russian/English classic windows, wide/narrow zone switching, hidden behaviors, cancellation and Simple-mode isolation. A synthetic subtitle verifies actual timing changes with its text and original source retained. This increment remains local; paid services are not used.
 
-## Unreleased — local 4.0.25.26
+## Development snapshot — local 4.0.25.26
 
 - Routed both startup and Help-menu update checks to stable releases of BrainDeLook/subtitleedit-classic. Download opens the matching Classic release; version normalization avoids offering an older published installer over a newer local build. Drafts, prereleases and invalid version tags are rejected. GitHub API rate limits use the same fork's public latest-stable redirect, validated before use; there is no upstream application-release fallback. Proxy settings are retained. Rate-limited checks show a release-notes link rather than API release-body text.
 - Adapted stable 5.3 nOCR training additions to the classic window: checked font selection with a live preview, multiple integer sizes (10–200 px), and incremental training from an existing database. Training runs in the background. Stop allows an explicit save of learned glyphs; closing cancels without showing a save dialog. Existing databases are unchanged until Save, which preserves the previous version as a backup. The scrollable form keeps footer actions accessible at smaller sizes.
 - Validation: real unauthenticated GitHub stable-channel check, simulated stable/draft/prerelease/error/foreign-redirect responses, version comparison, real Latin/Cyrillic multi-size training, incremental database retention, cancellation, backup/reload, preview rendering and minimum-size scrolling. Paid APIs are not used. This increment remains local and is not a new release.
 
-## Unreleased — local 4.0.25.25
+## Development snapshot — local 4.0.25.25
 
 - Adapted stable 5.3 AI review categories and filters, warnings for large rewrites (unchecked by default), editable suggestions and Select none. Selections persist when filtering/sorting; checked suggestions are counted across categories. Formatting tags and line breaks are validated again after manual edits.
 - Main-window AI review applies checked fixes in separate passes without closing. Each successful pass uses the normal undo history and changes text only; timing, actors, styles and unchecked cues are retained. Applied proposals disappear, the next review uses the updated text, and stale source text rejects a pass before changing anything. Added the selected-lines context-menu entry.
 - Added Play current using the selected suggestion's actual cue number, managed-server start/stop and a persisted request delay. Closing waits for active cancellation, stops preview playback and releases the review's managed model; Stop retains completed suggestions. Settings scroll above the results and footer actions wrap at smaller widths.
 - Validation: actual main-window application and two separate Undo operations, category/warning filters, sorting, edited proposals, stale-source rejection, request pacing, stop/close cleanup and normal/minimum-width rendering. Native managed Qwen corrects a known English grammar error and passes server stop/restart/close checks. Paid API tests use simulated responses only. Playback callback routing is checked; arbitrary video/player combinations still need normal user testing. This increment remains local.
 
-## Unreleased — local 4.0.25.24
+## Development snapshot — local 4.0.25.24
 
 - Added the stable 5.3 advanced translation workflow for llama.cpp, Ollama and LM Studio to both ordinary translation and Batch Convert: numbered cue batches, bounded translated history, synopsis/context, glossary, formality and strict JSON-schema output with compatibility fallbacks. Cue numbers, completeness, duplicate keys, tags and optional line-break preservation are validated before applying a batch; invalid/echoed output retries once and then fails explicitly. Completion-only managed models are rejected with guidance to use the ordinary engine.
 - Connected all seven previously adapted translators and the three advanced variants to classic Batch Convert. A separate Translation settings button reuses the existing provider settings and managed-model downloads. Language choices survive engine changes where supported, and missing local components open setup before conversion begins.
@@ -407,3 +414,19 @@ Validation includes Russian/English OCR and TTS, native process cancellation, ti
 For cloning, the transcript must exactly match the selected reference recording. Use a clear single-speaker sample and confirm permission in the import dialog. Cloning validation used a permitted synthetic reference; voice similarity on arbitrary recordings is not guaranteed. Automatic per-line speaker cloning, VoiceDesign and the full v5 engine catalog are not included. The existing Russian WhisperX external-alignment limitation remains: disable word alignment when its provider is unavailable.
 
 Download **SubtitleEdit-Classic-4.0.21-Setup.exe**, the normal Windows installer. Large OCR/TTS/ASR models are downloaded separately and are not bundled. SHA256SUMS.txt contains the installer checksum.
+
+
+## 4.0.20
+
+- Added local Crisp ASR, Qwen3 ASR CPP, Whisper CPP Vulkan and standalone WhisperX CPU routes, with runtime/model downloads from the Classic interface.
+- Improved word-timed cue segmentation, optional VAD/retry, cancellation, quality reporting and model-list scrolling.
+
+## 4.0.19
+
+- Expanded hard-subtitle export with container/audio-codec choices, text effects, logo and Blu-ray SUP overlays, audio-only input and target-size encoding.
+- Fixed progress/footer overlap and redundant video-surface resizing.
+
+## Earlier fork changes
+
+- Established the separate Classic installer identity while retaining the Windows Forms interface and legacy editing workflows.
+- Enabled MP4 edit lists for hard-subtitle exports to account for AAC encoder delay without stretching the first video sample. The reported Adobe Audition playback issue is documented in [upstream issue #15992](https://github.com/SubtitleEdit/subtitleedit/issues/15992).
