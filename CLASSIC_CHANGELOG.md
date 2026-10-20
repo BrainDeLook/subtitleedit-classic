@@ -1,5 +1,18 @@
 # Subtitle Edit Classic changelog
 
+## Unreleased — local 4.0.25.55
+
+- Adapted stable 5.3 MXF SMPTE 436M VANC caption decoding with separate CEA-608 channels and CEA-708 services. MXF metadata supplies the edit rate; video/audio essence is skipped rather than decoded. The existing text/image MXF import is retained. Invalid or truncated KLV lengths are rejected, and background import supports cancellation.
+- Added ARIB STD-B24 transport-stream caption import with named PID/language tracks, profile A/C selection from PMT descriptors and program-clock timing. The streaming reader supports 188-byte TS, 192-byte M2TS and 204-byte framing, bounds PES buffering and rejects broken framing. CEA video captions can be listed alongside ARIB tracks. Updated the B36 file reader and text decoder for `.1hd`, `.2hd`, `.1sd` and `.2sd`.
+- Extended File → Import → CEA / MXF VANC / ARIB with a common channel preview and explicit selection. Opening recognized ARIB transport streams and caption-bearing MXF files uses the channel chooser. Cancelling leaves the editor unchanged.
+- ASS text/style/actor filters can now hide nonmatching rows in the main editor without changing document indices. A visible counter and Clear filter button restore the complete grid. Selection, native keyboard navigation, edits, list rebuilds and saving retain the underlying cue identity and all filtered-out data. Filters are session-only and reset when the document is replaced.
+- DVD testing remains based on generated files and sector/subpicture fixtures. Physical drives, menus and alternate-angle discs are not required for this increment and are not claimed as field-tested. Paid APIs are excluded from validation.
+
+## Unreleased — local 4.0.25.54
+
+- Fixed advanced ASS effects and drawing replacement retaining the removed cue in the edit controls. Changing selection could overwrite the first generated event with the original text and full duration, causing overlapping events and apparent playback loops. The editor now detaches the old cue before replacement and selects the generated result with refreshed text and timing controls.
+- Added a regression reproducing the reported word-flip sequence, checking event text/times after selection changes, actor retention and single-step Undo. The test fails on the previous build.
+
 ## Unreleased — local 4.0.25.53
 
 - Added an ASS/SSA font collector with missing-font detection, folder collection, font attachment import/replacement and HarfBuzz-based glyph trimming. Fixed byte loss in legacy attachment UU encoding. The style manager applies header and attachment changes together through editor Undo; its font chooser separates installed faces and the Subtitle Edit collection. Collected fonts are available to MPV, hard-subtitle export and the new image renderer.

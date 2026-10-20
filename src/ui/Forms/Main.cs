@@ -3055,7 +3055,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             if (ext == ".mxf" && FileUtil.IsMaterialExchangeFormat(fileName))
             {
-                var parser = new MxfParser(fileName);
+                var parser = new Logic.ClassicBroadcast.Mxf.MxfParser(fileName);
                 if (parser.IsValid)
                 {
                     var subtitles = parser.GetSubtitles();
@@ -3097,6 +3097,15 @@ namespace Nikse.SubtitleEdit.Forms
                         return;
                     }
 
+                    if(parser.ClosedCaptionTracks.Count>0)
+                    {
+                        using(var chooser=new ClassicCaptionImportForm(fileName))
+                        {
+                            chooser.SetTracks(parser.ClosedCaptionTracks.Select(p=>new Logic.ClassicBroadcast.BroadcastTrack{Name="MXF VANC — "+Logic.ClassicCaptions.ClosedCaptionExtractor.GetTrackName(p.Key),Paragraphs=p.Value}).ToList());
+                            if(chooser.ShowDialog(this)==DialogResult.OK)ImportClassicSubtitle(chooser.Result);
+                        }
+                        return;
+                    }
                     MessageBox.Show("No subtitles found!");
                     return;
                 }
@@ -3444,7 +3453,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             if (format == null)
             {
-                var arib = new AribB36();
+                var arib = new Logic.ClassicBroadcast.Formats.AribB36();
                 if (arib.IsMine(null, fileName))
                 {
                     arib.LoadSubtitle(newSubtitle, null, fileName);
@@ -5535,6 +5544,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ResetSubtitle()
         {
+            SubtitleListview1.SetAssRowFilter(null);
             if (ModifierKeys != Keys.Shift)
             {
                 _videoFileName = null;
@@ -15985,6 +15995,18 @@ namespace Nikse.SubtitleEdit.Forms
 
         private bool ImportSubtitleFromTransportStream(string fileName)
         {
+            var broadcastTables=new Logic.ClassicBroadcast.Transport.ProgramMapTableParser();
+            broadcastTables.Parse(fileName);
+            if(broadcastTables.GetAribDataComponentIds().Count>0)
+            {
+                using(var chooser=new ClassicCaptionImportForm(fileName))
+                {
+                    chooser.ScanOnOpen();
+                    if(chooser.ShowDialog(this)!=DialogResult.OK)return false;
+                    ImportClassicSubtitle(chooser.Result);
+                    return true;
+                }
+            }
             ShowStatus(_language.ParsingTransportStream);
             Refresh();
             var tsParser = new TransportStreamParser();

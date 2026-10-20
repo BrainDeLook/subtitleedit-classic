@@ -59,6 +59,8 @@ $tests=@{
     TestClassicFiveBlocks='TestClassicFiveBlocks.cs'
     TestClassicFiveBlocksNative='TestClassicFiveBlocksNative.cs'
     TestClassicFiveBlocksUi='TestClassicFiveBlocksUi.cs'
+    TestClassicAssEffectApply='TestClassicAssEffectApply.cs'
+    TestClassicBroadcast='TestClassicBroadcast.cs'
     TestClassicForcedLines='TestClassicForcedLines.cs'
     TestClassicColumns='TestClassicColumns.cs'
     TestClassicShotColumns='TestClassicShotColumns.cs'
@@ -108,6 +110,10 @@ foreach($name in $tests.Keys) {
 if($LASTEXITCODE -ne 0){throw 'Classic fonts, ASS effects/draw and stable formats regression failed'}
 & "$OutputDirectory/TestClassicFiveBlocksUi.exe" (Join-Path $OutputDirectory 'classic-five-blocks-ui')
 if($LASTEXITCODE -ne 0){throw 'Classic five-block dialog layout and editor transaction regression failed'}
+& "$OutputDirectory/TestClassicAssEffectApply.exe" (Join-Path $OutputDirectory 'classic-ass-effect-apply')
+if($LASTEXITCODE -ne 0){throw 'Classic ASS effect replacement and selection regression failed'}
+& "$OutputDirectory/TestClassicBroadcast.exe" (Join-Path $OutputDirectory 'classic-broadcast')
+if($LASTEXITCODE -ne 0){throw 'Classic broadcast captions and main-grid filter regression failed'}
 if($FFmpegLocation){
     & "$OutputDirectory/TestClassicFiveBlocksNative.exe" $FFmpegLocation
     if($LASTEXITCODE -ne 0){throw 'Classic native image, spreadsheet, captions, DVD and video-tools regression failed'}

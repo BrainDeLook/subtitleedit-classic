@@ -1416,6 +1416,8 @@ namespace Nikse.SubtitleEdit.Controls
 
         internal void Fill(Subtitle subtitle, Subtitle subtitleOriginal = null)
         {
+            if(!ReferenceEquals(_assFilterDocument,subtitle))SetAssRowFilter(null);
+            _assFilterDocument=subtitle;
             if (subtitleOriginal == null || subtitleOriginal.Paragraphs.Count == 0)
             {
                 Fill(subtitle.Paragraphs);
@@ -1428,6 +1430,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         internal void Fill(List<Paragraph> paragraphs)
         {
+            if(_assFilterDocument!=null && !ReferenceEquals(_assFilterDocument.Paragraphs,paragraphs)){SetAssRowFilter(null);_assFilterDocument=null;}
             SaveFirstVisibleIndex();
             BeginUpdate();
             Items.Clear();
@@ -1469,6 +1472,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         internal void Fill(List<Paragraph> paragraphs, List<Paragraph> paragraphsOriginal)
         {
+            if(_assFilterDocument!=null && !ReferenceEquals(_assFilterDocument.Paragraphs,paragraphs)){SetAssRowFilter(null);_assFilterDocument=null;}
             SaveFirstVisibleIndex();
             BeginUpdate();
             Items.Clear();
@@ -1855,6 +1859,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void SelectIndexAndEnsureVisibleFaster(int index)
         {
+            if(HasAssRowFilter){SelectAssFilteredIndex(index,false);return;}
             var topItem = TopItem;
             if (!IsValidIndex(index) || topItem == null)
             {
@@ -1869,7 +1874,7 @@ namespace Nikse.SubtitleEdit.Controls
             selectedItem.Focused = true;
 
             var topIndex = topItem.Index;
-            var itemHeight = GetItemRect(0).Height;
+            var itemHeight = GetItemRect(topItem.Index).Height;
             if (itemHeight == 0)
             {
                 return;
@@ -1891,6 +1896,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void SelectIndexAndEnsureVisible(int index, bool focus)
         {
+            if(HasAssRowFilter){SelectAssFilteredIndex(index,focus);return;}
             if (!IsValidIndex(index))
             {
                 return;

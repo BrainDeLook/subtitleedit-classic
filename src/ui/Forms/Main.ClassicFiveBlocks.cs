@@ -14,6 +14,30 @@ namespace Nikse.SubtitleEdit.Forms
         private ToolStripMenuItem _classicFontCollector;
         private ToolStripMenuItem _classicEffects,_classicDraw,_classicAssFilter;
         private ToolStripMenuItem _classicTableExport, _classicSpreadsheet, _classicXmlImport, _classicCaptions, _classicImageExport, _classicVideoTools;
+        private ToolStrip _classicAssFilterBar;
+        private ToolStripLabel _classicAssFilterStatus;
+        private void ApplyClassicAssRowFilter(Predicate<Paragraph> predicate)
+        {
+            if(_classicAssFilterBar==null)
+            {
+                _classicAssFilterStatus=new ToolStripLabel();
+                var clear=new ToolStripButton(ClassicAssistedText.L("Сбросить фильтр","Clear filter"));
+                clear.Click+=(s,e)=>SubtitleListview1.SetAssRowFilter(null);
+                _classicAssFilterBar=new ToolStrip{Dock=DockStyle.Top,GripStyle=ToolStripGripStyle.Hidden};
+                _classicAssFilterBar.Items.AddRange(new ToolStripItem[]{_classicAssFilterStatus,clear});
+                splitContainerListViewAndText.Panel1.Controls.Add(_classicAssFilterBar);
+                _classicAssFilterBar.SendToBack();
+                SubtitleListview1.AssRowFilterChanged+=(s,e)=>
+                {
+                    _classicAssFilterBar.Visible=SubtitleListview1.HasAssRowFilter;
+                    _classicAssFilterStatus.Text=ClassicAssistedText.L("Фильтр ASS: ","ASS filter: ")+SubtitleListview1.AssVisibleRowCount+" / "+SubtitleListview1.Items.Count;
+                };
+            }
+            SubtitleListview1.SetAssRowFilter(predicate);
+            var first=SubtitleListview1.Items.Cast<ListViewItem>().FirstOrDefault(i=>i.Tag is Paragraph p && (predicate==null || predicate(p)));
+            if(SubtitleListview1.SelectedItems.Count==0 && first!=null)SubtitleListview1.SelectIndexAndEnsureVisible(first.Index);
+            if(first==null){_subtitleListViewIndex=-1;_listViewTextUndoIndex=-1;}
+        }
         private void InitializeClassicFiveBlocks()
         {
             ClassicFontCollection.LoadCollected();
@@ -44,7 +68,7 @@ namespace Nikse.SubtitleEdit.Forms
                 _classicEffects=new ToolStripMenuItem {Name="classicAdvancedEffects"};_classicDraw=new ToolStripMenuItem {Name="classicAssaDraw"};
                 _classicEffects.Click+=(s,e)=>ShowClassicAdvancedEffects();_classicDraw.Click+=(s,e)=>ShowClassicDraw();
                 toolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[]{_classicEffects,_classicDraw});
-                _classicAssFilter=new ToolStripMenuItem {Name="classicAssFilter"};_classicAssFilter.Click+=(s,e)=>{if(!CanEditClassicAss())return;using(var form=new ClassicAssaFilter(_subtitle,mediaPlayer.GetHiddenAssLayers(_subtitle)))if(form.ShowDialog(this)==DialogResult.OK){mediaPlayer.SetHiddenAssLayers(_subtitle,form.HiddenLayers);SubtitleListview1.SelectedItems.Clear();foreach(var i in form.SelectedIndices)SubtitleListview1.Items[i].Selected=true;if(form.SelectedIndices.Length>0)SubtitleListview1.Items[form.SelectedIndices[0]].EnsureVisible();}};toolsToolStripMenuItem.DropDownItems.Add(_classicAssFilter);
+                _classicAssFilter=new ToolStripMenuItem {Name="classicAssFilter"};_classicAssFilter.Click+=(s,e)=>{if(!CanEditClassicAss())return;using(var form=new ClassicAssaFilter(_subtitle,mediaPlayer.GetHiddenAssLayers(_subtitle)))if(form.ShowDialog(this)==DialogResult.OK){mediaPlayer.SetHiddenAssLayers(_subtitle,form.HiddenLayers);ApplyClassicAssRowFilter(form.RowFilter);SubtitleListview1.SelectedItems.Clear();foreach(var i in form.SelectedIndices)SubtitleListview1.Items[i].Selected=true;if(form.SelectedIndices.Length>0)SubtitleListview1.Items[form.SelectedIndices[0]].EnsureVisible();}};toolsToolStripMenuItem.DropDownItems.Add(_classicAssFilter);
             }
             _classicFontCollector.Text=ClassicAssistedText.L("Собрать шрифты ASS/SSA…","ASS/SSA font collector…");
             _classicEffects.Text=ClassicAssistedText.L("Расширенные ASS-эффекты…","Advanced ASS effects…");_classicDraw.Text=ClassicAssistedText.L("Редактор ASS Draw…","ASS Draw editor…");
@@ -52,13 +76,14 @@ namespace Nikse.SubtitleEdit.Forms
             _classicTableExport.Text = ClassicAssistedText.L("CSV/XLSX: выбрать столбцы…", "CSV/XLSX: choose columns…");
             _classicSpreadsheet.Text = ClassicAssistedText.L("Таблица CSV/XLSX/ODS: выбор столбцов…", "CSV/XLSX/ODS: map columns…");
             _classicXmlImport.Text = ClassicAssistedText.L("XML: определить структуру…", "XML: detect structure…");
-            _classicCaptions.Text = ClassicAssistedText.L("CEA-608/708: выбор канала…", "CEA-608/708: select channel…");
+            _classicCaptions.Text = ClassicAssistedText.L("CEA / MXF VANC / ARIB: выбор канала…", "CEA / MXF VANC / ARIB: select channel…");
             _classicImageExport.Text = ClassicAssistedText.L("Изображения IMSC / BDN / DVD SUP…", "IMSC / BDN / DVD SUP images…");
             _classicVideoTools.Text = ClassicAssistedText.L("Монтаж, перекодирование, дорожки и главы…", "Cuts, encoding, streams and chapters…");
         }
         private void ImportClassicSubtitle(Subtitle source)
         {
             if (source == null || !ContinueNewOrExit()) return;
+            SubtitleListview1.SetAssRowFilter(null);
             MakeHistoryForUndo("Import subtitles");
             _subtitle.Paragraphs.Clear(); _subtitle.Paragraphs.AddRange(source.Paragraphs.Select(p => new Paragraph(p, false)));
             _subtitle.Header = source.Header; _subtitle.Footer = source.Footer; _subtitle.Renumber();
@@ -74,7 +99,32 @@ namespace Nikse.SubtitleEdit.Forms
         }
         private void ApplyClassicAssEvents(int[] selected,System.Collections.Generic.List<Paragraph> result,string action,string header=null)
         {
-            MakeHistoryForUndo(action);if(header!=null)_subtitle.Header=header;var positions=new System.Collections.Generic.HashSet<int>(selected);var remaining=_subtitle.Paragraphs.Where((p,i)=>!positions.Contains(i)).ToList();remaining.AddRange(result);_subtitle.Paragraphs.Clear();_subtitle.Paragraphs.AddRange(remaining.OrderBy(p=>p.StartTime.TotalMilliseconds).ThenBy(p=>p.Layer));_subtitle.Renumber();SubtitleListview1.Fill(_subtitle,_subtitleOriginal);UpdateSourceView();audioVisualizer.Invalidate();SetTitle();
+            MakeHistoryForUndo(action);
+            StopAutoDuration();
+            // The controls still describe the source cue. Detach that binding before
+            // replacing it so a later selection cannot write it over a generated event.
+            _subtitleListViewIndex = -1;
+            _listViewTextUndoIndex = -1;
+            SubtitleListview1.SelectedIndexChanged -= SubtitleListview1_SelectedIndexChanged;
+            try
+            {
+                if(header!=null)_subtitle.Header=header;
+                var positions=new System.Collections.Generic.HashSet<int>(selected);
+                var remaining=_subtitle.Paragraphs.Where((p,i)=>!positions.Contains(i)).ToList();
+                remaining.AddRange(result);
+                _subtitle.Paragraphs.Clear();
+                _subtitle.Paragraphs.AddRange(remaining.OrderBy(p=>p.StartTime.TotalMilliseconds).ThenBy(p=>p.Layer));
+                _subtitle.Renumber();
+                SubtitleListview1.Fill(_subtitle,_subtitleOriginal);
+            }
+            finally
+            {
+                SubtitleListview1.SelectedIndexChanged += SubtitleListview1_SelectedIndexChanged;
+            }
+            var first=result.Count>0?_subtitle.Paragraphs.IndexOf(result[0]):-1;
+            if(first>=0)SubtitleListview1.SelectIndexAndEnsureVisible(first);
+            SubtitleListview1_SelectedIndexChanged(null, null);
+            UpdateSourceView();audioVisualizer.Invalidate();SetTitle();
         }
         private void ShowClassicAdvancedEffects()
         {
