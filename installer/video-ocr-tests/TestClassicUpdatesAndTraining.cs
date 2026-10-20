@@ -20,7 +20,8 @@ class TestClassicUpdatesAndTraining
  static readonly BindingFlags F=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;
  static object Field(object o,string n)=>o.GetType().GetField(n,F).GetValue(o);
  static void Check(bool ok,string m){if(!ok)throw new Exception(m);Console.WriteLine("PASS: "+m);}
- static string Release(string tag="4.0.26",bool prerelease=false,bool draft=false)=>new JObject{["tag_name"]=tag,["prerelease"]=prerelease,["draft"]=draft,["body"]="Classic release notes",["html_url"]="https://github.com/SubtitleEdit/subtitleedit/releases/tag/5.3.0"}.ToString();
+ static string FutureStable {get{var v=typeof(Updates).Assembly.GetName().Version;return new Version(v.Major,v.Minor,v.Build+1).ToString();}}
+ static string Release(string tag=null,bool prerelease=false,bool draft=false)=>new JObject{["tag_name"]=tag??FutureStable,["prerelease"]=prerelease,["draft"]=draft,["body"]="Classic release notes",["html_url"]="https://github.com/SubtitleEdit/subtitleedit/releases/tag/5.3.0"}.ToString();
  sealed class Handler:HttpMessageHandler
  {
   public string Body=Release();public HttpStatusCode Status=HttpStatusCode.OK;public int Calls; public string Redirect = Updates.RepositoryUrl+"/releases/tag/4.0.25";
@@ -47,7 +48,9 @@ class TestClassicUpdatesAndTraining
   foreach(var tag in new[]{"5.3.0-beta1","4.0.26-rc1","invalid","4.0"}){try{Updates.ParseStableVersion(tag);throw new Exception("Accepted "+tag);}catch(FormatException){Console.WriteLine("PASS: Reject unstable/invalid tag "+tag);}}
   var handler=new Handler();var update=new Updates(handler);await update.CheckForUpdates(true);
   Check(update.Done && update.Error==null && update.ManualCheck && update.IsNewSubtitleEditAvailable(),"Manual stable update completes");
-  Check(update.ReleasePageUrl==Updates.RepositoryUrl+"/releases/tag/4.0.26" && update.LatestChangeLog.Contains("Classic release notes"),"Release notes and download URL come from the fork");
+  Check(update.ReleasePageUrl==Updates.RepositoryUrl+"/releases/tag/"+FutureStable && update.LatestChangeLog.Contains("Classic release notes"),"Release notes and download URL come from the fork");
+  var current=typeof(Updates).Assembly.GetName().Version;
+  handler.Body=Release(new Version(current.Major,current.Minor,current.Build).ToString());await update.CheckForUpdates(false);Check(!update.IsNewSubtitleEditAvailable(),"The currently installed stable version is not offered as a newer release");
   handler.Body=Release("4.0.25");await update.CheckForUpdates(false);Check(!update.ManualCheck && !update.IsNewSubtitleEditAvailable(),"Startup checker uses the same stable channel and skips older releases");
   foreach(var body in new[]{Release("4.0.26",true),Release("4.0.26",false,true),Release("4.0.26-rc1"),"{}","not json"}){handler.Body=body;await update.CheckForUpdates(true);Check(update.Done && update.Error!=null && !update.IsUpdateAvailable() && update.ReleasePageUrl==Updates.LatestStableUrl,"Reject invalid/draft/prerelease payload without a fallback");}
   foreach(var status in new[]{HttpStatusCode.NotFound,HttpStatusCode.InternalServerError,HttpStatusCode.Redirect}){handler.Status=status;var calls=handler.Calls;await update.CheckForUpdates(false);Check(update.Done && update.Error!=null && handler.Calls==calls+1,"HTTP "+(int)status+" fails once without querying upstream");}

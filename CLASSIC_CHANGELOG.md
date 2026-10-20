@@ -1,10 +1,11 @@
 # Subtitle Edit Classic changelog
 
-## 4.0.26
+## 4.0.27
 
 - Publishes the completed Classic integrations developed through local 4.0.25.55 while retaining the Windows Forms interface. Includes the five-block font, ASS, format, import/export and video-tool update, MXF VANC/ARIB caption selection, and main-grid ASS filtering.
 - Includes the accumulated grid/actor/style/forced-line tools, Russian live spelling, comparison and synchronization improvements, timing profiles, external-file reload, command palette, expanded translation/batch workflows and the fork's stable-release update source. The entries below document the individual increments and their validation.
 - Fixes advanced ASS effects overwriting their first event after a selection change. Settings and existing subtitle files are preserved during installation.
+- Release validation also checks the currently installed stable version and a dynamically generated future version, so the update test remains valid after version bumps.
 - Local validation: the general regression passed 3,030 checks. The final broadcast/filter binary passed 30 checks on x64 and 30 on x86; ASS event replacement/Undo passed 12 checks; local install/rollback/path rejection passed three scenarios. Paid API calls and physical DVD-drive tests were excluded.
 
 ## Unreleased — local 4.0.25.55
