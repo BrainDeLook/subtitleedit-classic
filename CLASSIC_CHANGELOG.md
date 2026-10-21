@@ -7,6 +7,12 @@ This file records changes made by the Classic fork. Version numbers refer to thi
 Local development entries below are historical snapshots: the 4.0.25.x increments are included in stable 4.0.27. Their original validation notes describe what was tested at that stage, rather than the current feature inventory. For current coverage, see the README and [5.3 integration report](LOCAL_53_INTEGRATION.md).
 
 
+## Unreleased
+
+- Added optional plugin toolbar metadata (`ToolbarText`) and settings (`Configure(Form)`), with split buttons forwarding the original plugin command. Plugins without these optional members retain their existing behavior.
+- Added an optional `DoActionWithSelection` entry point for export plugins to receive the current selected cue indices without replacing the document.
+- The separate [Audition Markers plugin](https://github.com/BrainDeLook/subtitleedit-audition-markers) uses these extensions for one-click CSV marker export. It remains a separately installed plugin.
+
 ## 4.0.28
 
 - Eight custom shortcut sequences with command, insertion and replacement steps, scopes and AltGr support.

@@ -6390,7 +6390,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             toolStrip1.Visible = gs.ShowToolbarNew || gs.ShowToolbarOpen || gs.ShowToolbarOpenVideo || gs.ShowToolbarSave || gs.ShowToolbarSaveAs || gs.ShowToolbarFind || gs.ShowToolbarReplace ||
                                  gs.ShowToolbarFixCommonErrors || gs.ShowToolbarVisualSync || gs.ShowToolbarSpellCheck || gs.ShowToolbarNetflixGlyphCheck ||
-                                 gs.ShowToolbarBeautifyTimeCodes || gs.ShowToolbarSettings || gs.ShowToolbarHelp;
+                                 gs.ShowToolbarBeautifyTimeCodes || gs.ShowToolbarSettings || gs.ShowToolbarHelp || HasPluginToolbarButtons();
 
             UpdateToolbarButtonsToCurrentFormat(GetCurrentSubtitleFormat());
         }
@@ -26952,6 +26952,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void LoadPlugins()
         {
+            ClearPluginToolbar();
             var path = Configuration.PluginsDirectory.TrimEnd(Path.DirectorySeparatorChar);
             if (!Directory.Exists(path))
             {
@@ -26978,7 +26979,7 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 try
                 {
-                    GetPropertiesAndDoAction(pluginFileName, out var name, out var text, out var version, out var description, out var actionType, out var shortcut, out var mi);
+                    var pluginObject = GetPropertiesAndDoAction(pluginFileName, out var name, out var text, out var version, out var description, out var actionType, out var shortcut, out var mi);
                     if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(actionType) && mi != null)
                     {
                         var item = new ToolStripMenuItem { Text = text, Tag = pluginFileName, Name = "classicPlugin_" + name };
@@ -27006,6 +27007,7 @@ namespace Nikse.SubtitleEdit.Forms
                             AddSeparator(toolsMenuItems.Count, toolsToolStripMenuItem);
                             item.Click += PluginToolClick;
                             toolsMenuItems.Add(item);
+                            AddPluginToolbar(pluginObject, item, name);
                         }
                         else if (actionType.Equals("Sync", StringComparison.OrdinalIgnoreCase))
                         {
@@ -27131,8 +27133,7 @@ namespace Nikse.SubtitleEdit.Forms
                     rawText = _subtitle.ToText(format);
                 }
 
-                string pluginResult = (string)mi.Invoke(pluginObject,
-                    new object[]
+                var pluginArguments = new object[]
                     {
                         this,
                         _subtitle.ToText(new SubRip()),
@@ -27141,7 +27142,12 @@ namespace Nikse.SubtitleEdit.Forms
                         _fileName,
                         _videoFileName,
                         rawText
-                    });
+                    };
+                var selectionAction = pluginObject.GetType().GetMethod("DoActionWithSelection",
+                    new[] { typeof(Form), typeof(string), typeof(double), typeof(string), typeof(string), typeof(string), typeof(string), typeof(int[]) });
+                string pluginResult = selectionAction == null
+                    ? (string)mi.Invoke(pluginObject, pluginArguments)
+                    : (string)selectionAction.Invoke(pluginObject, pluginArguments.Concat(new object[] { SubtitleListview1.SelectedIndices.Cast<int>().ToArray() }).ToArray());
 
                 if (!string.IsNullOrEmpty(pluginResult) && pluginResult.Length > 10 && text != pluginResult)
                 {

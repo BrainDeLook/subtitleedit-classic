@@ -72,6 +72,10 @@ Automated and local checks cover editor behavior, real media outputs, installed-
 - [Build from source](docs/BUILD.md) — Windows build and installer instructions.
 - [Rendering dependencies and limitations](licenses/CLASSIC_RENDERING.md).
 
+## Optional plugins
+
+[Audition Markers](https://github.com/BrainDeLook/subtitleedit-audition-markers) exports the current subtitle as Adobe Audition CSV markers without Python. It is installed separately. Its menu command and shortcut work in 4.0.28; a toolbar button and selected-row export require the newer plugin-host extension described in the plugin repository.
+
 ## Bug reports
 
 [Open an issue in this repository](https://github.com/BrainDeLook/subtitleedit-classic/issues) with the Classic version, steps to reproduce, expected/actual behavior and the chosen engine/player when relevant. A small sample subtitle or media clip helps. Remove API keys and personal information before attaching logs.
