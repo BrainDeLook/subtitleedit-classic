@@ -9,6 +9,9 @@ Local development entries below are historical snapshots: the 4.0.25.x increment
 
 ## Unreleased
 
+- Added optional plugin settings context (`ConfigureWithSubtitle`) and hard-subtitle export callbacks. Only an installed plugin creates the extra control or postprocesses a rendered file. Validation runs before encoding, and postprocessing keeps cancellation responsive.
+- Audition Markers 1.2 uses this route for actor-filtered Adobe XMP tracks inside MP4, without changing the subtitles burned into the image. The separate plugin remains optional; Audition-side marker display is not yet verified.
+
 - Added optional plugin toolbar metadata (`ToolbarText`) and settings (`Configure(Form)`), with split buttons forwarding the original plugin command. Plugins without these optional members retain their existing behavior.
 - Added an optional `DoActionWithSelection` entry point for export plugins to receive the current selected cue indices without replacing the document.
 - The separate [Audition Markers plugin](https://github.com/BrainDeLook/subtitleedit-audition-markers) uses these extensions for one-click CSV marker export. It remains a separately installed plugin.

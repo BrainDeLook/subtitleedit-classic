@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Controls;
+using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AudioToText;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.BluRaySup;
@@ -9095,6 +9095,7 @@ namespace Nikse.SubtitleEdit.Forms
 
                     using (var form = new GenerateVideoWithHardSubs(sub, GetCurrentSubtitleFormat(), _videoFileName, _videoInfo, fontSize, true))
                     {
+                        form.InitializeHardSubPlugins(_subtitle, SubtitleListview1.GetSelectedIndices().ToArray());
                         form.ShowDialog(this);
                     }
                 };
@@ -35917,6 +35918,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             using (var form = new GenerateVideoWithHardSubs(sub, GetCurrentSubtitleFormat(), _videoFileName, _videoInfo, fontSize, false))
             {
+                form.InitializeHardSubPlugins(_subtitle, SubtitleListview1.GetSelectedIndices().ToArray());
                 form.ShowDialog(this);
             }
         }

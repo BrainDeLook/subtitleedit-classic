@@ -51,7 +51,14 @@ namespace Nikse.SubtitleEdit.Forms
                         ? "Настройки…" : "Settings…");
                 settings.Click += (sender, args) =>
                 {
-                    try { configure.Invoke(plugin, new object[] { this }); }
+                    try
+                    {
+                        var withSubtitle = type.GetMethod("ConfigureWithSubtitle", new[] {
+                            typeof(Form), typeof(Nikse.SubtitleEdit.Core.Common.Subtitle), typeof(int[]) });
+                        if (withSubtitle == null) configure.Invoke(plugin, new object[] { this });
+                        else withSubtitle.Invoke(plugin, new object[] { this,
+                            new Nikse.SubtitleEdit.Core.Common.Subtitle(_subtitle), SubtitleListview1.GetSelectedIndices().ToArray() });
+                    }
                     catch (Exception ex) { MessageBox.Show(this, (ex.InnerException ?? ex).Message, command.Text); }
                 };
             }

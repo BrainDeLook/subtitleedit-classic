@@ -651,7 +651,7 @@ namespace Nikse.SubtitleEdit.Forms
                             title = "Nvidia driver needs updating";
                         }
 
-                        MessageBox.Show($"Encoding with ffmpeg failed: {Environment.NewLine}{_log}", title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(_hardSubPluginError == null ? $"Encoding with ffmpeg failed: {Environment.NewLine}{_log}" : "Video was rendered, but the marker plugin failed: " + _hardSubPluginError + Environment.NewLine + VideoFileName, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
 
                     return;
@@ -711,6 +711,8 @@ namespace Nikse.SubtitleEdit.Forms
                 MessageBox.Show(CT("Сохрани результат под другим именем, чтобы сохранить исходное видео.", "Use another output name to preserve the source video."));
                 return false;
             }
+            _log = new StringBuilder();
+            if (!ValidateHardSubPlugins()) return false;
             subtitle = new Subtitle(subtitle, false);
 
             if (File.Exists(VideoFileName))
@@ -819,6 +821,8 @@ namespace Nikse.SubtitleEdit.Forms
             {
                 result = RunOnePassEncoding(assaTempFileName, videoFileName);
             }
+
+            if (result) result = ProcessHardSubPlugins();
 
             try
             {
