@@ -75,7 +75,7 @@ class TestAdvancedBatchTranslation
  {
   using(var form=NewForm())
   {
-   var engines=(List<IAutoTranslator>)Field(form,"_autoTranslatorEngines");Check(engines.OfType<ClassicNewTranslator>().Count()==10,"All ten modern engines appear in Batch Convert");var chooser=(Nikse.SubtitleEdit.Controls.NikseComboBox)Field(form,"nikseComboBoxEngine");var group=(Control)Field(form,"groupBoxAutoTranslate");group.Visible=true;
+   var engines=(List<IAutoTranslator>)Field(form,"_autoTranslatorEngines");Check(engines.OfType<ClassicNewTranslator>().Count()==11 && engines.OfType<ClassicNewTranslator>().Any(e=>e.Id=="opper"),"All eleven modern engines including Opper appear in Batch Convert");var chooser=(Nikse.SubtitleEdit.Controls.NikseComboBox)Field(form,"nikseComboBoxEngine");var group=(Control)Field(form,"groupBoxAutoTranslate");group.Visible=true;
    foreach(var engine in engines.OfType<ClassicNewTranslator>()){chooser.SelectedItem=engine.Name;Application.DoEvents();var button=Desc(form).OfType<Button>().Single(b=>b.Name=="classicBatchTranslateSettings");Check(button.Visible && button.Bottom<=group.ClientSize.Height && button.Width>150,"Classic batch settings fit for "+engine.Name);}
    using(var image=new Bitmap(form.Width,form.Height)){form.DrawToBitmap(image,new Rectangle(Point.Empty,form.Size));image.Save(Path.Combine(root,"BatchConvert.png"));}
   }
