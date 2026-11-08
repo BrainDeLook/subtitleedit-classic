@@ -84,7 +84,7 @@ class TestAdvancedBatchTranslation
  static void Files(string root,bool fail)
  {
   var folder=Path.Combine(root,fail?"failed-files":"translated-files");Directory.CreateDirectory(folder);var inputs=Path.Combine(folder,"input");var outputs=Path.Combine(folder,"output");Directory.CreateDirectory(inputs);Directory.CreateDirectory(outputs);
-  var requests=0;var history=new List<int>();var handler=new Handler{Run=(body,c)=>{requests++;var data=JObject.Parse((string)body["messages"][1]["content"]);history.Add(data["history"].Count());if(fail)return Task.FromResult(Reply("{}"));var output=new JObject();foreach(var line in data["lines"])output[(string)line["n"]]="Проверенная русская реплика.";return Task.FromResult(Reply(output.ToString()));}};
+  var requests=0;var history=new List<int>();var handler=new Handler{Run=(body,c)=>{requests++;var data=JObject.Parse((string)body["messages"][1]["content"]);history.Add(data["history"].Count());if(fail)return Task.FromResult(Reply("{}"));var output=new JObject();foreach(var line in data["lines"])output[(string)line["n"]]="Проверенная русская реплика " + (string)line["n"] + ".";return Task.FromResult(Reply(output.ToString()));}};
   using(var form=NewForm())
   {
    var engines=(List<IAutoTranslator>)Field(form,"_autoTranslatorEngines");var at=engines.FindIndex(e=>e is ClassicNewTranslator t && t.Id=="ollama-advanced");var previous=(IDisposable)engines[at];previous.Dispose();engines[at]=new ClassicNewTranslator("ollama-advanced",handler);
@@ -96,7 +96,7 @@ class TestAdvancedBatchTranslation
    Call(form,"buttonConvert_Click",null,EventArgs.Empty);
    var written=Directory.GetFiles(outputs,"*.srt");Check(fail?written.Length==0:written.Length==2,"Real Convert button "+(fail?"does not save failed translations":"writes both translated subtitle files"));
    Check(requests==(fail?4:2) && history.All(n=>n==0),"Queued files use independent context and bounded retries");
-   if(!fail)Check(written.All(p=>File.ReadAllText(p).Contains("Проверенная русская реплика.")),"Saved files contain translated text");
+   if(!fail)Check(written.All(p=>File.ReadAllText(p).Contains("Проверенная русская реплика ")),"Saved files contain translated text");
   }
  }
 }
