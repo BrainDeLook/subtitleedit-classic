@@ -103,6 +103,8 @@ namespace Nikse.SubtitleEdit.Forms
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
+            Load += (sender, args) => ClassicWindowPlacement.Restore(this, "SpellCheck");
+            FormClosed += (sender, args) => ClassicWindowPlacement.Save(this, "SpellCheck");
             UiUtil.FixFonts(this);
             _subtitleFormat = subtitleFormat;
             _imageSubFileName = imageSubFileName;
@@ -496,6 +498,7 @@ namespace Nikse.SubtitleEdit.Forms
                     comboBoxDictionaries.SelectedIndex = comboBoxDictionaries.Items.Count - 1;
                 }
             }
+            if (comboBoxDictionaries.Items.Count > 0 && comboBoxDictionaries.SelectedIndex < 0) comboBoxDictionaries.SelectedIndex = 0;
             comboBoxDictionaries.SelectedIndexChanged += ComboBoxDictionariesSelectedIndexChanged;
         }
 
@@ -1648,6 +1651,7 @@ namespace Nikse.SubtitleEdit.Forms
             using (var gd = new GetDictionaries())
             {
                 gd.ShowDialog(this);
+                if (gd.LastRemoved != null && Utilities.GetDictionaryLanguages().Count == 0) { DialogResult = DialogResult.Cancel; return; }
 
                 FillSpellCheckDictionaries(LanguageAutoDetect.AutoDetectLanguageName(null, _subtitle));
                 if (gd.LastDownload != null && gd.LastDownload.Length > 3 && comboBoxDictionaries.Items.Count > 0)

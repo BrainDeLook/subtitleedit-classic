@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.Ocr;
 using Nikse.SubtitleEdit.Logic.SpeechToText;
@@ -22,6 +22,9 @@ namespace Nikse.SubtitleEdit.Forms
     // crop selection, frame probe and result editing follow that feature.
     public sealed partial class ClassicVideoOcr : Form
     {
+        private readonly Subtitle _existing;
+        private readonly TextBox _ranges = new TextBox { Dock = DockStyle.Fill };
+        private readonly CheckBox _keepExisting = new CheckBox { AutoSize = true };
         private readonly ClassicVideoOcrOptions _options=ClassicVideoOcrOptions.Load();
         private readonly TextBox _file=new TextBox{Dock=DockStyle.Fill,ReadOnly=true};
         private readonly PictureBox _preview=new PictureBox{Dock=DockStyle.Fill,SizeMode=PictureBoxSizeMode.Zoom,BackColor=Color.Black};
@@ -60,11 +63,12 @@ namespace Nikse.SubtitleEdit.Forms
         private ClassicVideoOcrRules _rules;
         private readonly string _previewFolder=Path.Combine(ClassicPaddleOcr.Root,"Preview",Guid.NewGuid().ToString("N"));
         public Subtitle SubtitleFromOcr { get; private set; }=new Subtitle();
-        private static string L(string ru,string en) => Configuration.Settings.General.Language.StartsWith("ru",StringComparison.OrdinalIgnoreCase) ? ru : en;
+        private static string L(string ru,string en) => ClassicLocalization.Text(ru,en);
         private static NumericUpDown Number(decimal min,decimal max) => new NumericUpDown{Minimum=min,Maximum=max,Dock=DockStyle.Fill};
 
-        public ClassicVideoOcr(string video)
+        public ClassicVideoOcr(string video, Subtitle existing = null)
         {
+            _existing = existing == null ? new Subtitle() : new Subtitle(existing);
             UiUtil.PreInitialize(this);
             Text=L("OCR вшитых субтитров","OCR burned-in subtitles"); StartPosition=FormStartPosition.CenterParent;
             ClientSize=new Size(1080,760); MinimumSize=new Size(960,700);
@@ -91,6 +95,10 @@ namespace Nikse.SubtitleEdit.Forms
             var settings=new TableLayoutPanel{Dock=DockStyle.Top,ColumnCount=2,AutoSize=true,AutoSizeMode=AutoSizeMode.GrowAndShrink,Padding=new Padding(8,8,8,16)}; _settingsTable=settings;
             settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,58)); settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,42));
             AddSetting(settings,L("Движок","Engine"),_engine);
+            _ranges.Text = _options.TimeRanges;
+            AddSetting(settings,L("Диапазоны, например 1:00-2:00; 5:00-", "Ranges, e.g. 1:00-2:00; 5:00-"),_ranges);
+            _keepExisting.Text = L("Сохранить существующие реплики", "Keep existing lines"); _keepExisting.Checked = _options.KeepExistingLines;
+            AddSetting(settings,"",_keepExisting);
             AddSetting(settings,L("Язык","Language"),_language); AddSetting(settings,L("Вычисления","Compute"),_variant); AddSetting(settings,L("Размер модели","Model size"),_mode);
             AddSetting(settings,L("Модуль CrispEmbed","CrispEmbed backend"),_crispBackend); AddSetting(settings,L("Модель CrispEmbed","CrispEmbed model"),_crispModel);
             settings.RowCount++; settings.RowStyles.Add(new RowStyle(SizeType.Absolute,30)); settings.Controls.Add(_download,0,settings.RowCount-1); settings.SetColumnSpan(_download,2);
@@ -163,6 +171,7 @@ namespace Nikse.SubtitleEdit.Forms
         private static void Set(NumericUpDown control,decimal value) {control.Value=Math.Max(control.Minimum,Math.Min(control.Maximum,value));}
         private void CaptureOptions()
         {
+            _options.TimeRanges = _ranges.Text; _options.KeepExistingLines = _keepExisting.Checked;
             _options.Language=((OcrLanguage2)_language.SelectedItem).Code; _options.Engine=_engine.Text;
             if(_options.Engine=="CrispEmbed")
             {
@@ -235,9 +244,14 @@ namespace Nikse.SubtitleEdit.Forms
         }
         private async Task Run(bool probe,bool downloadOnly)
         {
+            using var taskbarWork=new ClassicTaskbarWork(this);
+            using var preventSleep=ClassicPowerRequest.Acquire("Processing subtitles and media");
             if(_operation!=null) return;
             if(!downloadOnly && _info==null){MessageBox.Show(this,L("Открой видео","Open a video"),Text);return;}
-            CaptureOptions(); _operation=new CancellationTokenSource(); var cancel=_operation.Token;
+            CaptureOptions();
+            if (!probe && !downloadOnly && VideoOcrTimeRanges.Parse(_options.TimeRanges, _info.TotalSeconds, out var invalidRange) == null)
+            { MessageBox.Show(this, L("Некорректный диапазон: ", "Invalid time range: ") + invalidRange); return; }
+            _operation=new CancellationTokenSource(); var cancel=_operation.Token;
             SetRunning(true); var watch=Stopwatch.StartNew(); _watch=watch; _elapsedTimer.Start(); long last=0;
             var progress=new Progress<SpeechProgress>(p=>
             {
@@ -284,6 +298,8 @@ namespace Nikse.SubtitleEdit.Forms
                     });
                     acceptObservations=false;
                     cancel.ThrowIfCancellationRequested(); _lines.Rows.Clear();
+                    if (_options.KeepExistingLines) result.Paragraphs.AddRange(_existing.Paragraphs.Select(p => new Paragraph(p)));
+                    var ordered = result.Paragraphs.OrderBy(p => p.StartTime.TotalMilliseconds).ThenBy(p => p.EndTime.TotalMilliseconds).ToList(); result.Paragraphs.Clear(); result.Paragraphs.AddRange(ordered); result.Renumber();
                     foreach(var p in result.Paragraphs) AddLine(p,false);
                     CollectRows(); _status.Text=L("Субтитров: ","Subtitle cues: ")+SubtitleFromOcr.Paragraphs.Count+" · "+watch.Elapsed.ToString(@"hh\:mm\:ss");
                 }

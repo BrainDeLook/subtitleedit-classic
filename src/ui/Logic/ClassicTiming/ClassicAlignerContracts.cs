@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,7 +12,8 @@ namespace Nikse.SubtitleEdit.Logic.ClassicTiming
     public sealed class ForcedAlignerException : Exception
     {
         public string Details { get; }
-        public ForcedAlignerException(string message,string details=null):base(message){Details=details;}
+        public int? ExitCode { get; }
+        public ForcedAlignerException(string message,string details=null,int? exitCode=null):base(message){Details=details;ExitCode=exitCode;}
     }
     public static class ClassicAlignerContracts
     {

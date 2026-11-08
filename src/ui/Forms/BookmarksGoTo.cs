@@ -11,8 +11,9 @@ namespace Nikse.SubtitleEdit.Forms
     public sealed partial class BookmarksGoTo : Form
     {
         private readonly Subtitle _subtitle;
+        private readonly Action _beforeChange;
 
-        public BookmarksGoTo(Subtitle subtitle)
+        public BookmarksGoTo(Subtitle subtitle, Action beforeChange = null)
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
@@ -30,7 +31,11 @@ namespace Nikse.SubtitleEdit.Forms
             deleteToolStripMenuItem.Text = LanguageSettings.Current.SubStationAlphaStyles.Remove;
             deleteAllToolStripMenuItem.Text = LanguageSettings.Current.SubStationAlphaStyles.RemoveAll;
 
-            _subtitle = subtitle;
+            _subtitle = subtitle; _beforeChange = beforeChange;
+            var import = new Button { Text = Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Импорт…", "Import…"), AutoSize = true, Left = buttonExport.Left - 105, Top = buttonExport.Top, Anchor = AnchorStyles.Bottom | AnchorStyles.Right };
+            import.Click += (sender, args) => ImportBookmarks(); Controls.Add(import);
+            var importMenu = new ToolStripMenuItem(import.Text); importMenu.Click += (sender, args) => ImportBookmarks(); contextMenuStripBookmarks.Items.Add(importMenu);
+
             foreach (var p in subtitle.Paragraphs)
             {
                 if (p.Bookmark != null)
@@ -102,7 +107,40 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void buttonExport_Click(object sender, EventArgs e)
         {
-            ExportBookmarksAsCsv(_subtitle, this);
+            ExportBookmarks();
+        }
+
+        private void ExportBookmarks()
+        {
+            using (var save = new SaveFileDialog { Filter = "Subtitle Edit bookmarks|*.txt|CSV (legacy)|*.csv", FileName = "bookmarks.txt" })
+            {
+                if (save.ShowDialog(this) != DialogResult.OK) return;
+                var text = save.FilterIndex == 2 ? string.Join(Environment.NewLine, _subtitle.Paragraphs.Where(p => p.Bookmark != null).Select(MakeParagraphCsvLine)) : ClassicBookmarksFile.ToText(_subtitle.Paragraphs);
+                try { File.WriteAllText(save.FileName, text, Encoding.UTF8); }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { MessageBox.Show(this, ex.Message, Text); }
+            }
+        }
+        private void ImportBookmarks()
+        {
+            using (var open = new OpenFileDialog { Filter = "Subtitle Edit bookmarks|*.txt;*.tsv|All files|*.*" })
+            {
+                if (open.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    if (new FileInfo(open.FileName).Length > 16 * 1024 * 1024) throw new InvalidDataException("Bookmark file exceeds 16 MiB.");
+                    var staged = new Subtitle(_subtitle); var count = ClassicBookmarksFile.Apply(File.ReadAllText(open.FileName), staged.Paragraphs);
+                    if (count == 0) { MessageBox.Show(this, Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Подходящие закладки не найдены.", "No matching bookmarks found."), Text); return; }
+                    _beforeChange?.Invoke();
+                    for (int i = 0; i < staged.Paragraphs.Count; i++) _subtitle.Paragraphs[i].Bookmark = staged.Paragraphs[i].Bookmark;
+                    listViewBookmarks.Items.Clear();
+                    foreach (var p in _subtitle.Paragraphs.Where(p => p.Bookmark != null))
+                    {
+                        var item = new ListViewItem("#" + p.Number) { Tag = p }; item.SubItems.Add(p.StartTime.ToShortDisplayString()); item.SubItems.Add(p.Bookmark.Replace(Environment.NewLine, "  ")); listViewBookmarks.Items.Add(item);
+                    }
+                    UpdateCount();
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { MessageBox.Show(this, ex.Message, Text); }
+            }
         }
 
         public static void ExportBookmarksAsCsv(Subtitle subtitle, Form form)
@@ -160,7 +198,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void exportToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            ExportBookmarksAsCsv(_subtitle, this);
+            ExportBookmarks();
         }
 
         private void toolStripMenuItemRename_Click(object sender, EventArgs e)
@@ -176,7 +214,7 @@ namespace Nikse.SubtitleEdit.Forms
                 {
                     if (form.ShowDialog() == DialogResult.OK)
                     {
-                        p.Bookmark = form.Comment;
+                        _beforeChange?.Invoke(); p.Bookmark = form.Comment;
                         listViewBookmarks.SelectedItems[0].SubItems[2].Text = p.Bookmark.Replace(Environment.NewLine, "  ");
                     }
                 }
@@ -193,7 +231,7 @@ namespace Nikse.SubtitleEdit.Forms
             var idx = listViewBookmarks.SelectedItems[0].Index;
             if (listViewBookmarks.Items[idx].Tag is Paragraph p)
             {
-                p.Bookmark = null;
+                _beforeChange?.Invoke(); p.Bookmark = null;
                 listViewBookmarks.Items.RemoveAt(idx);
 
                 if (idx > 0)
@@ -213,6 +251,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void deleteAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            _beforeChange?.Invoke();
             foreach (var p in _subtitle.Paragraphs.Where(p => p.Bookmark != null))
             {
                 p.Bookmark = null;

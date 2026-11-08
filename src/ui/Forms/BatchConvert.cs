@@ -40,6 +40,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         public class ThreadDoWorkParameter
         {
+            public Nikse.SubtitleEdit.Logic.Plugins.ClassicBatchPlugin[] ClassicBatchPlugins { get; set; } = new Nikse.SubtitleEdit.Logic.Plugins.ClassicBatchPlugin[0];
+            public CancellationToken PluginCancellation { get; set; }
             public bool FixCommonErrors { get; set; }
             public bool MultipleReplaceActive { get; set; }
             public bool FixRtl { get; set; }
@@ -1259,6 +1261,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void buttonConvert_Click(object sender, EventArgs e)
         {
+            using var preventSleep = Nikse.SubtitleEdit.Logic.ClassicPowerRequest.Acquire("Processing subtitles and media");
             _errors = 0;
             labelError.Visible = false;
             Refresh();
@@ -1274,6 +1277,8 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             _cancellationTokenSource = new CancellationTokenSource();
+            try { _batch53.Validate(); _classicBatchPlugins=_batch53.PluginManifests.Select(Nikse.SubtitleEdit.Logic.Plugins.ClassicBatchPlugin.Load).ToArray(); }
+            catch(Exception ex) when(ex is IOException || ex is Newtonsoft.Json.JsonException || ex is ArgumentException){MessageBox.Show(this,ex.Message,Text);return;}
             if (listViewInputFiles.Items.Count == 0)
             {
                 MessageBox.Show(LanguageSettings.Current.BatchConvert.NothingToConvert);
@@ -1727,7 +1732,7 @@ namespace Nikse.SubtitleEdit.Forms
                             var targetEncoding = GetCurrentEncoding(fileName);
 
                             var targetFrameRate = 0.0;
-                            if (double.TryParse(comboBoxFrameRateTo.Text.Replace(',', '.').Replace(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, "."), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var toFrameRate))
+                            if (IsActionEnabled(CommandLineConverter.BatchAction.ChangeFrameRate) && double.TryParse(comboBoxFrameRateTo.Text.Replace(',', '.').Replace(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, "."), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var toFrameRate))
                             {
                                 targetFrameRate = toFrameRate;
                             }
@@ -1812,12 +1817,14 @@ namespace Nikse.SubtitleEdit.Forms
                                             toFormat,
                                             fromFormat,
                                             binaryParagraphs);
-                                        ApplyFixesStep2(parameter, Configuration.Settings.Tools.BatchConvertFixRtlMode);
+                                        parameter.ClassicBatchPlugins=_classicBatchPlugins;parameter.PluginCancellation=_cancellationTokenSource.Token;
+                            ApplyFixesStep2(parameter, Configuration.Settings.Tools.BatchConvertFixRtlMode);
+                            if(!string.IsNullOrEmpty(parameter.Error))throw new InvalidDataException(parameter.Error);
 
                                         var preExt = TsToBluRaySup.GetFileNameEnding(programMapTableParser, id);
                                         var dummy = 0;
                                         PrepareClassicTsSave(parameter, preExt);
-                                        var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, parameter.TargetFileName, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp);
+                                        var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, parameter.TargetFileName, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp, frameRateAlreadyAdjusted: true);
                                         if(saved) { RecordClassicBatchErrors(parameter.Subtitle,GetCurrentSubtitleFormat(),fileName+preExt); tsConvertedCount++; SaveClassicTsVariants(parameter); }
                                     }
                                 }
@@ -1869,10 +1876,12 @@ namespace Nikse.SubtitleEdit.Forms
                                         toFormat,
                                         fromFormat,
                                         binaryParagraphs);
-                                    ApplyFixesStep2(parameter, Configuration.Settings.Tools.BatchConvertFixRtlMode);
+                                    parameter.ClassicBatchPlugins=_classicBatchPlugins;parameter.PluginCancellation=_cancellationTokenSource.Token;
+                            ApplyFixesStep2(parameter, Configuration.Settings.Tools.BatchConvertFixRtlMode);
+                            if(!string.IsNullOrEmpty(parameter.Error))throw new InvalidDataException(parameter.Error);
 
                                     PrepareClassicTsSave(parameter, preExt);
-                                        var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, parameter.TargetFileName, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp);
+                                        var saved = CommandLineConverter.BatchConvertSave(toFormat, TimeSpan.Zero, targetEncoding, outputFolder, parameter.TargetFileName, 0, ref dummy, ref dummy, SubtitleFormat.AllSubtitleFormats.ToList(), fileName, parameter.Subtitle, new SubRip(), null, overwrite, 0, targetFrameRate, null, new List<string>(), null, true, null, null, null, preExt, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp, frameRateAlreadyAdjusted: true);
                                     if(saved) { RecordClassicBatchErrors(parameter.Subtitle,GetCurrentSubtitleFormat(),fileName+preExt); tsConvertedCount++; SaveClassicTsVariants(parameter); }
                                 }
                             }
@@ -1991,7 +2000,9 @@ namespace Nikse.SubtitleEdit.Forms
                                 }
                             }
 
+                            parameter.ClassicBatchPlugins=_classicBatchPlugins;parameter.PluginCancellation=_cancellationTokenSource.Token;
                             ApplyFixesStep2(parameter, Configuration.Settings.Tools.BatchConvertFixRtlMode);
+                            if(!string.IsNullOrEmpty(parameter.Error))throw new InvalidDataException(parameter.Error);
                             ThreadWorkerCompleted(parameter);
                         }
                     }
@@ -2690,7 +2701,7 @@ namespace Nikse.SubtitleEdit.Forms
         private void UpdateActionEnabledCache()
         {
             _actionEnabledCache = new Dictionary<CommandLineConverter.BatchAction, bool>();
-            foreach (ListViewItem item in listViewConvertOptions.Items)
+            foreach (ListViewItem item in ClassicBatchActionItems)
             {
                 var fixItem = item.Tag as FixActionItem;
                 _actionEnabledCache.Add(fixItem.Action, item.Checked);
@@ -2704,7 +2715,7 @@ namespace Nikse.SubtitleEdit.Forms
                 return _actionEnabledCache[action];
             }
 
-            foreach (ListViewItem item in listViewConvertOptions.Items)
+            foreach (ListViewItem item in ClassicBatchActionItems)
             {
                 if (item.Tag is FixActionItem fixItem && fixItem.Action == action)
                 {
@@ -2920,6 +2931,12 @@ namespace Nikse.SubtitleEdit.Forms
 
         private static void ApplyFixesStep2(ThreadDoWorkParameter p, string mode)
         {
+            p.FixRtl = p.FixRtl && p.Subtitle.Paragraphs.Any(line => LanguageAutoDetect.ContainsRightToLeftLetter(line.Text));
+            if(p.ClassicBatchPlugins.Length>0)
+            {
+                try { var result=new Subtitle(p.Subtitle,false);foreach(var plugin in p.ClassicBatchPlugins)result=plugin.Run(result,p.SourceFormat ?? p.Format,p.FileName,Nikse.SubtitleEdit.Logic.Plugins.PluginConstants.RequestTypeBatch,p.PluginCancellation).GetAwaiter().GetResult();p.Subtitle=result; }
+                catch(Exception ex)when(ex is IOException || ex is Newtonsoft.Json.JsonException || ex is InvalidOperationException || ex is OperationCanceledException || ex is System.ComponentModel.Win32Exception || ex is UnauthorizedAccessException){p.Error=ex.Message;return;}
+            }
             if (p.FixRtl && mode == RemoveUnicode)
             {
                 for (var i = 0; i < p.Subtitle.Paragraphs.Count; i++)
@@ -3042,6 +3059,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ThreadWorkerCompletedOne(ThreadDoWorkParameter p)
         {
+            double? targetFrameRate = IsActionEnabled(CommandLineConverter.BatchAction.ChangeFrameRate) && double.TryParse(comboBoxFrameRateTo.Text.Replace(',', '.'), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var selectedFrameRate) && selectedFrameRate > 0 ? selectedFrameRate : (double?)null;
             CommandLineConverter.BatchConvertProgress progressCallback = null;
             if (p.Item.Index + 2 < listViewInputFiles.Items.Count)
             {
@@ -3117,7 +3135,7 @@ namespace Nikse.SubtitleEdit.Forms
                     {
                         dir = Path.GetDirectoryName(p.FileName);
                     }
-                    var success = CommandLineConverter.BatchConvertSave(targetFormat, TimeSpan.Zero, GetCurrentEncoding(p.FileName), dir, p.TargetFileName, _count, ref _converted, ref _errors, _allFormats, p.FileName, p.Subtitle, p.SourceFormat, binaryParagraphs, overwrite, -1, null, null, null, null, false, progressCallback, null, null, null, null, null, null, _preprocessingSettings, _cancellationTokenSource.Token, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp);
+                    var success = CommandLineConverter.BatchConvertSave(targetFormat, TimeSpan.Zero, GetCurrentEncoding(p.FileName), dir, p.TargetFileName, _count, ref _converted, ref _errors, _allFormats, p.FileName, p.Subtitle, p.SourceFormat, binaryParagraphs, overwrite, -1, targetFrameRate, null, null, null, false, progressCallback, null, null, null, null, null, null, _preprocessingSettings, _cancellationTokenSource.Token, preserveSourceTimestamp: _batch53.PreserveSourceTimestamp, frameRateAlreadyAdjusted: true);
                     if (success)
                     {
                         RecordClassicBatchErrors(p.Subtitle,p.Format,string.IsNullOrWhiteSpace(p.TargetFileName)?p.FileName:p.TargetFileName);
@@ -4005,7 +4023,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void listViewConvertOptions_SelectedIndexChanged(object sender, EventArgs e)
         {
-            foreach (ListViewItem item in listViewConvertOptions.Items)
+            foreach (ListViewItem item in ClassicBatchActionItems)
             {
                 if (item.Tag is FixActionItem fi && fi.Control != null)
                 {
@@ -4085,7 +4103,9 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void listViewConvertOptions_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            var count = listViewConvertOptions.CheckedItems.Count;
+            ((FixActionItem)e.Item.Tag).Checked = e.Item.Checked;
+            // During native handle creation other rows have not received their indices yet.
+            var count = ClassicBatchActionItems.Count(x => ((FixActionItem)x.Tag).Checked);
             if (count > 0)
             {
                 groupBoxConvertOptions.Text = LanguageSettings.Current.BatchConvert.ConvertOptions + "  " + count;

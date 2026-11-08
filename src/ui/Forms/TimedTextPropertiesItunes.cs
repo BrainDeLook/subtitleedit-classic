@@ -14,10 +14,22 @@ namespace Nikse.SubtitleEdit.Forms
         private readonly XmlDocument _xml;
         private readonly XmlNamespaceManager _namespaceManager;
 
+        private string _classicDefaultColor, _classicDefaultStyle, _classicDefaultRegion, _classicHeaderTemplate;
         public TimedTextPropertiesItunes(Subtitle subtitle)
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
+            var defaults = Configuration.Settings.SubtitleSettings;
+            _classicDefaultColor = defaults.TimedTextItunesDefaultColor; _classicDefaultStyle = defaults.TimedTextItunesDefaultStyle;
+            _classicDefaultRegion = defaults.TimedTextItunesDefaultRegion; _classicHeaderTemplate = defaults.TimedTextItunesHeaderTemplate;
+            var exportDefaults = new Button { Text = Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Предустановки экспорта / шаблон…", "Export presets / template…"), AutoSize = true, Left = 12, Top = buttonOK.Top, Anchor = AnchorStyles.Bottom | AnchorStyles.Left };
+            exportDefaults.Click += (sender, args) =>
+            {
+                using (var form = new ClassicItunesExportDefaults(_classicDefaultColor, _classicDefaultStyle, _classicDefaultRegion, _classicHeaderTemplate))
+                    if (form.ShowDialog(this) == DialogResult.OK) { _classicDefaultColor = form.ColorValue; _classicDefaultStyle = form.StyleValue; _classicDefaultRegion = form.RegionValue; _classicHeaderTemplate = form.HeaderValue; }
+            };
+            Controls.Add(exportDefaults);
+
             UiUtil.FixFonts(this);
             Application.DoEvents();
 
@@ -337,6 +349,11 @@ namespace Nikse.SubtitleEdit.Forms
             Configuration.Settings.SubtitleSettings.TimedTextItunesBottomOrigin = textBoxBottomOrigin.Text;
             Configuration.Settings.SubtitleSettings.TimedTextItunesBottomExtent = textBoxBottomExtent.Text;
             Configuration.Settings.SubtitleSettings.TimedTextItunesStyleAttribute = comboBoxStyleAttribute.Text;
+            Configuration.Settings.SubtitleSettings.TimedTextItunesDefaultColor = _classicDefaultColor;
+            Configuration.Settings.SubtitleSettings.TimedTextItunesDefaultStyle = _classicDefaultStyle;
+            Configuration.Settings.SubtitleSettings.TimedTextItunesDefaultRegion = _classicDefaultRegion;
+            Configuration.Settings.SubtitleSettings.TimedTextItunesHeaderTemplate = _classicHeaderTemplate;
+
 
             DialogResult = DialogResult.OK;
         }

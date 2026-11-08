@@ -30,6 +30,7 @@ namespace Nikse.SubtitleEdit.Forms
             var keys = new KeyEventArgs(keyData);
             if (HandleClassicCustomShortcut(keys)) return true;
             if (ClassicRightAlt) return false;
+            if(TryClassicEditor54Shortcut(keyData))return true;
             return base.ProcessCmdKey(ref msg, keyData);
         }
         private bool HandleClassicCustomShortcut(KeyEventArgs e)

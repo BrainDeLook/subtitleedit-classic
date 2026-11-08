@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 namespace Nikse.SubtitleEdit.Logic {
 public sealed class LlamaCppModel {
 public string DisplayName { get; }
@@ -9,8 +9,9 @@ public string MmprojFileName { get; }
 public string MmprojUrl { get; }
 public string ChatTemplate { get; }
 public bool NoJinja { get; }
+public Nikse.SubtitleEdit.Logic.Ocr.AiOcrPadding OcrPadding { get; }
 public string PromptTemplate { get; } public double Temperature { get; } public double TopP { get; } public int TopK { get; } public double RepeatPenalty { get; } public bool CompletionOnly { get; } public bool NoThinking { get; }
-public LlamaCppModel(string DisplayName, string FileName, string Size, string Url, string MmprojFileName = null, string MmprojUrl = null, string ChatTemplate = null, bool NoJinja = false, string PromptTemplate = null, double Temperature = -1, double TopP = -1, int TopK = -1, double RepeatPenalty = -1, bool CompletionOnly = false, bool NoThinking = false) { this.DisplayName = DisplayName; this.FileName = FileName; this.Size = Size; this.Url = Url; this.MmprojFileName = MmprojFileName; this.MmprojUrl = MmprojUrl; this.ChatTemplate = ChatTemplate; this.NoJinja = NoJinja; this.PromptTemplate = PromptTemplate; this.Temperature = Temperature; this.TopP = TopP; this.TopK = TopK; this.RepeatPenalty = RepeatPenalty; this.CompletionOnly = CompletionOnly; this.NoThinking = NoThinking; }
+public LlamaCppModel(string DisplayName, string FileName, string Size, string Url, string MmprojFileName = null, string MmprojUrl = null, string ChatTemplate = null, bool NoJinja = false, string PromptTemplate = null, double Temperature = -1, double TopP = -1, int TopK = -1, double RepeatPenalty = -1, bool CompletionOnly = false, bool NoThinking = false, Nikse.SubtitleEdit.Logic.Ocr.AiOcrPadding OcrPadding = Nikse.SubtitleEdit.Logic.Ocr.AiOcrPadding.Square) { this.OcrPadding = OcrPadding; this.DisplayName = DisplayName; this.FileName = FileName; this.Size = Size; this.Url = Url; this.MmprojFileName = MmprojFileName; this.MmprojUrl = MmprojUrl; this.ChatTemplate = ChatTemplate; this.NoJinja = NoJinja; this.PromptTemplate = PromptTemplate; this.Temperature = Temperature; this.TopP = TopP; this.TopK = TopK; this.RepeatPenalty = RepeatPenalty; this.CompletionOnly = CompletionOnly; this.NoThinking = NoThinking; }
 public override string ToString() => DisplayName + " (" + Size + ")"; }
 public static class ClassicLlamaCatalog {
     private const string HyMt2PromptTemplate =
@@ -302,45 +303,33 @@ public static class ClassicLlamaCatalog {
             "https://huggingface.co/ggml-org/GLM-OCR-GGUF/resolve/main/GLM-OCR-Q8_0.gguf",
             MmprojFileName: "mmproj-GLM-OCR-Q8_0.gguf",
             MmprojUrl: "https://huggingface.co/ggml-org/GLM-OCR-GGUF/resolve/main/mmproj-GLM-OCR-Q8_0.gguf"),
-        // Liquid AI's general vision model (3B), not an OCR specialist. Measured 2026-09-05 on the
-        // same 14-image corpus: 0.00% character error - flawless across all eight scripts, italics,
-        // busy video backgrounds and small text, where GLM-OCR misread one Russian word - and with
-        // its own prompt 13/14 exact (its one miss over-splits a line; it never merges). Second,
-        // not first, because it is 2.5x the download (2.9 GB + 0.6 GB mmproj) and ~2.5x slower per
-        // image. It follows instructions literally, so it needs the PromptTemplate below: under the
-        // shared prompt it prefixes every answer with the line count it was asked to identify.
-        new LlamaCppModel("LFM2.5-VL 3B (Q8_0)", "LFM2.5-VL-3B-Q8_0.gguf", "3.5 GB",
-            "https://huggingface.co/LiquidAI/LFM2.5-VL-3B-GGUF/resolve/main/LFM2.5-VL-3B-Q8_0.gguf",
-            MmprojFileName: "mmproj-LFM2.5-VL-3B-Q8_0.gguf",
-            MmprojUrl: "https://huggingface.co/LiquidAI/LFM2.5-VL-3B-GGUF/resolve/main/mmproj-LFM2.5-VL-3B-Q8_0.gguf",
+        new LlamaCppModel("LFM3-VL 2B (Q4_K_M)", "LFM3-VL-2B-Q4_K_M.gguf", "1.3 GB",
+            "https://huggingface.co/LiquidAI/LFM3-VL-2B-GGUF/resolve/main/LFM3-VL-2B-Q4_K_M.gguf",
+            MmprojFileName: "mmproj-LFM3-VL-2B-Q8_0.gguf",
+            MmprojUrl: "https://huggingface.co/LiquidAI/LFM3-VL-2B-GGUF/resolve/main/mmproj-LFM3-VL-2B-Q8_0.gguf",
             PromptTemplate: "Transcribe the subtitle in the image exactly as written, one output line per line of text in the image, keeping symbols such as ♪. Output only the text. The language is {language}."),
-        // PaddlePaddle's official llama.cpp package - 109 languages (NaViT + ERNIE-4.5).
+        new LlamaCppModel("LightOnOCR-3 4B (Q8_0)", "LightOnOCR-3-4B.Q8_0.gguf", "5.2 GB",
+            "https://huggingface.co/mradermacher/LightOnOCR-3-4B-GGUF/resolve/main/LightOnOCR-3-4B.Q8_0.gguf",
+            MmprojFileName: "mmproj-LightOnOCR-3-4B.Q8_0.gguf",
+            MmprojUrl: "https://huggingface.co/mradermacher/LightOnOCR-3-4B-GGUF/resolve/main/LightOnOCR-3-4B.mmproj-f16.gguf",
+            NoThinking: true, OcrPadding: Nikse.SubtitleEdit.Logic.Ocr.AiOcrPadding.Border),
         new LlamaCppModel("PaddleOCR-VL 1.6", "PaddleOCR-VL-1.6-GGUF.gguf", "1.8 GB",
             "https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6-GGUF/resolve/main/PaddleOCR-VL-1.6-GGUF.gguf",
             MmprojFileName: "PaddleOCR-VL-1.6-GGUF-mmproj.gguf",
             MmprojUrl: "https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6-GGUF/resolve/main/PaddleOCR-VL-1.6-GGUF-mmproj.gguf"),
-        // HunyuanOCR 1.5 (Tencent, ~1B). Was the fastest of the list when added (~1.6x GLM-OCR per
-        // image on b10310); on b10625 that lead is gone - re-measured 2026-08-25 at 3.4 s/image
-        // against GLM-OCR's 2.5 s, and it merges two-line subtitles into one line on 4 of 14
-        // images. Verified 2026-08-15 on the pinned b10310 build, 9-image
-        // EN/DE/FR/ES/IT/ZH/JA/RU subtitle corpus: recognition itself exact in every script,
-        // but two formatting quirks keep it from being the default: it sporadically prefixes a
-        // markdown "# " heading (1/9 images; immune to prompt wording, identical at bf16, and
-        // unstrippable because genuine SDH "# lyrics" hash cues - which it preserves verbatim -
-        // look the same), and it silently drops ♪ note marks. GLM-OCR gets both right.
-        // Q8_0 only: bf16 measured identical on the same corpus while twice the size.
         new LlamaCppModel("HunyuanOCR 1.5 (Q8_0)", "HunyuanOCR-Q8_0.gguf", "1.3 GB",
             "https://huggingface.co/ggml-org/HunyuanOCR-GGUF/resolve/main/HunyuanOCR-Q8_0.gguf",
             MmprojFileName: "mmproj-HunyuanOCR-Q8_0.gguf",
-            MmprojUrl: "https://huggingface.co/ggml-org/HunyuanOCR-GGUF/resolve/main/mmproj-HunyuanOCR-Q8_0.gguf"),
-        // Last on purpose: the weakest and by far the slowest of the four on subtitle images
-        // (9/14 recognized, 2.53% character error, 18.5 s/image against GLM-OCR's 2.5 s). It loses
-        // line breaks, drops ♪ note marks, misreads Cyrillic ё as е and Chinese 的, and wraps
-        // Japanese output in ``` fences. Kept for users who already rely on it.
-        new LlamaCppModel("LightOnOCR 1B (Q8_0)", "LightOnOCR-1B-1025-Q8_0.gguf", "1.2 GB",
-            "https://huggingface.co/ggml-org/LightOnOCR-1B-1025-GGUF/resolve/main/LightOnOCR-1B-1025-Q8_0.gguf",
-            MmprojFileName: "mmproj-LightOnOCR-1B-1025-Q8_0.gguf",
-            MmprojUrl: "https://huggingface.co/ggml-org/LightOnOCR-1B-1025-GGUF/resolve/main/mmproj-LightOnOCR-1B-1025-Q8_0.gguf"),
+            MmprojUrl: "https://huggingface.co/ggml-org/HunyuanOCR-GGUF/resolve/main/mmproj-HunyuanOCR-Q8_0.gguf", OcrPadding: Nikse.SubtitleEdit.Logic.Ocr.AiOcrPadding.Border),
+        new LlamaCppModel("QARI-OCR 0.2.2.1 Arabic 2B (Q8_0)", "Qari-OCR-0.2.2.1-VL-2B-Instruct-merged.Q8_0.gguf", "2.4 GB",
+            "https://huggingface.co/mradermacher/Qari-OCR-0.2.2.1-VL-2B-Instruct-merged-GGUF/resolve/main/Qari-OCR-0.2.2.1-VL-2B-Instruct-merged.Q8_0.gguf",
+            MmprojFileName: "mmproj-Qari-OCR-0.2.2.1-VL-2B-Instruct-merged.Q8_0.gguf",
+            MmprojUrl: "https://huggingface.co/mradermacher/Qari-OCR-0.2.2.1-VL-2B-Instruct-merged-GGUF/resolve/main/Qari-OCR-0.2.2.1-VL-2B-Instruct-merged.mmproj-Q8_0.gguf", OcrPadding: Nikse.SubtitleEdit.Logic.Ocr.AiOcrPadding.Border),
+        new LlamaCppModel("LightOnOCR-3 0.8B (Q8_0)", "LightOnOCR-3-0.8B-Q8_0.gguf", "1.0 GB",
+            "https://huggingface.co/Prathat/LightOnOCR-3-0.8B-GGUF/resolve/main/LightOnOCR-3-0.8B-Q8_0.gguf",
+            MmprojFileName: "mmproj-LightOnOCR-3-0.8B-Q8_0.gguf",
+            MmprojUrl: "https://huggingface.co/Prathat/LightOnOCR-3-0.8B-GGUF/resolve/main/LightOnOCR-3-0.8B-mmproj-f16.gguf",
+            NoThinking: true, OcrPadding: Nikse.SubtitleEdit.Logic.Ocr.AiOcrPadding.Border),
     };
 
 }}

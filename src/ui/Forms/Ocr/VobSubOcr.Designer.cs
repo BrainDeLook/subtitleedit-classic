@@ -160,7 +160,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             this.groupBoxTransportStream = new System.Windows.Forms.GroupBox();
             this.checkBoxTransportStreamGetColorAndSplit = new System.Windows.Forms.CheckBox();
             this.checkBoxTransportStreamGrayscale = new System.Windows.Forms.CheckBox();
-            this.pictureBoxSubtitleImage = new System.Windows.Forms.PictureBox();
+            this.pictureBoxSubtitleImage = new Nikse.SubtitleEdit.Controls.ClassicZoomPictureBox();
             this.contextMenuStripImage = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.autoTransparentBackgroundToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.setItalicAngleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -2559,7 +2559,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 
         #endregion
 
-        private System.Windows.Forms.PictureBox pictureBoxSubtitleImage;
+        private Nikse.SubtitleEdit.Controls.ClassicZoomPictureBox pictureBoxSubtitleImage;
         private System.Windows.Forms.Label labelSubtitleText;
         private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.Label labelStatus;

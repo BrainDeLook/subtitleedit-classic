@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<OCRFixReplaceList>
+  <WholeWords>
+    <Word from="ajövőnk" to="a jövőnk" />
+    <Word from="akkorjó" to="akkor jó" />
+    <Word from="Akkorjó" to="Akkor jó" />
+    <Word from="káris" to="kár is" />
+    <Word from="Káris" to="Kár is" />
+    <Word from="kétszeris" to="kétszer is" />
+    <Word from="tegyéljégre" to="tegyél jégre" />
+  </WholeWords>
+  <PartialWordsAlways />
+  <PartialWords>
+    <WordPart from="i" to="l" />
+    <WordPart from="I" to="l" />
+  </PartialWords>
+  <WholeLines />
+  <PartialLinesAlways />
+  <PartialLines />
+  <BeginLines />
+  <EndLines />
+  <RegularExpressions>
+    <!-- nagy I-l javítások -->
+    <RegEx find="((?![IVXLCDM])[\x41-\x5a\x61-\x7a\xc1-\xfc])II" replaceWith="$1ll" />
+    <RegEx find="II([\x61-\x7a\xe1-\xfc])" replaceWith="ll$1" />
+    <RegEx find="([\x61-\x7a\xe1-\xfc])(?&lt;!\bMa?c)I" replaceWith="$1l" />
+    <RegEx find="([\x20])I(?![&apos;’](?:m|ll|ve|d)\b)([^aeou\x41-\x5a\xc1-\xdc])" replaceWith="$1l$2" />
+    <RegEx find="\bl(?!l\b)([bcdfghjklmnpqrstvwxz])" replaceWith="I$1" />
+    <RegEx find="([\x41-\x5a\xc1-\xdc])I([\x61-\x7a\xe1-\xfc])" replaceWith="$1l$2" />
+    <RegEx find="([\x41-\x5a\xc1-\xdc])I([\-][\x41-\x5a\xc1-\xdc][\x61-\x7a\xe1-\xfc])" replaceWith="$1l$2" />
+    <RegEx find="\b([AEÜÓ])I([^\x41-\x5a\xc1-\xdc])" replaceWith="$1l$2" />
+    <RegEx find="([\xf5\xfb])I" replaceWith="$1l" />
+  </RegularExpressions>
+  <RegularExpressionsIfSpelledCorrectly>
+    <!-- Italic l misread as i (#13660): trailing i to l, double ii to ll.  -->
+    <!-- Correct i-words are in the dictionary and protected by the gate.   -->
+    <!-- Stem of 3+ letters (#14824): "toi"/"moi"/"roi" in a quoted French   -->
+    <!-- line are not in the dictionary but "tol"/"mol"/"rol" are.           -->
+    <RegEx find="\b([A-ZÁÉÍÓÖŐÚÜŰa-záéíóöőúüű][a-záéíóöőúüű]{3,})i\b" spellCheck="$1l" replaceWith="$1l" />
+    <RegEx find="\b([A-ZÁÉÍÓÖŐÚÜŰa-záéíóöőúüű][a-záéíóöőúüű]*)ii([a-záéíóöőúüű]*)\b" spellCheck="$1ll$2" replaceWith="$1ll$2" />
+
+    <!-- word-initial i to l (iove to love, iieber to lieber) -->
+    <RegEx find="\bi([a-záéíóöőúüű]{2,})\b" spellCheck="l$1" replaceWith="l$1" />
+    <!-- word-initial I before a vowel to l (Iesz to lesz), only when the l-word is in the dictionary: "Ian", "Iowa", "Iolaus" stay -->
+    <RegEx find="\bI([aáeéiíoóöuúüy\xf5\xfb][a-záéíóöőúüű]*)\b" spellCheck="l$1" replaceWith="l$1" />
+
+    <!-- word-initial ii to ll (iiegar to llegar) -->
+    <RegEx find="\bii([a-záéíóöőúüű]+)\b" spellCheck="ll$1" replaceWith="ll$1" />
+
+    <!-- Lowercase l misread as uppercase I (#13660): replace every I in the word, -->
+    <!-- so words with more than one are repaired too (deIectabIe -> delectable,   -->
+    <!-- ExceIIencies -> Excellencies). Words of two letters (AI) are never        -->
+    <!-- touched, and real words (MacIntosh) are kept by the spell check gate.     -->
+    <RegEx find="\b([A-ZÁÉÍÓÖŐÚÜŰa-záéíóöőúüű](?=[a-záéíóöőúüűI]*I)[a-záéíóöőúüűI]{2,})\b" replaceAllFrom="I" replaceAllTo="l" spellCheck="$1" replaceWith="$1" />
+  </RegularExpressionsIfSpelledCorrectly>
+</OCRFixReplaceList>

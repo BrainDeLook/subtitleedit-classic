@@ -37,7 +37,7 @@ namespace Nikse.SubtitleEdit.Logic
         public string Backend { get; set; }
         public string Runtime { get; set; }
         public bool IsAudioCpp => Runtime == "audiocpp";
-        public bool SupportsCloning => Id != "kugel" && Id != "kokoro" && Id != "zonos";
+        public bool SupportsCloning => Id != "voxtraltts" && Id != "kugel" && Id != "kokoro" && Id != "zonos";
         public bool SupportsSpeed => !new[] { "chatter", "dots", "confucius", "kokoro", "omnicpp", "zonos" }.Contains(Id) && (!IsAudioCpp || Id == "index25");
         public bool SupportsInstructions => Id == "breeze" || Id == "omnicpp";
         public string Notes { get; set; }

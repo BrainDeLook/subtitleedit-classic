@@ -8,6 +8,8 @@ namespace Nikse.SubtitleEdit.Core.Cea608
         public static List<CcData> GetCcData(Stream fs, ulong startPos, ulong size)
         {
             var fieldData = new List<CcData>();
+            if(size<6 || startPos>=(ulong)fs.Length)return fieldData;
+            size=System.Math.Min(size,(ulong)fs.Length-startPos);
             for (var i = startPos; i < startPos + size - 5; i++)
             {
                 var buffer = new byte[4];

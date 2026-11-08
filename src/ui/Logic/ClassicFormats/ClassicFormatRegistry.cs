@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -17,6 +17,12 @@ namespace Nikse.SubtitleEdit.Logic.ClassicFormats
             lock(Gate)
             {
                 if(_registered)return;
+                Nikse.SubtitleEdit.Core.Dictionaries.OcrFixReplaceList.BuiltInRulesProvider=name=>
+                {
+                    const string suffix="_OCRFixReplaceList.xml";
+                    if(!name.EndsWith(suffix,StringComparison.Ordinal))return null;
+                    return typeof(ClassicFormatRegistry).Assembly.GetManifestResourceStream("ClassicVideoOcrRules."+name.Substring(0,name.Length-suffix.Length)+".xml");
+                };
                 var current=SubtitleFormat.AllSubtitleFormats as IList<SubtitleFormat>;
                 var defaultOrder=typeof(SubtitleFormat).GetField("_subtitleFormatsWithDefaultOrder",BindingFlags.Static|BindingFlags.NonPublic)?.GetValue(null) as IList<SubtitleFormat>;
                 if(current==null || defaultOrder==null)throw new InvalidOperationException("Classic subtitle format registry is unavailable.");
@@ -25,7 +31,7 @@ namespace Nikse.SubtitleEdit.Logic.ClassicFormats
                 foreach(var list in new[]{current,defaultOrder}.Distinct())
                 {
                     foreach(var format in Added.Where(f=>!(f is TimedTextImage)))
-                        for(int i=list.Count-1;i>=0;i--)if(list[i].Name==format.Name)list.RemoveAt(i);
+                        for(int i=list.Count-1;i>=0;i--)if(list[i].Name==format.Name || format.AlternateNames.Contains(list[i].Name))list.RemoveAt(i);
                     var visible=Added.Where(f=>!(f is TimedTextImage)).ToList();for(int i=visible.Count-1;i>=0;i--)list.Insert(Math.Min(1,list.Count),visible[i]);
                 }
                 _registered=true;

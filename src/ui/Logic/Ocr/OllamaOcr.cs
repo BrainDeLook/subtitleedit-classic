@@ -35,7 +35,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
         public async Task<IEnumerable<string>> GetModels()
         {
-            if(_provider!=null)return _provider=="crispembed"?ClassicBitmapOcr.Models.Select(m=>m.Name):new[]{ClassicBitmapSettings.Load(_provider).Api.Model};
+            if(_provider!=null)return _provider=="crispembed"?ClassicBitmapOcr.Models.Select(m=>m.Name):new[]{ClassicBitmapSettings.Load(_provider).SelectedModel};
             try
             {
                 using (var response = await _httpClient.GetAsync("http://localhost:11434/api/tags").ConfigureAwait(false))

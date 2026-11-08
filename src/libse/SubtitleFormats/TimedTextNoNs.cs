@@ -27,6 +27,7 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             }
 
             xmlAsString = xmlAsString.RemoveControlCharactersButWhiteSpace();
+            if (xmlAsString.Contains("<timedtext", StringComparison.OrdinalIgnoreCase)) return false;
 
             if (xmlAsString.Contains("profile/imsc1"))
             {

@@ -66,7 +66,7 @@ namespace Nikse.SubtitleEdit.Logic
     // Shared by the interactive tools, batch conversion and speech preparation.
     public static class ClassicTextTools
     {
-        public static string L(string ru, string en) => (Configuration.Settings.General.Language ?? "").StartsWith("ru", StringComparison.OrdinalIgnoreCase) ? ru : en;
+        public static string L(string ru, string en) => ClassicLocalization.Text(ru, en);
         public static bool CanMerge(Paragraph a, Paragraph b, string language, int maxGap, int maxChars)
         {
             var first = HtmlUtil.RemoveHtmlTags(a.Text ?? "", true).Trim(); var second = HtmlUtil.RemoveHtmlTags(b.Text ?? "", true).Trim();

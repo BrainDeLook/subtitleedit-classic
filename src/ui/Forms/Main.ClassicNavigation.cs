@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -194,6 +194,15 @@ namespace Nikse.SubtitleEdit.Forms
                 toolStripMenuItemWebVttStyle, toolStripMenuItemWebVTT, toolStripMenuWebVttBrowserPreview,
                 toolStripMenuItemBookmark, _classicForcedContext);
 
+            var translationItems = toolStripMenuItemTranslateSelected.DropDownItems;
+            var selectedTranslation = NavigationAction(translationItems, "classicTranslateSelectedTogether",
+                "Перевести с заменой на месте…", "Translate and replace in place…", TranslateClassicSelectedRowsTogether);
+            selectedTranslation.ToolTipText = ClassicAssistedText.L(
+                "Заменяет текст выбранных реплик в текущем файле; остальные сохраняются.\nРасширенные AI-движки получают соседние реплики как контекст.",
+                "Replaces the selected cue text in the current file; other cues are retained.\nAdvanced AI engines receive neighboring cues as context.");
+            translationItems.Remove(selectedTranslation);
+            translationItems.Insert(Math.Max(0, translationItems.IndexOf(genericTranslateToolStripMenuItem) + 1), selectedTranslation);
+
             if (!_classicNavigationEvents)
             {
                 _classicNavigationEvents = true;
@@ -241,6 +250,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void RefreshClassicNavigation()
         {
+            var selectedTranslation = FindClassicMenu(contextMenuStripListView.Items, "classicTranslateSelectedTogether");
+            if (selectedTranslation != null) selectedTranslation.Enabled = SubtitleListview1.SelectedItems.Count > 0;
             foreach (var root in new[] { fileToolStripMenuItem, toolsToolStripMenuItem, toolStripMenuItemVideo, optionsToolStripMenuItem, toolStripMenuItemSpellCheckMain, editToolStripMenuItem })
                 CleanNavigationSeparators(root.DropDownItems);
             CleanNavigationSeparators(contextMenuStripListView.Items);

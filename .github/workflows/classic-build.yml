@@ -1,4 +1,4 @@
-﻿name: Build Subtitle Edit Classic Installer
+name: Build Subtitle Edit Classic Installer
 
 on:
   push:
@@ -25,21 +25,12 @@ jobs:
       - name: Build the classic Windows Forms solution
         shell: pwsh
         run: |
-          $sdk = Get-ChildItem 'C:/Program Files/dotnet/sdk' -Directory | Where-Object Name -like '8.0.*' | Sort-Object { [version]$_.Name } | Select-Object -Last 1
-          @{ sdk = @{ version = $sdk.Name; rollForward = 'latestPatch' } } | ConvertTo-Json | Set-Content global.json
-          # Generate these files before the solution is evaluated, so fresh checkouts
-          # include them in the default Compile glob and receive the correct version.
-          msbuild src/UpdateAssemblyInfo/UpdateAssemblyInfo.csproj /restore /p:Configuration=Release /verbosity:minimal
+          ./installer/Build-Classic54.ps1 -Revision 0
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & ./src/UpdateAssemblyInfo/bin/Release/net48/win-x64/UpdateAssemblyInfo.exe src/ui/Properties/AssemblyInfo.cs.template src/libse/Properties/AssemblyInfo.cs.template
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          msbuild SubtitleEdit.sln /restore /p:Configuration=Release /p:SolutionDir="$env:GITHUB_WORKSPACE\" /verbosity:minimal
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item 'src/seconv/bin/Release/net48/seconv.exe' 'src/ui/bin/Release/net48/seconv.exe'
-          Copy-Item 'src/seconv/bin/Release/net48/seconv.exe.config' 'src/ui/bin/Release/net48/seconv.exe.config'
-          $exeVersion = (Get-Item 'src/ui/bin/Release/net48/SubtitleEdit.exe').VersionInfo.FileVersion
-          Write-Output "Compiled application version: $exeVersion"
-          if ($exeVersion -notmatch '^4\.0\.28\.') { throw "Expected Classic 4.0.28, got $exeVersion." }
+          Copy-Item 'src/seconv/bin/Release/net48/seconv.exe' 'src/ui/bin/Release/net48/seconv.exe' -Force
+          Copy-Item 'src/seconv/bin/Release/net48/seconv.exe.config' 'src/ui/bin/Release/net48/seconv.exe.config' -Force
+          $exeVersion = (Get-Item 'src/ui/bin/Release/net48/SubtitleEdit.exe').VersionInfo.FileVersion.Trim()
+          if ($exeVersion -ne '4.0.29.0') { throw "Expected Classic 4.0.29.0, got $exeVersion." }
       - name: Find or install the Inno Setup compiler
         shell: pwsh
         run: |
@@ -59,15 +50,15 @@ jobs:
           $outputDirectory = Join-Path $env:GITHUB_WORKSPACE 'artifacts'
           & $env:CLASSIC_ISCC /DCLASSIC_FORK "/O$outputDirectory" installer/Subtitle_Edit_installer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $setup = Join-Path $outputDirectory 'SubtitleEdit-Classic-4.0.28-Setup.exe'
+          $setup = Join-Path $outputDirectory 'SubtitleEdit-Classic-4.0.29-Setup.exe'
           if (-not (Test-Path -LiteralPath $setup)) { throw 'Installer output was not found.' }
           $hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  SubtitleEdit-Classic-4.0.28-Setup.exe" | Set-Content artifacts/SHA256SUMS.txt -Encoding ascii
+          "$hash  SubtitleEdit-Classic-4.0.29-Setup.exe" | Set-Content artifacts/SHA256SUMS.txt -Encoding ascii
       - name: Test installer and application startup on the CI machine
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $setup = Join-Path $env:GITHUB_WORKSPACE 'artifacts/SubtitleEdit-Classic-4.0.28-Setup.exe'
+          $setup = Join-Path $env:GITHUB_WORKSPACE 'artifacts/SubtitleEdit-Classic-4.0.29-Setup.exe'
           $installDirectory = Join-Path $env:RUNNER_TEMP 'SubtitleEditClassicTest'
           $install = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$installDirectory", '/NOICONS', '/TASKS=') -WindowStyle Hidden -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "Installer failed with exit code $($install.ExitCode)." }
@@ -109,6 +100,6 @@ jobs:
         with:
           name: SubtitleEdit-Classic-Installer
           path: |
-            artifacts/SubtitleEdit-Classic-4.0.28-Setup.exe
+            artifacts/SubtitleEdit-Classic-4.0.29-Setup.exe
             artifacts/SHA256SUMS.txt
           if-no-files-found: error

@@ -18,6 +18,16 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
 
         public override string Name => NameOfFormat;
 
+        internal static bool HasSmpteTt2052Marker(List<string> lines, string fileName)
+        {
+            if (fileName != null && !(fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".dfxp", StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+
+            return string.Join(Environment.NewLine, lines).Contains("http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt#cea608");
+        }
+
         public override bool IsMine(List<string> lines, string fileName)
         {
             if (fileName != null && !(fileName.EndsWith(Extension, StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".dfxp", StringComparison.OrdinalIgnoreCase)))

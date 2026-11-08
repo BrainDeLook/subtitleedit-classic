@@ -352,8 +352,9 @@
           {
             "File": "Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 6317911232,
-            "Hash": "4ffc169447b7a26df8bf49e8637adb4000bfa763a22c018b6c03968564259d0b"
+            "Bytes": 6317915552,
+            "Hash": "4f051347079cfb61f9ef2996f67057229e486fefce31374721b5690940dfc34a",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf"
           }
         ]
       },
@@ -363,8 +364,9 @@
           {
             "File": "Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-bf16.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 10229278080,
-            "Hash": "781fdece3ff837838c48f7d5a7b37e37c4d661a6416416ad57fe92fed47d96ff"
+            "Bytes": 10229282400,
+            "Hash": "b938ecf9968fc0a432c04d2b05cc6f729663017d1b1c0a079c90e3c504750447",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-bf16.gguf"
           }
         ]
       }
@@ -392,8 +394,9 @@
           {
             "File": "IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 3502955328,
-            "Hash": "5e827b2072042e4a1b21ccf24a5cb4f71cb1011403067a0a9b039311d8b38628"
+            "Bytes": 3502960096,
+            "Hash": "d1ab7b5c3f5ecf2bcd285753be76c7290b0a54939a76b7c39e8f886f80cf6b5c",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf"
           }
         ]
       },
@@ -403,8 +406,9 @@
           {
             "File": "IndexTTS2.5-GGUF/index-tts2_5-f16.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 4547355072,
-            "Hash": "87bed9b82fc8f22119a1a1042332091016c28e37f29b0e93343ccdbfa76ef66a"
+            "Bytes": 4547359840,
+            "Hash": "505f896d83aa5d309a3180e5e72f95a9b192c95930d6d9d534b93c0ca8b42e73",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/IndexTTS2.5-GGUF/index-tts2_5-f16.gguf"
           }
         ]
       }
@@ -425,8 +429,9 @@
           {
             "File": "Higgs-Audio-v3-TTS-4B-GGUF/higgs-audio-v3-tts-4b-q8_0.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 5095354048,
-            "Hash": "79746822045b5bf8f9ab2bda87b16cd3f8ea3d9e319cbcf887a87aa1b537a74a"
+            "Bytes": 5095359136,
+            "Hash": "cfa5cc01adcd199dfcf1baf0f610aa474cda83418fd1802aa6defa82d956a0e4",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/Higgs-Audio-v3-TTS-4B-GGUF/higgs-audio-v3-tts-4b-q8_0.gguf"
           }
         ]
       },
@@ -436,8 +441,9 @@
           {
             "File": "Higgs-Audio-v3-TTS-4B-GGUF/higgs-audio-v3-tts-4b-bf16.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 8501587648,
-            "Hash": "2c04410d9ae6af9a48ce989c1b6d7dfaa0320c8e09ff7da8d3e04b8d9b0669dc"
+            "Bytes": 8501592736,
+            "Hash": "d9fc55bee3e0d1e84eb9ffec779355c870190487bdaa4a2d26b99c1b1f40c12b",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/Higgs-Audio-v3-TTS-4B-GGUF/higgs-audio-v3-tts-4b-bf16.gguf"
           }
         ]
       }
@@ -483,8 +489,9 @@
           {
             "File": "FireRedTTS3-Base-GGUF/fireredtts3-base-q8_0.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 4180334848,
-            "Hash": "68acd5bce0d87a53bb5b88255c65e19df4cbc6017b4bab0824e96f1e2351c3a7"
+            "Bytes": 4180336192,
+            "Hash": "936b7c8f717e734d2f4333060c3ff905c0eee03d83d80b0038548a461251aafa",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/FireRedTTS3-Base-GGUF/fireredtts3-base-q8_0.gguf"
           }
         ]
       },
@@ -494,8 +501,9 @@
           {
             "File": "FireRedTTS3-Base-GGUF/fireredtts3-base-orig.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 12301253120,
-            "Hash": "1af06f341044121ddebb389c1e6e5181a43f65e2591f77c7eda2ca5810e484c8"
+            "Bytes": 12301254464,
+            "Hash": "6702457ded13b49ae7c5bfe1e783bb2f88cc06872d4bb11dd4860cc25d04167b",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/FireRedTTS3-Base-GGUF/fireredtts3-base-orig.gguf"
           }
         ]
       }
@@ -522,7 +530,8 @@
             "File": "KugelAudio-0-Open-GGUF/kugelaudio-0-open-q4_k.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
             "Bytes": 5732997442,
-            "Hash": "38a79cf4ffdcdeed69dc05d6350fc88042f951f952924799f59a0b93bc3895e9"
+            "Hash": "38a79cf4ffdcdeed69dc05d6350fc88042f951f952924799f59a0b93bc3895e9",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/KugelAudio-0-Open-GGUF/kugelaudio-0-open-q4_k.gguf"
           }
         ]
       },
@@ -533,7 +542,8 @@
             "File": "KugelAudio-0-Open-GGUF/kugelaudio-0-open-q8_0.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
             "Bytes": 9752398658,
-            "Hash": "9cff404eeafed33ac419f855002fa5fc6f6ef719f160b6fe333095b9cfb5be52"
+            "Hash": "9cff404eeafed33ac419f855002fa5fc6f6ef719f160b6fe333095b9cfb5be52",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/KugelAudio-0-Open-GGUF/kugelaudio-0-open-q8_0.gguf"
           }
         ]
       }
@@ -559,8 +569,9 @@
           {
             "File": "Breeze-TTS-2-GGUF/breeze-tts-2-q8_0.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 5079668352,
-            "Hash": "0de52d61560f9f6b2dfeca79f9100f8fce0c2b17c52ec30622e23e150df1ad88"
+            "Bytes": 5079670336,
+            "Hash": "b17b89b1c21107c44e8d556ab0a856d7acd06bdd0c914e68e0e57f6e33f555a3",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/Breeze-TTS-2-GGUF/breeze-tts-2-q8_0.gguf"
           }
         ]
       },
@@ -570,8 +581,9 @@
           {
             "File": "Breeze-TTS-2-GGUF/breeze-tts-2-bf16.gguf",
             "Repository": "audio-cpp/audio.cpp-gguf",
-            "Bytes": 7342916800,
-            "Hash": "a00c9f678b4c5ae03d1dcd228f636b329352cda200823faef4e01d3bd97c0a89"
+            "Bytes": 7342918784,
+            "Hash": "5620623371e2011e9bb22389f12252d3969061adad139b3cdda6b1473a82a0d5",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/Breeze-TTS-2-GGUF/breeze-tts-2-bf16.gguf"
           }
         ]
       }
@@ -2770,5 +2782,63 @@
     ],
     "Notes": "One fixed voice; no voice cloning in this backend. Trained languages: English, Japanese, Chinese, French and German; other languages are experimental.",
     "NotesRu": "Один стандартный голос; клонирование в этом бэкенде недоступно. Обученные языки: английский, японский, китайский, французский и немецкий; остальные экспериментальные."
+  },
+  {
+    "Id": "voxtraltts",
+    "Name": "Voxtral TTS (audio.cpp / local)",
+    "Backend": "voxtral_tts",
+    "Runtime": "audiocpp",
+    "Presets": [
+      "casual_female",
+      "casual_male",
+      "cheerful_female",
+      "neutral_female",
+      "neutral_male",
+      "fr_female",
+      "fr_male",
+      "de_female",
+      "de_male",
+      "es_female",
+      "es_male",
+      "it_female",
+      "it_male",
+      "pt_female",
+      "pt_male",
+      "nl_female",
+      "nl_male",
+      "hi_female",
+      "hi_male",
+      "ar_male"
+    ],
+    "Languages": [
+      "auto|Auto detect"
+    ],
+    "Models": [
+      {
+        "Key": "Q8_0",
+        "Files": [
+          {
+            "File": "voxtral-4b-tts-2603-q8_0.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/Voxtral-4B-TTS-2603-GGUF/voxtral-4b-tts-2603-q8_0.gguf",
+            "Bytes": 4722918208,
+            "Hash": "46eca2bfc66c89c415b66995d3544e91dea3320c93765ec0596f5c616354972d"
+          }
+        ]
+      },
+      {
+        "Key": "BF16",
+        "Files": [
+          {
+            "File": "voxtral-4b-tts-2603-bf16.gguf",
+            "Repository": "audio-cpp/audio.cpp-gguf",
+            "Url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/6f45df32f8fb283e4cfce3d3e1cb7688986fcbe6/Voxtral-4B-TTS-2603-GGUF/voxtral-4b-tts-2603-bf16.gguf",
+            "Bytes": 8030847808,
+            "Hash": "883f53bc9e54412110649f2725819c2453d871cc0f02d9dde1aaec495960081d"
+          }
+        ]
+      }
+    ],
+    "Notes": "20 preset voices in nine languages. No Russian checkpoint or voice cloning. CC BY-NC 4.0 weights."
   }
 ]

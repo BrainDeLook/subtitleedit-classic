@@ -1,10 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using SkiaSharp;
 
-namespace Nikse.SubtitleEdit.Core.BluRaySup
-{public enum BluRayContentAlignment {TopLeft,TopCenter,TopRight,MiddleLeft,MiddleCenter,MiddleRight,BottomLeft,BottomCenter,BottomRight}}
 namespace Nikse.SubtitleEdit.Logic.ClassicImageExport
 {
     internal static class ExportMath

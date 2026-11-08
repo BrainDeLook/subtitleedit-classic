@@ -1,6 +1,7 @@
 ﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Logic;
+using Nikse.SubtitleEdit.Logic.ClassicDraw;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -73,8 +74,8 @@ namespace Nikse.SubtitleEdit.Forms.Assa
             comboBoxTextHorizontalAlignment.Items.Add(LanguageSettings.Current.ExportPngXml.Right);
 
             comboBoxProgressBarEdge.Items.Clear();
-            comboBoxProgressBarEdge.Items.Add(l.SquareCorners);
-            comboBoxProgressBarEdge.Items.Add(l.RoundedCorners);
+            comboBoxProgressBarEdge.Items.AddRange(ProgressBarStyles.Names);
+            comboBoxProgressBarEdge.DropDownWidth = 240;
 
             buttonOK.Text = LanguageSettings.Current.General.Ok;
             buttonCancel.Text = LanguageSettings.Current.General.Cancel;
@@ -689,14 +690,7 @@ Dialogue: -255,0:00:00.00,0:43:00.00,SE-progress-bar-bg,,0,0,0,,[PB_DRAWING]";
 
         private string GenerateProgressBar(VideoInfo videoInfo, int height, int duration)
         {
-            if (comboBoxProgressBarEdge.SelectedIndex == 1) // rounded corners
-            {
-                var barEnd = videoInfo.Width - height;
-                var w = videoInfo.Width;
-                return $@"{{\K{duration}\p1}}m {height} 0 b 0 0 0 {height} {height} {height} l {barEnd} {height} b {w} {height} {w} 0 {barEnd} 0 l  {barEnd} 0 {height} 0{{\p0}}";
-            }
-
-            return $"{{\\K{duration}\\p1}}m 0 0 l {videoInfo.Width} 0 {videoInfo.Width} {height} 0 {height}{{\\p0}}";
+            return $"{{\\K{duration}\\p1}}{ProgressBarStyles.Drawing(comboBoxProgressBarEdge.SelectedIndex, videoInfo.Width, height)}{{\\p0}}";
         }
 
         private int GetTextPosition(int position, Paragraph p, int i, double percentOfDuration)
@@ -722,12 +716,8 @@ Dialogue: -255,0:00:00.00,0:43:00.00,SE-progress-bar-bg,,0,0,0,,[PB_DRAWING]";
                     positionNextX = (int)Math.Round(_videoInfo.Width * percentOfDurationNext / 100.0);
                 }
 
-                if (comboBoxProgressBarEdge.SelectedIndex == 1 && i == _chapters.Paragraphs.Count - 1 && comboBoxTextHorizontalAlignment.SelectedIndex == 2) // Rounded corners + last paragraph + align text right
-                {
-                    return (int)Math.Round(positionNextX - (double)numericUpDownHeight.Value + (double)numericUpDownXAdjust.Value);
-                }
-
-                return (int)Math.Round(positionNextX - 10.0 + (double)numericUpDownXAdjust.Value);
+                var inset = i == _chapters.Paragraphs.Count - 1 ? Math.Max(10, ProgressBarStyles.GetEndCapInset(comboBoxProgressBarEdge.SelectedIndex, (int)numericUpDownHeight.Value).Right) : 10;
+                return (int)Math.Round(positionNextX - inset + (double)numericUpDownXAdjust.Value);
             }
 
             if (comboBoxProgressBarEdge.SelectedIndex == 1 && i == 0 && comboBoxTextHorizontalAlignment.SelectedIndex == 0) // Rounded corners + first paragraph + align text left

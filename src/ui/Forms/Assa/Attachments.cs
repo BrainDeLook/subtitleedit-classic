@@ -21,6 +21,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
         {
             ".png",
             ".jpg" ,
+            ".jpeg",
             ".gif" ,
             ".bmp" ,
             ".ico"
@@ -34,6 +35,12 @@ namespace Nikse.SubtitleEdit.Forms.Assa
             UiUtil.PreInitialize(this);
             InitializeComponent();
             UiUtil.FixFonts(this);
+            AllowDrop = true;
+            listViewAttachments.AllowDrop = true;
+            DragEnter += AttachmentDragEnter;
+            DragDrop += AttachmentDragDrop;
+            listViewAttachments.DragEnter += AttachmentDragEnter;
+            listViewAttachments.DragDrop += AttachmentDragDrop;
 
             _loading = true;
             labelInfo.Visible = false;
@@ -308,14 +315,44 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 return;
             }
 
+            AttachFiles(openFileDialog1.FileNames);
+        }
+
+        private void AttachmentDragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        }
+
+        private void AttachmentDragDrop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+            AttachFiles((string[])e.Data.GetData(DataFormats.FileDrop));
+        }
+
+        private void AttachFiles(IEnumerable<string> fileNames)
+        {
+
             int skipCount = 0;
             var skipFiles = new List<string>();
             var newAttachments = new List<AssaAttachment>();
-            foreach (var fileName in openFileDialog1.FileNames)
+            foreach (var fileName in fileNames)
             {
                 var attachmentFileName = Path.GetFileName(fileName);
-                var attachmentContent = ClassicUUEncoding.UUEncode(FileUtil.ReadAllBytesShared(fileName));
                 var ext = Path.GetExtension(attachmentFileName)?.ToLowerInvariant();
+                if (!File.Exists(fileName) || ext != ".ttf" && !_imageExtensions.Contains(ext))
+                {
+                    skipFiles.Add(attachmentFileName);
+                    skipCount++;
+                    continue;
+                }
+                string attachmentContent;
+                try { attachmentContent = ClassicUUEncoding.UUEncode(FileUtil.ReadAllBytesShared(fileName)); }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    skipFiles.Add(attachmentFileName + ": " + ex.Message);
+                    skipCount++;
+                    continue;
+                }
                 if (ext == ".ttf")
                 {
                     AddToListIfNotEmpty(attachmentContent, attachmentFileName, newAttachments, GetType(attachmentFileName));

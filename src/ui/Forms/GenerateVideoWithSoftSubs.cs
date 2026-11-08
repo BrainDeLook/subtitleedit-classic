@@ -594,6 +594,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void RunEmbedding()
         {
+            using var taskbarWork=new ClassicTaskbarWork(this);
+            using var preventSleep=ClassicPowerRequest.Acquire("Processing subtitles and media");
             var process = GetFfmpegProcess(_inputVideoFileName, VideoFileName);
             _log.AppendLine("ffmpeg arguments: " + process.StartInfo.Arguments);
             if (!CheckForPromptParameters(process))

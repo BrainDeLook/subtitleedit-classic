@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -333,6 +333,13 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                 {
                     int nextBegin = res.IndexOf('[', nextTag);
                     int nextEnd = res.IndexOf(']', nextTag);
+                    if (nextEnd < 0)
+                    {
+                        // No closing bracket left (damaged file): "nextEnd + 1" below restarted the
+                        // scan at 0 with a deeper tagLevel every pass - an endless loop.
+                        break;
+                    }
+
                     if (nextBegin < nextEnd && nextBegin != -1)
                     {
                         nextTag = nextBegin + 1;

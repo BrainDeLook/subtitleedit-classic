@@ -615,6 +615,8 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
             return 0 == _libvlc_media_player_add_slave(_mediaPlayer, 0, Encoding.UTF8.GetBytes(uri.AbsoluteUri + "\0"), true);
         }
 
+        public void ClearSecondSubtitle() => _libvlc_video_set_spu?.Invoke(_mediaPlayer, -1);
+
         public LibVlcDynamic MakeSecondMediaPlayer(Control ownerControl, string videoFileName, EventHandler onVideoLoaded, EventHandler onVideoEnded)
         {
             var newVlc = new LibVlcDynamic { _libVlc = _libVlc, _libVlcDll = _libVlcDll, _ownerControl = ownerControl };

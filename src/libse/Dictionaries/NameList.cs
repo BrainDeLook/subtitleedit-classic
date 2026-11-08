@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +14,13 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
         private readonly HashSet<string> _namesMultiList;
         private readonly HashSet<string> _namesMultiListUppercase;
         private readonly HashSet<string> _blackList;
+
+        // Names from the shipped lists (not the user file) - only these need a blacklist entry to
+        // stay removed; a name that only lives in the user file is gone once its node is deleted.
+        private readonly HashSet<string> _shippedNames;
+
+        // Lazy reverse index for IsInNamesMultiWordList, see GetMultiNamePartIndex.
+        private Dictionary<string, List<string>> _namesMultiListParts;
         public string LanguageName { get; private set; }
 
         public NameList(string dictionaryFolder, string languageName, bool useOnlineNameList, string namesUrl)
@@ -25,14 +32,16 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
             _namesMultiList = new HashSet<string>();
             _namesMultiListUppercase = new HashSet<string>();
             _blackList = new HashSet<string>();
+            _shippedNames = new HashSet<string>();
 
-            LoadNamesList(GetLocalNamesUserFileName()); // e.g: en_names_user.xml (culture sensitive)
-            LoadNamesList(GetLocalNamesFileName()); // e.g: en_names.xml (culture sensitive)
+            LoadNamesList(GetLocalNamesUserFileName(), null); // e.g: en_names_user.xml (culture sensitive)
+            LoadNamesList(GetLocalNamesFileName(), _shippedNames); // e.g: en_names.xml (culture sensitive)
+            LoadNamesList(GetLocalCultureNamesFileName(), _shippedNames); // e.g: pt_BR_names.xml (region specific)
             if (useOnlineNameList && !string.IsNullOrEmpty(namesUrl))
             {
                 try
                 {
-                    LoadNamesList(Configuration.Settings.WordLists.NamesUrl);
+                    //LoadNamesList(Configuration.Settings.WordLists.NamesUrl);
                 }
                 catch (Exception exception)
                 {
@@ -41,7 +50,7 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
             }
             else
             {
-                LoadNamesList(Path.Combine(_dictionaryFolder, "names.xml"));
+                LoadNamesList(Path.Combine(_dictionaryFolder, "names.xml"), _shippedNames);
             }
 
             foreach (var name in _blackList)
@@ -102,7 +111,22 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
             return Path.Combine(_dictionaryFolder, twoLetterIsoLanguageName + "_names.xml");
         }
 
-        private void LoadNamesList(string fileNameOrUrl)
+        /// <summary>
+        /// Region specific names file, e.g. pt_BR_names.xml. Portuguese ships one list per region
+        /// (pt_PT / pt_BR) and no neutral pt_names.xml, so without this they were never loaded.
+        /// Returns an empty string for a neutral language name; LoadNamesList ignores a missing file.
+        /// </summary>
+        private string GetLocalCultureNamesFileName()
+        {
+            if (LanguageName.Length <= 2)
+            {
+                return string.Empty;
+            }
+
+            return Path.Combine(_dictionaryFolder, LanguageName + "_names.xml");
+        }
+
+        private void LoadNamesList(string fileNameOrUrl, HashSet<string> loadedNames)
         {
             if (string.IsNullOrEmpty(fileNameOrUrl) ||
                 !File.Exists(fileNameOrUrl) &&
@@ -126,7 +150,8 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
                                 var name = reader.ReadElementContentAsString().Trim();
                                 if (name.Length > 0)
                                 {
-                                    if (name.IndexOf(' ') >= 0)
+                                    loadedNames?.Add(name);
+                                    if (name.Contains(' '))
                                     {
                                         _namesMultiList.Add(name);
                                     }
@@ -159,7 +184,7 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
             }
             catch (Exception ex)
             {
-                throw new Exception("Unable to read name list file: " + fileNameOrUrl, ex);
+                throw new Exception("NameList: Unable to read name list file: " + fileNameOrUrl, ex);
             }
         }
 
@@ -171,16 +196,25 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
                 // Try removing name from both lists
                 _namesList.Remove(name);
                 _namesMultiList.Remove(name);
+                _namesMultiListParts = null;
+                _namesListCaseInsensitive = null;
+                _namesMultiListCaseInsensitive = null;
 
                 var fileName = GetLocalNamesUserFileName();
                 var nameListXml = CreateDocument(fileName);
 
-                // Add removed name to blacklist
-                var nameNode = nameListXml.CreateElement("name");
-                nameNode.InnerText = name;
                 if (nameListXml.DocumentElement != null)
                 {
-                    nameListXml.DocumentElement.SelectSingleNode("blacklist")?.AppendChild(nameNode);
+                    // Blacklist only a shipped name: one the user added (e.g. spell-check "Add to
+                    // names list" followed by Undo) just loses its node - a blacklist entry would
+                    // make adding it again later silently fail to save. (#16472)
+                    if (_shippedNames.Contains(name))
+                    {
+                        var nameNode = nameListXml.CreateElement("name");
+                        nameNode.InnerText = name;
+                        nameListXml.DocumentElement.SelectSingleNode("blacklist")?.AppendChild(nameNode);
+                    }
+
                     var nodeToRemove = default(XmlNode);
 
                     // Remove remove-name from name-list
@@ -220,23 +254,48 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
         public bool Add(string name)
         {
             name = name.RemoveControlCharacters().Trim();
-            if (name.Length == 0 || _blackList.Contains(name) || !name.ContainsLetter())
+            if (name.Length == 0 || !name.ContainsLetter())
             {
                 return false;
             }
 
+            // An explicit add overrides an earlier removal: blacklisted names are left out of the
+            // lists at load, so TryAdd succeeds and the blacklist entry is dropped below. Refusing
+            // here left the name in the caller's session but never saved it. (#16472)
+            var wasBlacklisted = _blackList.Remove(name);
             if (!TryAdd(name))
             {
                 return false;
             }
 
-            // <two-letter-iso-code>_names.xml, e.g "en_names.xml"
+            // <two-letter-iso-code>_names_user.xml, e.g "en_names_user.xml"
             var fileName = GetLocalNamesUserFileName();
             var nameListXml = CreateDocument(fileName);
 
             var de = nameListXml.DocumentElement;
             if (de != null)
             {
+                if (wasBlacklisted)
+                {
+                    var blacklistNodes = de.SelectNodes("blacklist/name");
+                    var nodesToRemove = new List<XmlNode>();
+                    if (blacklistNodes != null)
+                    {
+                        foreach (XmlNode blacklistNode in blacklistNodes)
+                        {
+                            if (blacklistNode.InnerText.Trim().Equals(name, StringComparison.Ordinal))
+                            {
+                                nodesToRemove.Add(blacklistNode);
+                            }
+                        }
+                    }
+
+                    foreach (var blacklistNode in nodesToRemove)
+                    {
+                        blacklistNode.ParentNode?.RemoveChild(blacklistNode);
+                    }
+                }
+
                 var node = nameListXml.CreateElement("name");
                 node.InnerText = name;
                 de.AppendChild(node);
@@ -248,8 +307,15 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
 
         private bool TryAdd(string name)
         {
-            var collection = name.Contains(" ") ? _namesMultiList : _namesList;
-            return collection.Add(name);
+            if (name.Contains(" "))
+            {
+                _namesMultiListParts = null;
+                _namesListCaseInsensitive = null;
+                _namesMultiListCaseInsensitive = null;
+                return _namesMultiList.Add(name);
+            }
+
+            return _namesList.Add(name);
         }
 
         private static XmlDocument CreateDocument(string fileName)
@@ -274,9 +340,6 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
                 return false;
             }
 
-            var text = input.Replace(Environment.NewLine, " ");
-            text = text.FixExtraSpaces();
-
             if (_namesMultiList.Contains(word))
             {
                 return true;
@@ -287,20 +350,81 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
                 return true;
             }
 
-            foreach (var multiWordName in _namesMultiList)
+            // This runs once per word of every line during spell check (and up to four times per
+            // word from the OCR fix engine), so the common answer - "this word is not part of any
+            // multi-word name" - must be a single lookup. Scanning all several hundred multi-word
+            // names, with three string concatenations each, plus normalizing the whole line first,
+            // was pure waste for every ordinary word.
+            if (!GetMultiNamePartIndex().TryGetValue(word, out var candidates))
             {
-                if (text.FastIndexOf(multiWordName) < 0)
-                {
-                    continue;
-                }
+                return false;
+            }
 
-                if (multiWordName.StartsWith(word + " ", StringComparison.Ordinal) || multiWordName.EndsWith(" " + word, StringComparison.Ordinal) || multiWordName.Contains(" " + word + " "))
+            var text = input.Replace(Environment.NewLine, " ");
+            text = text.FixExtraSpaces();
+
+            foreach (var multiWordName in candidates)
+            {
+                if (text.FastIndexOf(multiWordName) >= 0)
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Each space-delimited part of every multi-word name, mapped to the names containing it -
+        /// exactly the names the scan in <see cref="IsInNamesMultiWordList"/> could accept for that
+        /// word. Built on first use and dropped whenever the multi-word list changes.
+        /// </summary>
+        private Dictionary<string, List<string>> GetMultiNamePartIndex()
+        {
+            var index = _namesMultiListParts;
+            if (index != null)
+            {
+                return index;
+            }
+
+            index = new Dictionary<string, List<string>>();
+            foreach (var multiWordName in _namesMultiList)
+            {
+                foreach (var part in multiWordName.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (!index.TryGetValue(part, out var names))
+                    {
+                        names = new List<string>();
+                        index[part] = names;
+                    }
+
+                    names.Add(multiWordName);
+                }
+            }
+
+            _namesMultiListParts = index;
+            return index;
+        }
+
+        // Case-insensitive views of the two name sets, built on first use and dropped whenever
+        // the sets change (same lifetime as _namesMultiListParts). The lookup used to walk the
+        // whole set with OrdinalIgnoreCase Equals per name candidate per line.
+        private Dictionary<string, string> _namesListCaseInsensitive;
+        private Dictionary<string, string> _namesMultiListCaseInsensitive;
+
+        private static Dictionary<string, string> BuildCaseInsensitiveIndex(HashSet<string> names)
+        {
+            var index = new Dictionary<string, string>(names.Count, StringComparer.OrdinalIgnoreCase);
+            foreach (var n in names)
+            {
+                // First entry in set order wins, as the replaced foreach did.
+                if (!index.ContainsKey(n))
+                {
+                    index.Add(n, n);
+                }
+            }
+
+            return index;
         }
 
         public bool ContainsCaseInsensitive(string name, out string newName)
@@ -311,13 +435,20 @@ namespace Nikse.SubtitleEdit.Core.Dictionaries
                 return false;
             }
 
-            foreach (var n in name.IndexOf(' ') >= 0 ? _namesMultiList : _namesList)
+            Dictionary<string, string> index;
+            if (name.Contains(' '))
             {
-                if (name.Equals(n, StringComparison.OrdinalIgnoreCase))
-                {
-                    newName = n;
-                    return true;
-                }
+                index = _namesMultiListCaseInsensitive ?? (_namesMultiListCaseInsensitive = BuildCaseInsensitiveIndex(_namesMultiList));
+            }
+            else
+            {
+                index = _namesListCaseInsensitive ?? (_namesListCaseInsensitive = BuildCaseInsensitiveIndex(_namesList));
+            }
+
+            if (index.TryGetValue(name, out var found))
+            {
+                newName = found;
+                return true;
             }
 
             return false;

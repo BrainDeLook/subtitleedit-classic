@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using System;
 using System.Collections.Generic;
@@ -13,6 +13,20 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
 {
     public class LibMpvDynamic : VideoPlayer, IDisposable
     {
+        public override System.Drawing.Bitmap CaptureFrame()
+        {
+            if (_mpvHandle == IntPtr.Zero || !IsPaused) return null;
+            var file = Path.Combine(Path.GetTempPath(), "se-mpv-frame-" + Guid.NewGuid().ToString("N") + ".png");
+            try
+            {
+                DoMpvCommand("screenshot-to-file", file, "video");
+                if (!File.Exists(file)) return null;
+                using (var image = System.Drawing.Image.FromFile(file)) return new System.Drawing.Bitmap(image);
+            }
+            catch (Exception ex) when (ex is IOException || ex is ExternalException || ex is UnauthorizedAccessException)
+            { SeLogger.Error(ex, "Capture paused mpv frame"); return null; }
+            finally { if (File.Exists(file)) File.Delete(file); }
+        }
 
         #region LibMpv methods - see https://github.com/mpv-player/mpv/blob/master/libmpv/client.h
 
@@ -148,6 +162,13 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
             Marshal.FreeHGlobal(mainPtr);
         }
 
+        private bool? _previewSubtitleVisibility;
+        public void SetSubtitleVisibility(bool visible)
+        {
+            if(_mpvHandle==IntPtr.Zero || _previewSubtitleVisibility==visible)return;
+            DoMpvCommand("set","sub-visibility",visible?"yes":"no");_previewSubtitleVisibility=visible;
+        }
+
         public override string PlayerName => $"libmpv {VersionNumber}";
 
         private int _volume = 75;
@@ -172,6 +193,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
                     {
                         return 0;
                     }
+                    if (_aacDuration.HasValue) return _aacDuration.Value;
 
                     var mpvFormatDouble = 5;
                     double d = 0;
@@ -539,8 +561,34 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
 
         public void LoadSecondSubtitle(string fileName)
         {
+            ClearSecondSubtitle();
+            _previousSubtitleId = ReadTextProperty("sid");
             _secondSubtitleFileName = fileName;
             DoMpvCommand("sub-add", fileName, "select");
+            _secondSubtitleId = ReadTextProperty("sid");
+        }
+
+        private string _secondSubtitleId;
+        private string _previousSubtitleId;
+
+        private string ReadTextProperty(string name)
+        {
+            if (_mpvHandle == IntPtr.Zero) return null;
+            var buffer = IntPtr.Zero;
+            _mpvGetPropertyString(_mpvHandle, GetUtf8Bytes(name), MpvFormatString, ref buffer);
+            var value = Marshal.PtrToStringAnsi(buffer);
+            _mpvFree(buffer);
+            return value;
+        }
+
+        public void ClearSecondSubtitle()
+        {
+            if (_secondSubtitleFileName == null) return;
+            if (!string.IsNullOrEmpty(_secondSubtitleId)) DoMpvCommand("sub-remove", _secondSubtitleId);
+            if (!string.IsNullOrEmpty(_previousSubtitleId)) DoMpvCommand("set", "sid", _previousSubtitleId);
+            _secondSubtitleFileName = null;
+            _secondSubtitleId = null;
+            _previousSubtitleId = null;
         }
 
         public void RemoveSubtitle()
@@ -682,8 +730,11 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
 
         public override void Initialize(Control ownerControl, string videoFileName, EventHandler onVideoLoaded, EventHandler onVideoEnded)
         {
+            _aacDuration = null;
             _audioTrackIds = null;
             _secondSubtitleFileName = null;
+            _secondSubtitleId = null;
+            _previousSubtitleId = null;
             if (LoadLib())
             {
                 LoadLibMpvDynamic();
@@ -692,6 +743,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
                     throw new Exception("MPV - not all needed methods found in dll file");
                 }
                 _mpvHandle = _mpvCreate.Invoke();
+                _previewSubtitleVisibility=null;
 
                 if (Configuration.Settings.General.MpvLogging)
                 {
@@ -717,6 +769,9 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
             if (!string.IsNullOrEmpty(videoFileName))
             {
                 _mpvSetOptionString(_mpvHandle, GetUtf8Bytes("sub-fonts-dir"), GetUtf8Bytes(ClassicFontCollection.Folder));
+                var cookieBrowser = ClassicEditorPreferences.Load().VideoCookiesBrowser;
+                if (cookieBrowser != ClassicCookieBrowser.None)
+                    _mpvSetOptionString(_mpvHandle, GetUtf8Bytes("ytdl-raw-options"), GetUtf8Bytes("cookies-from-browser=" + cookieBrowser.ToString().ToLowerInvariant()));
                 _mpvInitialize.Invoke(_mpvHandle);
                 SetVideoOwner(ownerControl);
 
@@ -789,6 +844,20 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
                 SetVideoOwner(ownerControl);
 
                 VideoFileName = videoFileName;
+                if (Path.GetExtension(videoFileName).Equals(".aac", StringComparison.OrdinalIgnoreCase))
+                    _ = UpdateAacDuration(videoFileName, _mpvHandle);
+            }
+        }
+
+        private double? _aacDuration;
+        private async System.Threading.Tasks.Task UpdateAacDuration(string fileName, IntPtr handle)
+        {
+            var duration = await System.Threading.Tasks.Task.Run(() => AacDurationReader.TryGetDurationSeconds(fileName));
+            lock (_lockObj)
+            {
+                if (_mpvHandle != handle || VideoFileName != fileName || !duration.HasValue) return;
+                _aacDuration = duration;
+                DoMpvCommand("set", "end", (duration.Value + 0.05).ToString("0.###", CultureInfo.InvariantCulture));
             }
         }
 

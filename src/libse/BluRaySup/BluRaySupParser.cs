@@ -62,9 +62,9 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
         {
             private const int AlphaCrop = 14;
 
-            public static BluRaySupPalette DecodePalette(IList<PaletteInfo> paletteInfos)
+            public static BluRaySupPalette DecodePalette(IList<PaletteInfo> paletteInfos, bool useBt601 = false)
             {
-                var palette = new BluRaySupPalette(256);
+                var palette = new BluRaySupPalette(256, useBt601);
                 // by definition, index 0xff is always completely transparent
                 // also all entries must be fully transparent after initialization
 
@@ -121,7 +121,7 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
             /// Decode caption from the input stream
             /// </summary>
             /// <returns>bitmap of the decoded caption</returns>
-            public static Bitmap DecodeImage(PcsObject pcs, IList<OdsData> data, List<PaletteInfo> palettes)
+            public static Bitmap DecodeImage(PcsObject pcs, IList<OdsData> data, List<PaletteInfo> palettes, bool useBt601 = false)
             {
                 if (pcs == null || data == null || data.Count == 0)
                 {
@@ -138,7 +138,7 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
 
                 var bm = new FastBitmap(new Bitmap(w, h));
                 bm.LockImage();
-                var pal = DecodePalette(palettes);
+                var pal = DecodePalette(palettes,useBt601);
 
                 int ofs = 0;
                 int xpos = 0;
@@ -284,7 +284,7 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
             {
                 if (PcsObjects.Count == 1)
                 {
-                    return SupDecoder.DecodeImage(PcsObjects[0], BitmapObjects[0], PaletteInfos);
+                    return SupDecoder.DecodeImage(PcsObjects[0], BitmapObjects[0], PaletteInfos,Size.Height==480 || Size.Height==576);
                 }
 
                 var r = Rectangle.Empty;
@@ -303,7 +303,7 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
                     if (ioIndex < BitmapObjects.Count)
                     {
                         var offset = PcsObjects[ioIndex].Origin - new Size(r.Location);
-                        using (var singleBmp = SupDecoder.DecodeImage(PcsObjects[ioIndex], BitmapObjects[ioIndex], PaletteInfos))
+                        using (var singleBmp = SupDecoder.DecodeImage(PcsObjects[ioIndex], BitmapObjects[ioIndex], PaletteInfos,Size.Height==480 || Size.Height==576))
                         using (var gSideBySide = Graphics.FromImage(mergedBmp))
                         {
                             gSideBySide.DrawImage(singleBmp, offset.X, offset.Y);

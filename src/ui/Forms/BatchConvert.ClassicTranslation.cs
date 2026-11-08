@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -48,6 +48,7 @@ namespace Nikse.SubtitleEdit.Forms
                 for(var at=0;at<source.Paragraphs.Count;)
                 {
                     cancel.ThrowIfCancellationRequested();
+                    if(Nikse.SubtitleEdit.Core.Translate.TranslationMusic.IsKeptUntranslated(source.Paragraphs[at].Text)){at++;continue;}
                     if(translator.IsAdvanced)
                     {
                         var count=Math.Min(translator.AdvancedBatchSize,source.Paragraphs.Count-at);

@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Enums;
 using System;
 using System.Collections.Generic;
@@ -2033,6 +2033,9 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 settings.Tools.MicrosoftTranslatorTokenEndpoint = subNode.InnerText;
             }
 
+            subNode = node.SelectSingleNode("MicrosoftTranslatorRegion");
+            if (subNode != null) settings.Tools.MicrosoftTranslatorRegion = subNode.InnerText;
+
             subNode = node.SelectSingleNode("MicrosoftTranslatorCategory");
             if (subNode != null)
             {
@@ -2068,6 +2071,9 @@ namespace Nikse.SubtitleEdit.Core.Settings
             {
                 settings.Tools.GoogleTranslateLastTargetLanguage = subNode.InnerText;
             }
+
+            subNode = node.SelectSingleNode("AutoTranslateKeepMusicLines");
+            if (subNode != null) settings.Tools.AutoTranslateKeepMusicLines = Convert.ToBoolean(subNode.InnerText);
 
             subNode = node.SelectSingleNode("AutoTranslateLastName");
             if (subNode != null)
@@ -4830,6 +4836,18 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 {
                     settings.SubtitleSettings.TimedTextItunesStyleAttribute = subNode.InnerText;
                 }
+
+                subNode = node.SelectSingleNode("TimedTextItunesDefaultColor");
+                if (subNode != null) settings.SubtitleSettings.TimedTextItunesDefaultColor = subNode.InnerText;
+
+                subNode = node.SelectSingleNode("TimedTextItunesDefaultStyle");
+                if (subNode != null) settings.SubtitleSettings.TimedTextItunesDefaultStyle = subNode.InnerText;
+
+                subNode = node.SelectSingleNode("TimedTextItunesDefaultRegion");
+                if (subNode != null) settings.SubtitleSettings.TimedTextItunesDefaultRegion = subNode.InnerText;
+
+                subNode = node.SelectSingleNode("TimedTextItunesHeaderTemplate");
+                if (subNode != null) settings.SubtitleSettings.TimedTextItunesHeaderTemplate = subNode.InnerText;
 
                 subNode = node.SelectSingleNode("TimedTextImsc11TimeCodeFormat");
                 if (subNode != null)
@@ -9238,11 +9256,13 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 xmlWriter.WriteElementString("MicrosoftTranslatorApiKey", settings.Tools.MicrosoftTranslatorApiKey);
                 xmlWriter.WriteElementString("MicrosoftTranslatorTokenEndpoint", settings.Tools.MicrosoftTranslatorTokenEndpoint);
                 xmlWriter.WriteElementString("MicrosoftTranslatorCategory", settings.Tools.MicrosoftTranslatorCategory);
+                xmlWriter.WriteElementString("MicrosoftTranslatorRegion", settings.Tools.MicrosoftTranslatorRegion);
                 xmlWriter.WriteElementString("GoogleApiV2Key", settings.Tools.GoogleApiV2Key);
                 xmlWriter.WriteElementString("GoogleTranslateNoKeyWarningShow", settings.Tools.GoogleTranslateNoKeyWarningShow.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("GoogleApiV1ChunkSize", settings.Tools.GoogleApiV1ChunkSize.ToString(CultureInfo.InvariantCulture));
                 xmlWriter.WriteElementString("GoogleTranslateLastSourceLanguage", settings.Tools.GoogleTranslateLastSourceLanguage);
                 xmlWriter.WriteElementString("GoogleTranslateLastTargetLanguage", settings.Tools.GoogleTranslateLastTargetLanguage);
+                xmlWriter.WriteElementString("AutoTranslateKeepMusicLines", settings.Tools.AutoTranslateKeepMusicLines.ToString());
                 xmlWriter.WriteElementString("AutoTranslateLastName", settings.Tools.AutoTranslateLastName);
                 xmlWriter.WriteElementString("AutoTranslateLastUrl", settings.Tools.AutoTranslateLastUrl);
                 xmlWriter.WriteElementString("AutoTranslateNllbApiUrl", settings.Tools.AutoTranslateNllbApiUrl);
@@ -9745,6 +9765,10 @@ namespace Nikse.SubtitleEdit.Core.Settings
                 xmlWriter.WriteElementString("TimedTextItunesBottomExtent", settings.SubtitleSettings.TimedTextItunesBottomExtent);
                 xmlWriter.WriteElementString("TimedTextItunesTimeCodeFormat", settings.SubtitleSettings.TimedTextItunesTimeCodeFormat);
                 xmlWriter.WriteElementString("TimedTextItunesStyleAttribute", settings.SubtitleSettings.TimedTextItunesStyleAttribute);
+                xmlWriter.WriteElementString("TimedTextItunesDefaultColor", settings.SubtitleSettings.TimedTextItunesDefaultColor);
+                xmlWriter.WriteElementString("TimedTextItunesDefaultStyle", settings.SubtitleSettings.TimedTextItunesDefaultStyle);
+                xmlWriter.WriteElementString("TimedTextItunesDefaultRegion", settings.SubtitleSettings.TimedTextItunesDefaultRegion);
+                xmlWriter.WriteElementString("TimedTextItunesHeaderTemplate", settings.SubtitleSettings.TimedTextItunesHeaderTemplate);
                 xmlWriter.WriteElementString("TimedTextImsc11TimeCodeFormat", settings.SubtitleSettings.TimedTextImsc11TimeCodeFormat);
                 xmlWriter.WriteElementString("TimedTextImsc11FileExtension", settings.SubtitleSettings.TimedTextImsc11FileExtension);
                 xmlWriter.WriteElementString("FcpFontSize", settings.SubtitleSettings.FcpFontSize.ToString(CultureInfo.InvariantCulture));

@@ -8,6 +8,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr;
 /// </summary>
 public class VideoOcrFrameGroup
 {
+    public double OffsetMs { get; set; }
     /// <summary>First frame index of the group (0-based, in sampled frames).</summary>
     public int StartFrame { get; set; }
 
@@ -42,11 +43,11 @@ public class VideoOcrFrameGroup
 
     public double GetStartMs(double framesPerSecond)
     {
-        return StartFrame * 1000.0 / framesPerSecond;
+        return OffsetMs + StartFrame * 1000.0 / framesPerSecond;
     }
 
     public double GetEndMs(double framesPerSecond)
     {
-        return (EndFrame + 1) * 1000.0 / framesPerSecond;
+        return OffsetMs + (EndFrame + 1) * 1000.0 / framesPerSecond;
     }
 }

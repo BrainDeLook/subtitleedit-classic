@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,6 +6,16 @@ namespace Nikse.SubtitleEdit.Core.Common
 {
     public class StrippableText
     {
+        /// <summary>
+        /// Characters allowed to follow a name. Built once - the name loop below tested this
+        /// per candidate match, and concatenating the literal with Environment.NewLine there
+        /// allocated a fresh string every time.
+        /// </summary>
+        private static readonly string NameEndChars = @" ,.!?:;')]- <”""" + Environment.NewLine;
+
+        /// <summary>A line break followed by a dash - the dialog marker tested in the casing loop below.</summary>
+        private static readonly string NewLineDash = Environment.NewLine + "-";
+
         public string Pre { get; set; }
         public string Post { get; set; }
         public string StrippedText { get; set; }
@@ -20,101 +30,106 @@ namespace Nikse.SubtitleEdit.Core.Common
 
         public StrippableText(string input, string stripStartCharacters, string stripEndCharacters)
         {
+            // A StrippableText is constructed per paragraph in several FixCommonErrors rules,
+            // so strip by moving [start, end) cursors over the input. The previous version did
+            // "Pre += text[0]; text = text.Remove(0, 1)" per stripped character (and the
+            // mirrored Substring dance at the end), reallocating the whole remaining string for
+            // every dash/quote/bracket/tag - quadratic on decorated lines. The cursor logic
+            // below mirrors the old flow exactly; only the final three Substring calls allocate.
             OriginalText = input;
             var text = input;
+            var start = 0;
+            var end = text.Length;
 
-            Pre = string.Empty;
-            if (text.Length > 0 && ("<{" + stripStartCharacters).Contains(text[0]))
+            // Test the two extra characters directly. Concatenating them onto the strip set
+            // allocated a fresh ~20-character string on every construction - and this type is
+            // constructed per paragraph by several fix-common-errors rules and by name casing.
+            if (end > 0 && (text[0] == '<' || text[0] == '{' || stripStartCharacters.Contains(text[0])))
             {
-                int beginLength;
+                int beginStart;
                 do
                 {
-                    beginLength = text.Length;
+                    beginStart = start;
 
-                    while (text.Length > 0 && stripStartCharacters.Contains(text[0]))
+                    while (start < end && stripStartCharacters.Contains(text[start]))
                     {
-                        Pre += text[0];
-                        text = text.Remove(0, 1);
+                        start++;
                     }
 
                     // ASS/SSA codes like {\an9}
-                    int endIndex = text.IndexOf('}');
-                    if (endIndex > 0 && text.StartsWith("{\\", StringComparison.Ordinal))
+                    int endIndex = text.IndexOf('}', start);
+                    if (endIndex > start && start + 1 < end && text[start] == '{' && text[start + 1] == '\\')
                     {
-                        int nextStartIndex = text.IndexOf('{', 2);
+                        int nextStartIndex = start + 2 < end ? text.IndexOf('{', start + 2) : -1;
                         if (nextStartIndex == -1 || nextStartIndex > endIndex)
                         {
-                            endIndex++;
-                            Pre += text.Substring(0, endIndex);
-                            text = text.Remove(0, endIndex);
+                            start = endIndex + 1;
                         }
                     }
 
                     // tags like <i> or <font face="Segoe Print" color="#ff0000">
-                    endIndex = text.IndexOf('>');
-                    if (text.StartsWith('<') && endIndex >= 2)
+                    endIndex = start < end ? text.IndexOf('>', start) : -1;
+                    if (start < end && text[start] == '<' && endIndex - start >= 2)
                     {
-                        endIndex++;
-                        Pre += text.Substring(0, endIndex);
-                        text = text.Remove(0, endIndex);
+                        start = endIndex + 1;
                     }
                 }
-                while (text.Length < beginLength);
+                while (start > beginStart);
             }
 
-            Post = string.Empty;
-            if (text.Length > 0 && (">" + stripEndCharacters).Contains(text[text.Length - 1]))
+            if (end > start && (text[end - 1] == '>' || stripEndCharacters.Contains(text[end - 1])))
             {
-                int beginLength;
+                int beginEnd;
                 do
                 {
-                    beginLength = text.Length;
+                    beginEnd = end;
 
-                    while (text.Length > 0 && stripEndCharacters.Contains(text[text.Length - 1]))
+                    while (end > start && stripEndCharacters.Contains(text[end - 1]))
                     {
-                        Post = text[text.Length - 1] + Post;
-                        text = text.Substring(0, text.Length - 1);
+                        end--;
                     }
 
-                    if (text.EndsWith('>'))
+                    if (end > start && text[end - 1] == '>')
                     {
                         // tags </i> </b> </u>
-                        if (text.EndsWith("</i>", StringComparison.OrdinalIgnoreCase) ||
-                            text.EndsWith("</b>", StringComparison.OrdinalIgnoreCase) ||
-                            text.EndsWith("</u>", StringComparison.OrdinalIgnoreCase))
+                        if (end - start >= 4 && text[end - 4] == '<' && text[end - 3] == '/' &&
+                            (EndsWithTag(text, end, "</i>") || EndsWithTag(text, end, "</b>") || EndsWithTag(text, end, "</u>")))
                         {
-                            Post = text.Substring(text.Length - 4) + Post;
-                            text = text.Substring(0, text.Length - 4);
+                            end -= 4;
                         }
 
                         // tag </font>
-                        if (text.EndsWith("</font>", StringComparison.OrdinalIgnoreCase))
+                        if (end - start >= 7 && EndsWithTag(text, end, "</font>"))
                         {
-                            Post = text.Substring(text.Length - 7) + Post;
-                            text = text.Substring(0, text.Length - 7);
+                            end -= 7;
                         }
 
-                        if (text.EndsWith('>'))
+                        if (end > start && text[end - 1] == '>')
                         {
-                            var lastIndexOfStart = text.LastIndexOf("<");
-                            if (lastIndexOfStart >= 0)
+                            var lastIndexOfStart = text.LastIndexOf('<', end - 1);
+                            if (lastIndexOfStart >= start)
                             {
-                                var tag = text.Substring(lastIndexOfStart);
+                                var tag = text.Substring(lastIndexOfStart, end - lastIndexOfStart);
                                 tag = tag.TrimStart('<').TrimEnd('>');
                                 if (tag.StartsWith("/c.", StringComparison.Ordinal) && !tag.Contains(' ') && !tag.Contains('\n'))
                                 {
-                                    Post = text.Substring(lastIndexOfStart) + Post;
-                                    text = text.Substring(0, lastIndexOfStart);
+                                    end = lastIndexOfStart;
                                 }
                             }
                         }
                     }
                 }
-                while (text.Length < beginLength);
+                while (end < beginEnd);
             }
 
-            StrippedText = text;
+            Pre = text.Substring(0, start);
+            Post = text.Substring(end);
+            StrippedText = text.Substring(start, end - start);
         }
+
+        // True when text[..end] ends with the given lowercase tag, ignoring case.
+        private static bool EndsWithTag(string text, int end, string tag) =>
+            string.Compare(text, end - tag.Length, tag, 0, tag.Length, StringComparison.OrdinalIgnoreCase) == 0;
 
         private static string GetAndInsertNextId(List<string> replaceIds, List<string> replaceNames, string name, int idName)
         {
@@ -124,7 +139,10 @@ namespace Nikse.SubtitleEdit.Core.Common
             return id;
         }
 
-        private void ReplaceNames1Remove(List<string> nameList, List<string> replaceIds, List<string> replaceNames, List<string> originalNames)
+        [ThreadStatic]
+        private static List<int> _nameCandidates;
+
+        private void ReplaceNames1Remove(IEnumerable<string> nameList, NameListIndex nameIndex, List<string> replaceIds, List<string> replaceNames, List<string> originalNames)
         {
             if (Post.StartsWith('.'))
             {
@@ -133,47 +151,24 @@ namespace Nikse.SubtitleEdit.Core.Common
             }
 
             string lower = StrippedText.ToLowerInvariant();
+            GetNameStartMask(lower, out var startMaskLow, out var startMaskHigh);
             int idName = 0;
-            foreach (string name in nameList)
+            if (nameIndex != null)
             {
-                int start = lower.IndexOf(name.ToLowerInvariant(), StringComparison.Ordinal);
-                while (start >= 0 && start < lower.Length)
+                // Only the names that are a token of the line (or contain a separator) can match.
+                var candidates = _nameCandidates ?? (_nameCandidates = new List<int>());
+                nameIndex.GetCandidates(lower, candidates);
+                var names = nameIndex.Names;
+                foreach (var position in candidates)
                 {
-                    bool startOk = (start == 0) || (lower[start - 1] == ' ') || (lower[start - 1] == '-') ||
-                                   (lower[start - 1] == '"') || (lower[start - 1] == '\'') || (lower[start - 1] == '>') || (lower[start - 1] == '[') || (lower[start - 1] == '“') ||
-                                   Environment.NewLine.EndsWith(lower[start - 1]);
-
-                    if (startOk && string.CompareOrdinal(name, "Don") == 0 && lower.Substring(start).StartsWith("don't", StringComparison.Ordinal))
-                    {
-                        startOk = false;
-                    }
-
-                    if (startOk)
-                    {
-                        int end = start + name.Length;
-                        bool endOk = end <= lower.Length;
-                        if (endOk)
-                        {
-                            endOk = end == lower.Length || (@" ,.!?:;')]- <”""" + Environment.NewLine).Contains(lower[end]);
-                        }
-
-                        if (endOk && StrippedText.Length >= start + name.Length)
-                        {
-                            string originalName = StrippedText.Substring(start, name.Length);
-                            originalNames.Add(originalName);
-                            StrippedText = StrippedText.Remove(start, name.Length);
-                            StrippedText = StrippedText.Insert(start, GetAndInsertNextId(replaceIds, replaceNames, name, idName++));
-                            lower = StrippedText.ToLowerInvariant();
-                        }
-                    }
-                    if (start + 3 > lower.Length)
-                    {
-                        start = lower.Length + 1;
-                    }
-                    else
-                    {
-                        start = lower.IndexOf(name, start + 3, StringComparison.OrdinalIgnoreCase);
-                    }
+                    ReplaceName(names[position], ref lower, startMaskLow, startMaskHigh, ref idName, replaceIds, replaceNames, originalNames);
+                }
+            }
+            else
+            {
+                foreach (string name in nameList)
+                {
+                    ReplaceName(name, ref lower, startMaskLow, startMaskHigh, ref idName, replaceIds, replaceNames, originalNames);
                 }
             }
 
@@ -184,29 +179,142 @@ namespace Nikse.SubtitleEdit.Core.Common
             }
         }
 
-        private void ReplacAssaTagsRemove(List<string> nameList, List<string> replaceIds, List<string> replaceNames, List<string> originalNames)
+        private void ReplaceName(string name, ref string lower, ulong startMaskLow, ulong startMaskHigh, ref int idName, List<string> replaceIds, List<string> replaceNames, List<string> originalNames)
+        {
+            // A name can only be replaced where it starts at a name start (see "startOk"
+            // below), so a name whose first letter is at none of them can be skipped without
+            // searching - the name list has thousands of entries, and this loop used to scan
+            // the line once for every one of them.
+            if (name.Length > 0 && name[0] < 128 && !MayStartName(name[0], startMaskLow, startMaskHigh))
+            {
+                return;
+            }
+
+            // "lower" is already lower case, so an ignore-case search finds the same
+            // positions as the lower-cased name did - without allocating one string per name.
+            int start = lower.IndexOf(name, StringComparison.OrdinalIgnoreCase);
+            while (start >= 0 && start < lower.Length)
+            {
+                bool startOk = start == 0 || IsNameStartBoundary(lower[start - 1]);
+
+                if (startOk && string.CompareOrdinal(name, "Don") == 0 && lower.AsSpan(start).StartsWith("don't".AsSpan(), StringComparison.Ordinal))
+                {
+                    startOk = false;
+                }
+
+                if (startOk)
+                {
+                    int end = start + name.Length;
+                    bool endOk = end <= lower.Length;
+                    if (endOk)
+                    {
+                        endOk = end == lower.Length || NameEndChars.Contains(lower[end]);
+                    }
+
+                    if (endOk && StrippedText.Length >= start + name.Length)
+                    {
+                        string originalName = StrippedText.Substring(start, name.Length);
+                        originalNames.Add(originalName);
+                        StrippedText = StrippedText.Remove(start, name.Length);
+                        StrippedText = StrippedText.Insert(start, GetAndInsertNextId(replaceIds, replaceNames, name, idName++));
+                        lower = StrippedText.ToLowerInvariant();
+                    }
+                }
+                if (start + 3 > lower.Length)
+                {
+                    start = lower.Length + 1;
+                }
+                else
+                {
+                    start = lower.IndexOf(name, start + 3, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+        }
+
+        private const string AsciiUpperLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        private static bool IsNameStartBoundary(char c) =>
+            c == ' ' || c == '-' || c == '"' || c == '\'' || c == '>' || c == '[' || c == '“' || Environment.NewLine.EndsWith(c);
+
+        /// <summary>
+        /// Builds a 128 bit set of the ASCII characters, upper-cased, that an ordinal ignore-case
+        /// match could see at a name start in "lower". Removing names never creates a new name
+        /// start - the inserted id begins with "_", which is always in the set, and the char before
+        /// every other position is unchanged - so the set stays valid while names are replaced.
+        /// </summary>
+        private static void GetNameStartMask(string lower, out ulong low, out ulong high)
+        {
+            low = 0;
+            high = 1UL << ('_' - 64);
+            for (var i = 0; i < lower.Length; i++)
+            {
+                if (i > 0 && !IsNameStartBoundary(lower[i - 1]))
+                {
+                    continue;
+                }
+
+                var c = lower[i];
+                if (c < 128)
+                {
+                    SetMaskBit(char.ToUpperInvariant(c), ref low, ref high);
+                }
+                else if (char.IsLetter(c))
+                {
+                    // A few non-ASCII letters (like the long s) fold to an ASCII letter.
+                    for (var k = 0; k < AsciiUpperLetters.Length; k++)
+                    {
+                        if (string.Compare(lower, i, AsciiUpperLetters, k, 1, StringComparison.OrdinalIgnoreCase) == 0)
+                        {
+                            SetMaskBit(AsciiUpperLetters[k], ref low, ref high);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void SetMaskBit(char c, ref ulong low, ref ulong high)
+        {
+            if (c < 64)
+            {
+                low |= 1UL << c;
+            }
+            else
+            {
+                high |= 1UL << (c - 64);
+            }
+        }
+
+        private static bool MayStartName(char first, ulong low, ulong high)
+        {
+            first = char.ToUpperInvariant(first);
+            return first < 64 ? (low & (1UL << first)) != 0 : (high & (1UL << (first - 64))) != 0;
+        }
+
+        private void ReplaceAssaTagsRemove(List<string> replaceIds, List<string> replaceNames, List<string> originalNames)
         {
             int idName = 1000;
-            var idx = 0;
-            while (StrippedText.IndexOf("{", idx) >= 0 && StrippedText.IndexOf('}', idx) > 0)
+            var openIndex = StrippedText.IndexOf('{');
+            while (openIndex >= 0)
             {
-                var start = StrippedText.IndexOf("{", idx);
-                var end = StrippedText.IndexOf("}", idx);
-                if (end < start)
+                // Pair each "{" with the first "}" after it - searching both from the same start
+                // index made a stray "}" (as in "a} b {\i1}") look like an unbalanced tag and
+                // abort the scan, leaving the real tags unprotected.
+                var closeIndex = StrippedText.IndexOf('}', openIndex + 1);
+                if (closeIndex < 0)
                 {
                     return;
                 }
 
-                var tag = StrippedText.Substring(start, end - start + 1);
-                StrippedText = StrippedText.Remove(start, tag.Length);
-                StrippedText = StrippedText.Insert(start, GetAndInsertNextId(replaceIds, replaceNames, tag, idName++));
+                var tag = StrippedText.Substring(openIndex, closeIndex - openIndex + 1);
+                StrippedText = StrippedText.Remove(openIndex, tag.Length);
+                var id = GetAndInsertNextId(replaceIds, replaceNames, tag, idName++);
+                StrippedText = StrippedText.Insert(openIndex, id);
                 originalNames.Add(tag);
 
-                idx = end + 1;
-                if (idx >= StrippedText.Length)
-                {
-                    return;
-                }   
+                // Resume after the inserted id - "closeIndex + 1" was an index into the string
+                // as it looked before the replacement, so any tag longer than the id skipped
+                // the following tags.
+                openIndex = StrippedText.IndexOf('{', openIndex + id.Length);
             }
         }
 
@@ -219,13 +327,27 @@ namespace Nikse.SubtitleEdit.Core.Common
         }
 
         private static readonly char[] ExpectedCharsArray = { '.', '!', '?', ':', ';', ')', ']', '}', '(', '[', '{' };
-        public void FixCasing(List<string> nameList, bool changeNameCases, bool makeUppercaseAfterBreak, bool checkLastLine, string lastLine, double millisecondsFromLast = 0)
+        public void FixCasing(IEnumerable<string> nameList, bool changeNameCases, bool makeUppercaseAfterBreak, bool checkLastLine, string lastLine, double millisecondsFromLast = 0)
+        {
+            FixCasing(nameList, null, changeNameCases, makeUppercaseAfterBreak, checkLastLine, lastLine, millisecondsFromLast);
+        }
+
+        /// <summary>
+        /// Same as the name list overload, but only searches the names that can match the line -
+        /// build the <see cref="NameListIndex"/> once and reuse it for every line.
+        /// </summary>
+        public void FixCasing(NameListIndex nameIndex, bool changeNameCases, bool makeUppercaseAfterBreak, bool checkLastLine, string lastLine, double millisecondsFromLast = 0)
+        {
+            FixCasing(null, nameIndex, changeNameCases, makeUppercaseAfterBreak, checkLastLine, lastLine, millisecondsFromLast);
+        }
+
+        private void FixCasing(IEnumerable<string> nameList, NameListIndex nameIndex, bool changeNameCases, bool makeUppercaseAfterBreak, bool checkLastLine, string lastLine, double millisecondsFromLast)
         {
             var replaceIds = new List<string>();
             var replaceNames = new List<string>();
             var originalNames = new List<string>();
-            ReplaceNames1Remove(nameList, replaceIds, replaceNames, originalNames);
-            ReplacAssaTagsRemove(nameList, replaceIds, replaceNames, originalNames);
+            ReplaceNames1Remove(nameList, nameIndex, replaceIds, replaceNames, originalNames);
+            ReplaceAssaTagsRemove(replaceIds, replaceNames, originalNames);
 
             if (checkLastLine && ShouldStartWithUpperCase(lastLine, millisecondsFromLast))
             {
@@ -266,7 +388,7 @@ namespace Nikse.SubtitleEdit.Core.Common
                         {
                             sb.Append(s);
                         }
-                        else if ((sb.EndsWith('<') || sb.ToString().EndsWith("</", StringComparison.Ordinal)) && i + 1 < StrippedText.Length && StrippedText[i + 1] == '>')
+                        else if ((sb.EndsWith('<') || sb.EndsWith("</")) && i + 1 < StrippedText.Length && StrippedText[i + 1] == '>')
                         { // tags
                             sb.Append(s);
                         }
@@ -274,7 +396,7 @@ namespace Nikse.SubtitleEdit.Core.Common
                         { // tags
                             sb.Append(s);
                         }
-                        else if (sb.ToString().EndsWith("... ", StringComparison.Ordinal))
+                        else if (sb.EndsWith("... "))
                         {
                             sb.Append(s);
                             lastWasBreak = false;
@@ -318,13 +440,18 @@ namespace Nikse.SubtitleEdit.Core.Common
                             var idx = sb.ToString().IndexOf('[');
                             if (s == ']' && idx > 1)
                             { // I [Motor roaring] love you!
-                                var temp = sb.ToString(0, idx - 1).Trim();
+                                // The text before '[' is [0, idx), so the length is idx - the
+                                // "- 1" dropped the last character before the bracket, which is
+                                // exactly the one this test looks at. "Yes.[Motor roaring] hello."
+                                // saw "Yes" (a letter) instead of "Yes." and left "hello"
+                                // lowercase. The documented "I [Motor roaring]" case is unchanged.
+                                var temp = sb.ToString(0, idx).Trim();
                                 if (temp.Length > 0 && !char.IsLetterOrDigit(temp[temp.Length - 1]))
                                 {
                                     lastWasBreak = true;
                                 }
                             }
-                            else if (s == ']' && idx == -1 && Pre.IndexOf('[') >= 0)
+                            else if (s == ']' && idx == -1 && Pre.Contains('['))
                             { // [ Motor roaring ] Hallo!
                                 lastWasBreak = true;
                             }
@@ -345,11 +472,11 @@ namespace Nikse.SubtitleEdit.Core.Common
                                 }
                             }
                         }
-                        else if (s == '-' && Pre.IndexOf('-') >= 0)
+                        else if (s == '-' && Pre.Contains('-'))
                         {
-                            if (sb.ToString().EndsWith(Environment.NewLine + "-"))
+                            if (sb.EndsWith(NewLineDash))
                             {
-                                var prevLine = HtmlUtil.RemoveHtmlTags(sb.ToString().Substring(0, sb.Length - 2).TrimEnd());
+                                var prevLine = HtmlUtil.RemoveHtmlTags(sb.ToString(0, sb.Length - 2).TrimEnd());
                                 if (prevLine.EndsWith('.') ||
                                     prevLine.EndsWith('!') ||
                                     prevLine.EndsWith('?') ||

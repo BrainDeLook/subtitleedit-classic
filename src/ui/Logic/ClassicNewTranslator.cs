@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -43,6 +43,7 @@ namespace Nikse.SubtitleEdit.Logic
             s.Api.Model = id == "nvidia" ? "meta/llama-3.3-70b-instruct" : id == "perplexity" ? "openai/gpt-5-mini" : id == "route" ? "deepseek-chat" : id == "madlad" ? "madlad400-3b-mt-q4_k.gguf" : "local-model";
             if(id=="ollama-advanced"){s.Api.Url="http://localhost:11434/v1/chat/completions";s.Api.Model="qwen3:8b";}
             if(id=="lmstudio-advanced")s.Api.Url="http://localhost:1234/v1/chat/completions";
+            if(id=="opper"){s.Api.Url="https://api.opper.ai/v3/compat/chat/completions";s.Api.Model="claude-sonnet-4-6";}
             return s;
         }
         public void Save(string id)
@@ -65,8 +66,8 @@ namespace Nikse.SubtitleEdit.Logic
         private HttpClient _http;
         private readonly HttpMessageHandler _handler;
         private readonly Queue<string> _context = new Queue<string>();
-        public static readonly string[] Ids = { "compatible", "llama", "nvidia", "route", "perplexity", "lara", "madlad", "llama-advanced", "ollama-advanced", "lmstudio-advanced" };
-        public static readonly string[] Names = { "OpenAI-compatible", "llama.cpp", "NVIDIA", "API Route", "Perplexity", "Lara", "CrispASR MADLAD", "llama.cpp advanced", "Ollama advanced", "LM Studio advanced" };
+        public static readonly string[] Ids = { "compatible", "llama", "nvidia", "route", "perplexity", "lara", "madlad", "llama-advanced", "ollama-advanced", "lmstudio-advanced", "opper" };
+        public static readonly string[] Names = { "OpenAI-compatible", "llama.cpp", "NVIDIA", "API Route", "Perplexity", "Lara", "CrispASR MADLAD", "llama.cpp advanced", "Ollama advanced", "LM Studio advanced", "Opper" };
         public override string ToString() => Name;
         public ClassicNewTranslator(string id, HttpMessageHandler handler = null) { _handler=handler; Id = id; Name = Names[Array.IndexOf(Ids, id)]; }
         public void Initialize() => Initialize(ClassicTranslationSettings.Load(Id));
@@ -79,6 +80,8 @@ namespace Nikse.SubtitleEdit.Logic
         public List<TranslationPair> GetSupportedTargetLanguages() => GetSupportedSourceLanguages();
         public async Task<string> Translate(string text, string sourceLanguageCode, string targetLanguageCode, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TranslationMusic.IsKeptUntranslated(text)) return text;
             if(IsAdvanced)return (await TranslateBatchAsync(new[]{text},sourceLanguageCode,targetLanguageCode,cancellationToken).ConfigureAwait(false))[0];
             if (_settings == null) Initialize();
             LlamaCppModel definition = null;

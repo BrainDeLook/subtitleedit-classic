@@ -170,6 +170,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             buttonDownloadAndInstall.Visible = _updatesHelper.IsNewSubtitleEditAvailable();
+            if (ClassicReleaseInstaller.CanInstallAndRestart && _updatesHelper.InstallerUrl != null && _updatesHelper.ChecksumsUrl != null) buttonDownloadAndInstall.Text = Configuration.Settings.General.Language.StartsWith("ru", StringComparison.OrdinalIgnoreCase) ? "Установить и перезапустить" : "Install and restart";
 
             if (_updatesHelper.IsNewSubtitleEditAvailable() || _updatesHelper.ManualCheck)
             {
@@ -194,9 +195,30 @@ namespace Nikse.SubtitleEdit.Forms
             }
         }
 
-        private void buttonDownloadAndInstall_Click(object sender, EventArgs e)
+        private async void buttonDownloadAndInstall_Click(object sender, EventArgs e)
         {
-            UiUtil.OpenUrl(_updatesHelper?.ReleasePageUrl ?? CheckForUpdatesHelper.LatestStableUrl);
+            if (!ClassicReleaseInstaller.CanInstallAndRestart || _updatesHelper?.InstallerUrl == null || _updatesHelper.ChecksumsUrl == null) { UiUtil.OpenUrl(_updatesHelper?.ReleasePageUrl ?? CheckForUpdatesHelper.LatestStableUrl); return; }
+            buttonDownloadAndInstall.Enabled = false;
+            using (var cancel = new System.Threading.CancellationTokenSource())
+            {
+                string installer = null; bool handedOff = false;
+                FormClosingEventHandler closing = (s, args) => cancel.Cancel(); FormClosing += closing;
+                try
+                {
+                    installer = await ClassicReleaseInstaller.Download(_updatesHelper, cancel.Token, new Progress<long>(bytes => labelStatus.Text = (bytes / 1048576.0).ToString("0.0") + " MB"));
+                    if (IsDisposed) return;
+                    var ru = Configuration.Settings.General.Language.StartsWith("ru", StringComparison.OrdinalIgnoreCase);
+                    if (System.Windows.Forms.MessageBox.Show(this, ru ? "Установщик проверен. Сохраните изменения при закрытии редактора. Установить обновление и перезапустить Classic?" : "The installer is verified. Save your changes when the editor closes. Install the update and restart Classic?", Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                    var application = typeof(Main).Assembly.Location;
+                    // Main owns the existing unsaved-work confirmation. A cancelled close leaves it running.
+                    Close(); _mainForm.Close();
+                    if (_mainForm.IsDisposed) { ClassicReleaseInstaller.InstallAndRestart(installer, application); handedOff = true; }
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception ex) when (ex is System.IO.IOException || ex is System.Net.Http.HttpRequestException || ex is InvalidOperationException || ex is System.ComponentModel.Win32Exception)
+                { if (!IsDisposed) labelStatus.Text = ex.Message; }
+                finally { if (!handedOff && installer != null && System.IO.File.Exists(installer)) System.IO.File.Delete(installer); FormClosing -= closing; if (!IsDisposed) buttonDownloadAndInstall.Enabled = true; }
+            }
         }
 
         private void buttonDontCheckUpdates_Click(object sender, EventArgs e)

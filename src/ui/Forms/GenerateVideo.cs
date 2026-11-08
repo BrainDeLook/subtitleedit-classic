@@ -144,6 +144,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void buttonGenerate_Click(object sender, EventArgs e)
         {
+            using var taskbarWork=new ClassicTaskbarWork(this);
+            using var preventSleep=ClassicPowerRequest.Acquire("Processing subtitles and media");
             EnableDisableControls(false);
 
             if (string.IsNullOrEmpty(_subtitleFileName) || _subtitleFileName == "Untitled")

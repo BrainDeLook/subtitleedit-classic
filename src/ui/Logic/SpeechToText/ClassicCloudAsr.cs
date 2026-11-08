@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -117,7 +117,24 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
                 foreach (var field in new[] { new[] { "OSSAccessKeyId", "oss_access_key_id" }, new[] { "policy", "policy" }, new[] { "Signature", "signature" }, new[] { "x-oss-object-acl", "x_oss_object_acl" }, new[] { "x-oss-forbid-overwrite", "x_oss_forbid_overwrite" } })
                     form.Add(new StringContent((string)policy[field[1]] ?? ""), field[0]);
                 form.Add(new StringContent(key), "key"); form.Add(new StringContent("200"), "success_action_status");
-                form.Add(new ByteArrayContent(File.ReadAllBytes(file)), "file", "audio.wav");
+                var audio = new ByteArrayContent(File.ReadAllBytes(file));
+                audio.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                form.Add(audio, "file", "audio.wav");
+                foreach (var parameter in form.Headers.ContentType.Parameters)
+                    if (parameter.Name.Equals("boundary", StringComparison.OrdinalIgnoreCase)) parameter.Value = parameter.Value.Trim('"');
+                foreach (var part in form)
+                {
+                    var disposition = part.Headers.ContentDisposition;
+                    disposition.Name = "\"" + disposition.Name.Trim('"') + "\"";
+                    if (disposition.FileName != null)
+                    {
+                        disposition.FileName = "\"" + disposition.FileName.Trim('"') + "\"";
+                        disposition.FileNameStar = null;
+                    }
+                    var contentType = part.Headers.ContentType;
+                    part.Headers.ContentType = null;
+                    if (contentType != null) part.Headers.ContentType = contentType;
+                }
                 // The signed upload host must not receive the user's bearer key.
                 await Send(HttpMethod.Post, (string)policy["upload_host"], form, cancel, false).ConfigureAwait(false);
             }

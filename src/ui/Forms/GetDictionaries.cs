@@ -34,11 +34,15 @@ namespace Nikse.SubtitleEdit.Forms
 
         public string SelectedEnglishName { get; private set; }
         public string LastDownload { get; private set; }
+        public string LastRemoved { get; private set; }
 
         public GetDictionaries()
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
+            var uninstall = new Button { Name = "classicUninstallDictionary", Text = ClassicErrorReport.L("Удалить…", "Uninstall…"), Location = new System.Drawing.Point(buttonDownload.Left, buttonDownload.Bottom + 5), Size = buttonDownload.Size, Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            uninstall.Click += (sender, args) => UninstallDictionary();
+            Controls.Add(uninstall);
             UiUtil.FixFonts(this);
 
             Text = LanguageSettings.Current.GetDictionaries.Title;
@@ -57,6 +61,41 @@ namespace Nikse.SubtitleEdit.Forms
 #if DEBUG
             buttonDownloadAll.Visible = true; // For testing all download links
 #endif
+        }
+
+        private void UninstallDictionary()
+        {
+            var dictionaries = Utilities.GetDictionaryLanguages();
+            if (dictionaries.Count == 0)
+            {
+                MessageBox.Show(this, ClassicErrorReport.L("Установленных словарей нет.", "No dictionaries are installed."), Text);
+                return;
+            }
+            using (var dialog = new Form { Text = ClassicErrorReport.L("Удалить установленный словарь", "Uninstall dictionary"), ClientSize = new System.Drawing.Size(520, 150), StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog, MinimizeBox = false, MaximizeBox = false })
+            {
+                var choices = new ComboBox { Dock = DockStyle.Top, DropDownStyle = ComboBoxStyle.DropDownList };
+                choices.Items.AddRange(dictionaries.Cast<object>().ToArray()); choices.SelectedIndex = 0;
+                var note = new Label { Dock = DockStyle.Fill, Text = ClassicErrorReport.L("Будут удалены только файлы выбранного словаря (.dic и .aff). Ваши слова, имена и правила сохранятся.", "Only the selected .dic and .aff files will be removed. Your words, names and rules are kept."), Padding = new Padding(8), AutoSize = false };
+                var remove = new Button { Text = ClassicErrorReport.L("Удалить", "Uninstall"), DialogResult = DialogResult.OK, AutoSize = true };
+                var cancel = new Button { Text = LanguageSettings.Current.General.Cancel, DialogResult = DialogResult.Cancel, AutoSize = true };
+                var footer = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.RightToLeft };
+                footer.Controls.AddRange(new Control[] { cancel, remove }); dialog.Controls.Add(note); dialog.Controls.Add(choices); dialog.Controls.Add(footer); dialog.AcceptButton = remove; dialog.CancelButton = cancel;
+                UiUtil.FixFonts(dialog);
+                if (dialog.ShowDialog(this) != DialogResult.OK) return;
+                var selected = (string)choices.SelectedItem;
+                var start = selected.LastIndexOf('[') + 1;
+                var name = selected.Substring(start, selected.LastIndexOf(']') - start);
+                // The names come from the installed-file inventory, never editable input.
+                var baseName = Path.Combine(Utilities.DictionaryFolder, Path.GetFileName(name));
+                try
+                {
+                    File.Delete(baseName + ".aff"); File.Delete(baseName + ".dic");
+                    LastRemoved = name;
+                    labelPleaseWait.Text = ClassicErrorReport.L("Словарь удалён: ", "Dictionary removed: ") + name;
+                }
+                catch (IOException exception) { MessageBox.Show(this, exception.Message, Text); }
+                catch (UnauthorizedAccessException exception) { MessageBox.Show(this, exception.Message, Text); }
+            }
         }
 
         private void LoadDictionaryList(string xmlResourceName)

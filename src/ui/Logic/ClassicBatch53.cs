@@ -14,6 +14,7 @@ namespace Nikse.SubtitleEdit.Logic
 {
     public sealed class ClassicBatch53Options
     {
+        public string[] PluginManifests {get;set;} = new string[0];
         [Description("Comma-separated target language codes; leave empty for the selected target language.")]
         public string TargetLanguages { get; set; } = "";
         public bool PreserveSourceTimestamp { get; set; }
@@ -28,6 +29,7 @@ namespace Nikse.SubtitleEdit.Logic
         public string[] Languages => TargetLanguages.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         public void Validate()
         {
+            PluginManifests = PluginManifests ?? new string[0];
             if (!new[] { "all", "format", "extension", "error", "forced", "filename", "language" }.Contains(Filter)) throw new ArgumentException("Unknown filter.");
             if (TrimAssFonts && !EmbedAssFonts) throw new ArgumentException("Enable font embedding before font subsetting.");
             var probe = new SsaStyle(); ApplyStyle(probe);

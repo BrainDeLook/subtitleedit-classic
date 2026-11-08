@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,14 +9,14 @@ using Nikse.SubtitleEdit.Logic.ClassicCast;
 using Nikse.SubtitleEdit.Logic.SpeechToText;
 namespace Nikse.SubtitleEdit.Logic
 {
-    // Runtime and protocol pinned to stable Subtitle Edit v5.3.0.
+    // Runtime and protocol pinned to stable Subtitle Edit v5.4.0.
     public static class ClassicAudioCpp
     {
-        private const string Release = "audiocpp-indextts25-2026-10-13";
+        private const string Release = "audiocpp-indextts25-2026-11-05";
         private static readonly Dictionary<string,string> Hashes = new Dictionary<string,string> {
-            {"cpu","2d5d3ffdb9e95c816f214ecdfdb40697ccce8d24dfd742befc05ac79fde93daf"},
-            {"cuda","bcb0cc492fedb356398ca1a10708ca92ec4e5f8cbda439b6eee40c5ad820b0a4"},
-            {"vulkan","d79517505418d4cbdf0d1d266a99cb983515920ec81b45891c50abe6a8202a48"},
+            {"cpu","0eb04e64b47b2b40b720ca3e7d48b2096000a931ee737d23cf0df737477e0720"},
+            {"cuda","113b97aee3702bb8bf7584967bb8cc1fc48ba700274dff33292d1cf6ad9fe7d7"},
+            {"vulkan","b291e630839759545e20ee077a6b01926db549fdbaa3cf83e65ece68ad520df0"},
         };
         private static readonly Dictionary<string,long> Sizes=new Dictionary<string,long>{{"cpu",6179099L},{"cuda",837110935L},{"vulkan",33150010L}};
         public static string Root(string variant) => Path.Combine(Configuration.DataDirectory, "audio.cpp", Release, variant);
@@ -27,12 +27,13 @@ namespace Nikse.SubtitleEdit.Logic
             if (!Hashes.ContainsKey(variant)) throw new ArgumentException("audio.cpp supports CPU, Vulkan or CUDA (not CUDA13).");
             await InstallLock.WaitAsync(cancel).ConfigureAwait(false);
             try {
-                if (File.Exists(Executable(variant))) return;
+                if (File.Exists(Executable(variant)) && File.Exists(Path.Combine(Root(variant), "audiocpp_cli.exe"))) return;
                 var root = Root(variant); var staging = root + "." + Guid.NewGuid().ToString("N") + ".staging";
                 var archive = staging + ".zip";
                 try {
                     var name = "audiocpp-indextts25-windows-x86_64-" + variant + ".zip";
-                    await ClassicVoiceAssets.EnsureFileAsync("https://github.com/SubtitleEdit/support-files/releases/download/" + Release + "/" + name, archive, Sizes[variant], Hashes[variant], false, cancel, progress).ConfigureAwait(false);
+                    await ClassicSpeechDownload.DownloadFileAsync("https://github.com/SubtitleEdit/support-files/releases/download/" + Release + "/" + name, archive, false, cancel, progress).ConfigureAwait(false);
+                    await ClassicVoiceAssets.CheckHashAsync(archive, Hashes[variant], cancel).ConfigureAwait(false);
                     await Task.Run(() => ClassicSpeechDownload.Extract(archive, staging, cancel), cancel).ConfigureAwait(false);
                     var exe = Directory.GetFiles(staging,"audiocpp_server.exe",SearchOption.AllDirectories).SingleOrDefault();
                     if (exe == null) throw new InvalidDataException("audio.cpp server was not found in the archive.");
@@ -48,6 +49,7 @@ namespace Nikse.SubtitleEdit.Logic
         }
         public static string[] License(string id)
         {
+            if(id=="voxtraltts")return new[]{"cc-by-nc-4.0","Voxtral TTS weights and preset voices are CC BY-NC 4.0. Commercial use requires separate permission. Read the complete model license before accepting.","https://creativecommons.org/licenses/by-nc/4.0/"};
             if(id=="fish")return new[]{"fish-audio-research-license-2026-09","Fish Audio S2 Pro weights: Fish Audio Research License. Research and non-commercial use; commercial use requires a separate written license. Preserve the license notice when redistributing derivatives. Read the full license before accepting.","https://huggingface.co/fishaudio/s2-pro/blob/main/LICENSE.md"};
             if(id=="higgs")return new[]{"boson-higgs-tts3-nc-license-2026-09","Higgs Audio v3 weights: Boson AI Research and Non-Commercial License. Production deployment, hosted APIs, embedding in a product or reselling models/fine-tunes requires a separate commercial license. Read the full license before accepting.","https://huggingface.co/bosonai/higgs-tts-3-4b/blob/main/LICENSE"};
             if(id=="breeze")return new[]{"breezeblue-research-non-commercial-1.1","Breeze TTS 2: BreezeBlue Research and Non-Commercial License. The non-commercial restriction applies to the weights and generated audio. Read the full license before accepting.","https://huggingface.co/BreezeBlue/Breeze-TTS-2/blob/main/LICENSE"};
@@ -67,7 +69,7 @@ namespace Nikse.SubtitleEdit.Logic
         {
             var options = new Dictionary<string,object>();
             var body = new Dictionary<string,object>{{"model",definition.Id},{"input",text},{"response_format","wav"}};
-            if(definition.Id=="kugel") {
+            if(definition.Id=="kugel" || definition.Id=="voxtraltts") {
                 if(!definition.Presets.Contains(voice))throw new ArgumentException("KugelAudio supports preset voices only.");
                 options["voice_id"]=voice;
             } else if(!definition.Presets.Contains(voice)) {

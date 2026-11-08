@@ -23,6 +23,8 @@ namespace Nikse.SubtitleEdit.Logic
         public bool ManualCheck { get; set; }
         public string LatestVersionNumber { get; set; }
         public string LatestChangeLog { get; set; }
+        public string InstallerUrl { get; private set; }
+        public string ChecksumsUrl { get; private set; }
         public string ReleasePageUrl { get; private set; }=LatestStableUrl;
 
         public CheckForUpdatesHelper() { }
@@ -54,12 +56,21 @@ namespace Nikse.SubtitleEdit.Logic
             if((bool?)release["draft"]!=false || (bool?)release["prerelease"]!=false)throw new FormatException("The Classic update endpoint did not return a stable release.");
             var tag=(string)release["tag_name"];var version=ParseStableVersion(tag);
             LatestVersionNumber=version.ToString();
+            InstallerUrl = null; ChecksumsUrl = null;
+            var installerName = "SubtitleEdit-Classic-" + version.Major + "." + version.Minor + "." + version.Build + "-Setup.exe";
+            var assetPrefix = RepositoryUrl + "/releases/download/" + Uri.EscapeDataString(tag) + "/";
+            foreach (var asset in release["assets"] as JArray ?? new JArray())
+            {
+                var name = (string)asset["name"]; var url = (string)asset["browser_download_url"];
+                if (name == installerName && url == assetPrefix + installerName) InstallerUrl = url;
+                if (name == "SHA256SUMS.txt" && url == assetPrefix + "SHA256SUMS.txt") ChecksumsUrl = url;
+            }
             ReleasePageUrl=RepositoryUrl+"/releases/tag/"+Uri.EscapeDataString(tag);
             LatestChangeLog="Subtitle Edit Classic "+tag+Environment.NewLine+Environment.NewLine+((string)release["body"]??"");
         }
         public async Task CheckForUpdates(bool manualCheck)
         {
-            ManualCheck=manualCheck;Done=false;Error=null;PluginUpdates=0;LatestVersionNumber=null;LatestChangeLog=null;ReleasePageUrl=LatestStableUrl;
+            InstallerUrl=null;ChecksumsUrl=null;ManualCheck=manualCheck;Done=false;Error=null;PluginUpdates=0;LatestVersionNumber=null;LatestChangeLog=null;ReleasePageUrl=LatestStableUrl;
             try
             {
                 using(var http=new HttpClient(_handler ?? CreateHandler(), _handler == null))

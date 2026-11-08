@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Logic;
+﻿using Nikse.SubtitleEdit.Logic;
 using System;
 using System.Drawing;
 using System.Threading;
@@ -12,7 +12,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
     public sealed class ClassicQwenCloneSettings : Form
     {
         private static bool Ru => Nikse.SubtitleEdit.Core.Common.Configuration.Settings.General.Language.StartsWith("ru",StringComparison.OrdinalIgnoreCase);
-        private static string L(string ru,string en)=>Ru ? ru : en;
+        private static string L(string ru,string en)=>ClassicLocalization.Text(ru,en);
         public ClassicQwenCloneSettings(ClassicQwenTtsSettings settings)
         {
             Text=L("Модель и клонирование голоса","Model and voice cloning");Size=new Size(620,450);MinimumSize=Size;StartPosition=FormStartPosition.CenterParent;

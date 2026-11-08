@@ -11,7 +11,7 @@ using Nikse.SubtitleEdit.Core.SubtitleFormats;
 
 namespace Nikse.SubtitleEdit.Logic
 {
-    public enum ClassicLineErrorType { TooManyLines, ReadingSpeed, TooShort, TooLong, LineTooLong, LineTooWide, Overlap, GapTooShort, WordsPerMinute, MissingTimeCodes }
+    public enum ClassicLineErrorType { TooManyLines, ReadingSpeed, TooShort, TooLong, LineTooLong, LineTooWide, Overlap, GapTooShort, WordsPerMinute, MissingTimeCodes, CustomRule }
     public sealed class ClassicLineError
     {
         public int Number { get; set; }
@@ -20,8 +20,8 @@ namespace Nikse.SubtitleEdit.Logic
         public string Detail { get; set; }
         public Paragraph Cue { get; set; }
         public string Category => ClassicErrorReport.Label(Type);
-        public string Show => Cue.StartTime.ToDisplayString();
-        public string Hide => Cue.EndTime.ToDisplayString();
+        public string Show => new TimeCode(Cue.StartTime.TotalMilliseconds+Configuration.Settings.General.CurrentVideoOffsetInMs).ToDisplayString();
+        public string Hide => new TimeCode(Cue.EndTime.TotalMilliseconds+Configuration.Settings.General.CurrentVideoOffsetInMs).ToDisplayString();
         public string Text => Cue.Text ?? "";
     }
     // The stable 5.3 per-cue report, mapped to the classic grid's combined duration/CPS switches.
@@ -42,10 +42,11 @@ namespace Nikse.SubtitleEdit.Logic
                 case ClassicLineErrorType.Overlap: return L("Пересечение", "Overlapping");
                 case ClassicLineErrorType.GapTooShort: return L("Короткий зазор", "Gap too short");
                 case ClassicLineErrorType.WordsPerMinute: return L("Слов в минуту", "Words per minute");
+                case ClassicLineErrorType.CustomRule: return L("Пользовательское правило", "Custom rule");
                 default: return L("Нет тайм-кода", "Missing time code");
             }
         }
-        public static string ColorHex(ClassicLineErrorType type) => new[]{"#E84393","#E8912D","#F1C40F","#9B59B6","#3498DB","#2980B9","#E74C3C","#1ABC9C","#D35400","#C0392B"}[(int)type];
+        public static string ColorHex(ClassicLineErrorType type) => new[]{"#E84393","#E8912D","#F1C40F","#9B59B6","#3498DB","#2980B9","#E74C3C","#1ABC9C","#D35400","#C0392B","#8E44AD"}[(int)type];
         public static List<ClassicLineError> Analyze(Subtitle source,SubtitleFormat format,string fileName=null)
         {
             var result=new List<ClassicLineError>(); var settings=Configuration.Settings; var rules=settings.General; var switches=settings.Tools;
@@ -54,6 +55,7 @@ namespace Nikse.SubtitleEdit.Logic
             {
                 var p=source.Paragraphs[i]; var snapshot=new Paragraph(p,false); var lines=HtmlUtil.RemoveHtmlTags(p.Text??"",true).SplitToLines();
                 Action<ClassicLineErrorType,string> add=(type,detail)=>result.Add(new ClassicLineError {Number=i+1,FileName=fileName??source.FileName??"",Type=type,Detail=detail,Cue=snapshot});
+                var custom = ClassicCustomErrorRules.Match(p.Text); if (custom != null) add(ClassicLineErrorType.CustomRule, custom);
                 if(p.StartTime.IsMaxTime || p.EndTime.IsMaxTime)add(ClassicLineErrorType.MissingTimeCodes,L("Не задано начало или конец", "Start or end time is not set"));
                 else if(p.WordsPerMinute>rules.SubtitleMaximumWordsPerMinute)add(ClassicLineErrorType.WordsPerMinute,Math.Round(p.WordsPerMinute,1)+" > "+rules.SubtitleMaximumWordsPerMinute);
                 if(switches.ListViewSyntaxMoreThanXLines && p.NumberOfLines>rules.MaxNumberOfLines) add(ClassicLineErrorType.TooManyLines,p.NumberOfLines+" > "+rules.MaxNumberOfLines);

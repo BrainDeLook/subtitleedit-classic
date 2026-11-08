@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Collections.Generic;
@@ -33,7 +33,14 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             using (var stream = typeof(ClassicSpeechExtras).Assembly.GetManifestResourceStream("ClassicSpeechExtras.json"))
             using (var reader = new StreamReader(stream)) return JsonConvert.DeserializeObject<ClassicSpeechExtras>(reader.ReadToEnd());
         }
-        public static bool NeedsVad(SpeechEngine engine) => engine.Family == "crisp" && (engine.Backend == "cohere" || engine.Backend == "mega-asr" || engine.Backend == "index-echo");
+        public static bool NeedsVad(SpeechEngine engine) => engine.Family == "crisp" && (engine.Backend == "cohere" || engine.Backend == "mega-asr" || engine.Backend == "index-echo" || engine.Backend == "granite-4.1");
+        private static readonly System.Text.RegularExpressions.Regex ExplicitVad = new System.Text.RegularExpressions.Regex(@"(^|\s)(--vad|-vm|--vad-model|--chunk-seconds|-ck)\b", System.Text.RegularExpressions.RegexOptions.Compiled);
+        public static bool UseVad(SpeechEngine engine, ClassicSpeechOptions options)
+        {
+            if (engine.Family != "crisp" || !(options.UseVad || NeedsVad(engine))) return false;
+            options.ExtraArguments.TryGetValue(engine.Name, out var extra);
+            return !ExplicitVad.IsMatch(extra ?? "");
+        }
         public static bool CanDiarize(SpeechEngine engine) => engine.Family == "crisp" && engine.Backend != "moss-diarize";
         public static string EffectiveVad(SpeechEngine engine, ClassicSpeechOptions options)
         {
@@ -51,7 +58,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         {
             if (engine.Family != "crisp") return;
             var required = new List<string>();
-            if (options.UseVad || NeedsVad(engine)) {var choice = EffectiveVad(engine, options); if (choice != "webrtc") required.Add(choice);}
+            if (UseVad(engine, options)) {var choice = EffectiveVad(engine, options); if (choice != "webrtc") required.Add(choice);}
             if (options.DetectSpeakers && CanDiarize(engine)) required.Add("sortformer");
             if (options.IsolateSpeech) required.Add("roformer");
             foreach (var choice in required)

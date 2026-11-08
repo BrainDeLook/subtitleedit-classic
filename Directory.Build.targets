@@ -1,0 +1,27 @@
+<Project>
+  <!-- Generate each project's metadata before its own compilation. The previous
+       UI-only helper ran after libse had already compiled without a version. -->
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)/Properties/AssemblyInfo.cs.template')">
+    <ClassicRevision Condition="'$(ClassicRevision)' == ''">0</ClassicRevision>
+    <ClassicSourceDescription Condition="'$(SourceRevisionId)' != ''">$(SourceRevisionId)</ClassicSourceDescription>
+    <ClassicSourceDescription Condition="'$(ClassicSourceDescription)' == ''">Local Classic build</ClassicSourceDescription>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/Properties/AssemblyInfo.cs.template')">
+    <Compile Remove="Properties/AssemblyInfo.cs" />
+  </ItemGroup>
+  <Target Name="GenerateClassicAssemblyMetadata" BeforeTargets="CoreCompile"
+          Condition="Exists('$(MSBuildProjectDirectory)/Properties/AssemblyInfo.cs.template')">
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(ClassicRevision)', '^[0-9]{1,5}$'))"
+           Text="ClassicRevision must be an integer from 0 through 65534." />
+    <Error Condition="$(ClassicRevision) &gt; 65534" Text="ClassicRevision must be at most 65534." />
+    <PropertyGroup>
+      <_ClassicMetadata>$([MSBuild]::Escape($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/Properties/AssemblyInfo.cs.template'))))</_ClassicMetadata>
+      <_ClassicMetadata>$(_ClassicMetadata.Replace('[REVNO]', '$(ClassicRevision)').Replace('[GITHASH]', '$(ClassicSourceDescription)'))</_ClassicMetadata>
+      <_ClassicMetadataFile>$(IntermediateOutputPath)Classic.AssemblyInfo.cs</_ClassicMetadataFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_ClassicMetadataFile)" Lines="$(_ClassicMetadata)" Overwrite="true" WriteOnlyWhenDifferent="true" Encoding="UTF-8" />
+    <ItemGroup>
+      <Compile Include="$(_ClassicMetadataFile)" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -23,6 +23,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
         }
 
+        private readonly CheckBox _isolateVobSub = new CheckBox { AutoSize = true, Name = "isolateVobSubColors" };
         public string OcrEngine { get; set; }
         public string OcrLanguage { get; set; }
 
@@ -37,6 +38,13 @@ namespace Nikse.SubtitleEdit.Forms
             buttonOK.Text = LanguageSettings.Current.General.Ok;
             UiUtil.FixLargeFonts(this, buttonOK);
 
+            var extraHeight = 35;
+            ClientSize = new System.Drawing.Size(ClientSize.Width, ClientSize.Height + extraHeight);
+            _isolateVobSub.Text = Configuration.Settings.General.Language.StartsWith("ru") ? "Изолировать цвет текста VobSub для OCR" : "Isolate VobSub text colour for OCR";
+            _isolateVobSub.Checked = ClassicEditorPreferences.Load().VobSubIsolateColors;
+            _isolateVobSub.Location = new System.Drawing.Point(12, buttonOK.Top - extraHeight);
+            Controls.Add(_isolateVobSub);
+            _isolateVobSub.BringToFront();
             OcrEngine = ocrEngine;
             OcrLanguage = ocrLanguage;
         }
@@ -53,6 +61,8 @@ namespace Nikse.SubtitleEdit.Forms
         {
             OcrLanguage = !(comboBoxLanguage.SelectedItem is OcrLanguageItem item) ? "en" : item.Id;
 
+            var preferences = ClassicEditorPreferences.Load(); preferences.VobSubIsolateColors = _isolateVobSub.Checked;
+            preferences.Save();
             DialogResult = DialogResult.OK;
         }
 

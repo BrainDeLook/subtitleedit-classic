@@ -1,9 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using System.Drawing;
+using System.Collections.Generic;
 using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.VobSub;
 namespace Nikse.SubtitleEdit.Logic.Ocr
 {
 
@@ -18,7 +19,7 @@ public class NOcrChar
     public List<NOcrPoint> LinesBackground { get; }
     public int ExpandCount { get; set; }
     public bool LoadedOk { get; }
-    public ImageSplitterItem ImageSplitterItem { get; set; }
+    public ImageSplitterItem? ImageSplitterItem { get; set; }
 
     /// <summary>
     /// Height expressed as a percentage of width (i.e. <c>Height * 100 / Width</c>).
@@ -336,25 +337,30 @@ public class NOcrChar
 
     public static void GenerateLineSegments(int maxNumberOfLines, bool veryPrecise, NOcrChar nOcrChar, NikseBitmap bitmap, NOcrLineAlgorithm algorithm)
     {
+        GenerateLineSegments(maxNumberOfLines, veryPrecise, nOcrChar, bitmap, algorithm, new Random());
+    }
+
+    /// <param name="random">Source for the Random algorithm (also the fallback of the others for tiny glyphs); pass a seeded instance for reproducible lines.</param>
+    public static void GenerateLineSegments(int maxNumberOfLines, bool veryPrecise, NOcrChar nOcrChar, NikseBitmap bitmap, NOcrLineAlgorithm algorithm, Random random)
+    {
         switch (algorithm)
         {
             case NOcrLineAlgorithm.SkeletonDistance:
-                NOcrLineGenerator.GenerateSkeletonDistance(maxNumberOfLines, veryPrecise, nOcrChar, bitmap);
+                NOcrLineGenerator.GenerateSkeletonDistance(maxNumberOfLines, veryPrecise, nOcrChar, bitmap, random);
                 break;
             case NOcrLineAlgorithm.EdgeHough:
-                NOcrLineGenerator.GenerateEdgeHough(maxNumberOfLines, veryPrecise, nOcrChar, bitmap);
+                NOcrLineGenerator.GenerateEdgeHough(maxNumberOfLines, veryPrecise, nOcrChar, bitmap, random);
                 break;
             case NOcrLineAlgorithm.Random:
             default:
-                GenerateLineSegmentsRandom(maxNumberOfLines, veryPrecise, nOcrChar, bitmap);
+                GenerateLineSegmentsRandom(maxNumberOfLines, veryPrecise, nOcrChar, bitmap, random);
                 break;
         }
     }
 
-    internal static void GenerateLineSegmentsRandom(int maxNumberOfLines, bool veryPrecise, NOcrChar nOcrChar, NikseBitmap bitmap)
+    internal static void GenerateLineSegmentsRandom(int maxNumberOfLines, bool veryPrecise, NOcrChar nOcrChar, NikseBitmap bitmap, Random r)
     {
         const int giveUpCount = 15_000;
-        var r = new Random(Guid.NewGuid().GetHashCode());
 
         GenerateLines(
             maxNumberOfLines, veryPrecise, giveUpCount, nOcrChar, bitmap, r,

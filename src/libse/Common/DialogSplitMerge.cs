@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Enums;
+using Nikse.SubtitleEdit.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,8 +12,15 @@ namespace Nikse.SubtitleEdit.Core.Common
         public string TwoLetterLanguageCode { get; set; }
         public bool SkipLineEndingCheck { get; set; }
 
-        private static char GetDashChar() => '-';
-        private static char GetAlternateDashChar() => '‐'; // Unicode En Dash (\u2010)
+        public static char GetDashChar() => '-';
+
+        /// <summary>
+        /// Every IsDialog variant needs a line starting with a dash, so text without one is
+        /// returned as is - without splitting it and stripping tags for the dialog checks.
+        /// </summary>
+        private static bool CannotBeDialog(string input) =>
+            input != null && input.IndexOf(GetDashChar()) < 0 && input.IndexOf(GetAlternateDashChar()) < 0;
+        public static char GetAlternateDashChar() => '‐'; // Unicode En Dash (\u2010)
 
         public string FixDashesAndSpaces(string input)
         {
@@ -27,6 +34,11 @@ namespace Nikse.SubtitleEdit.Core.Common
 
         public string FixSpaces(string input)
         {
+            if (CannotBeDialog(input))
+            {
+                return input;
+            }
+
             var lines = input.SplitToLines();
             if (!IsDialog(lines))
             {
@@ -94,6 +106,11 @@ namespace Nikse.SubtitleEdit.Core.Common
 
         public string AddSpaces(string input)
         {
+            if (CannotBeDialog(input))
+            {
+                return input;
+            }
+
             var lines = input.SplitToLines();
             if (!IsDialog(lines))
             {
@@ -140,6 +157,11 @@ namespace Nikse.SubtitleEdit.Core.Common
 
         public string RemoveSpaces(string input)
         {
+            if (CannotBeDialog(input))
+            {
+                return input;
+            }
+
             var lines = input.SplitToLines();
             if (!IsDialog(lines))
             {
@@ -189,6 +211,11 @@ namespace Nikse.SubtitleEdit.Core.Common
 
         public string FixDashes(string input, Paragraph p, Paragraph prev)
         {
+            if (CannotBeDialog(input))
+            {
+                return input;
+            }
+
             var lines = input.SplitToLines();
             if (!IsDialog(lines, p, prev))
             {
@@ -285,6 +312,11 @@ namespace Nikse.SubtitleEdit.Core.Common
 
         public string FixDashes(string input)
         {
+            if (CannotBeDialog(input))
+            {
+                return input;
+            }
+
             var lines = input.SplitToLines();
             if (!IsDialog(lines))
             {
@@ -443,14 +475,15 @@ namespace Nikse.SubtitleEdit.Core.Common
             }
         }
 
-        private static string GetStartTags(string input)
+        public static string GetStartTags(string input)
         {
             var pre = new StringBuilder();
             var s = input;
-            if (s.StartsWith("{\\") && s.Contains('}'))
+            while (s.StartsWith("{\\") && s.Contains('}'))
             {
-                pre.Append(s.Substring(0, s.IndexOf('}') + 1));
-                s = s.Remove(0, pre.Length);
+                var assaPre = s.Substring(0, s.IndexOf('}') + 1);
+                s = s.Remove(0, assaPre.Length);
+                pre.Append(assaPre);
             }
 
             while (s.StartsWith("<") && s.Contains('>'))
@@ -602,7 +635,7 @@ namespace Nikse.SubtitleEdit.Core.Common
             return !l0.HasSentenceEnding(TwoLetterLanguageCode) &&
                    l1.HasSentenceEnding(TwoLetterLanguageCode) &&
                    !(l1.TrimStart().StartsWith(GetDashChar()) || l1.TrimStart().StartsWith(GetAlternateDashChar())) &&
-                   (l2.TrimStart().StartsWith(GetDashChar())) || l2.TrimStart().StartsWith(GetAlternateDashChar());
+                   (l2.TrimStart().StartsWith(GetDashChar()) || l2.TrimStart().StartsWith(GetAlternateDashChar()));
         }
 
         private string GetLineStartFromDashStyle(int lineIndex)

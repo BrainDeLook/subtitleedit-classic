@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -23,11 +23,13 @@ namespace Nikse.SubtitleEdit.Forms
         private readonly DataGridView _cuts = Grid(), _chapters = Grid();
         private readonly ComboBox _audio = Combo(), _transition = Combo(), _profile = Combo();
         private readonly NumericUpDown _fade = new NumericUpDown { Minimum = 0, Maximum = 10, DecimalPlaces = 2, Value = .5m, Width = 85 };
+        private readonly NumericUpDown _captionOffset = new NumericUpDown { Minimum = -86400000, Maximum = 86400000, Increment = 100, Width = 130 };
         private readonly CheckBox _mix = new CheckBox { AutoSize = true };
         private readonly TabControl _tabs = new TabControl { Dock = DockStyle.Fill };
         private readonly Label _status = new Label { Dock = DockStyle.Fill };
         private readonly Button _run = new Button { AutoSize = true };
         private readonly Button _open = new Button { AutoSize = true }, _external = new Button { AutoSize = true };
+        private readonly double _cutClockFactor=Configuration.Settings.General.CurrentVideoIsSmpte?1.001:1.0;
         private CancellationTokenSource _operation; private ClassicMediaInfo _info; private bool _closing;
         private static string L(string ru, string en) => ClassicAssistedText.L(ru, en);
         private static DataGridView Grid() => new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = true, AllowUserToDeleteRows = true, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill };
@@ -40,7 +42,7 @@ namespace Nikse.SubtitleEdit.Forms
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 37)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 38)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));
             var top = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 }; top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
             _open.Text = L("Открыть видео…", "Open video…"); top.Controls.Add(_path); top.Controls.Add(_open, 1, 0); _open.Click += async (s, e) => { using (var d = new OpenFileDialog { Filter = "Media|*.mkv;*.mp4;*.mov;*.ts;*.m2ts;*.avi;*.webm|All files|*.*" }) if (d.ShowDialog(this) == DialogResult.OK) await LoadVideo(d.FileName); }; root.Controls.Add(top, 0, 0);
-            _cuts.Columns.Add("start", L("Начало, секунды", "Start, seconds")); _cuts.Columns.Add("end", L("Конец, секунды", "End, seconds"));
+            _cuts.Columns.Add("start", _cutClockFactor>1?L("Начало, секунды SMPTE","Start, SMPTE seconds"):L("Начало, секунды", "Start, seconds")); _cuts.Columns.Add("end", _cutClockFactor>1?L("Конец, секунды SMPTE","End, SMPTE seconds"):L("Конец, секунды", "End, seconds"));
             _transition.Items.AddRange(new object[] { "none", "fade", "fadeblack", "wipeleft", "slideright" }); _transition.SelectedIndex = 0;
             var cutPanel = Panel(_cuts, new Control[] { new Label { Text = L("Переход", "Transition"), AutoSize = true }, _transition, _fade, new Label { Text = L("сек.; звук:", "sec.; audio:"), AutoSize = true }, _audio });
             Page(L("Монтаж", "Cut / join"), cutPanel);
@@ -48,8 +50,8 @@ namespace Nikse.SubtitleEdit.Forms
             Page(L("Для видеоредактора", "Editing codec"), Panel(new Label { Text = L("Видео перекодируется выбранным профилем. Аудиодорожки выбираются во вкладке «Дорожки» и сохраняются отдельно.", "Video uses the selected profile. Select audio streams on the Streams tab; each remains separate."), Dock = DockStyle.Fill }, new Control[] { _profile }));
             _external.Text = L("Добавить внешний файл…", "Add external file…"); _mix.Text = L("Смешать отмеченные аудиодорожки в одну стереодорожку", "Mix checked audio streams into one stereo stream");
             _external.Click += async (s, e) => { if (_operation != null) return; using (var d = new OpenFileDialog { Filter = "Media / subtitles|*.*" }) if (d.ShowDialog(this) == DialogResult.OK) await AddExternal(d.FileName); };
-            Page(L("Дорожки", "Streams"), Panel(_streams, new Control[] { _external, _mix }));
-            _chapters.Columns.Add("time", L("Начало, секунды", "Start, seconds")); _chapters.Columns.Add("title", L("Название главы", "Chapter title"));
+            Page(L("Дорожки", "Streams"), Panel(_streams, new Control[] { _external, _mix, new Label { Text = L("Сдвиг SCC/MCC, мс (MP4/MPEG; + = позже)", "SCC/MCC offset, ms (MP4/MPEG; + = later)"), AutoSize = true }, _captionOffset }));
+            _chapters.Columns.Add("time", _cutClockFactor>1?L("Начало, секунды SMPTE","Start, SMPTE seconds"):L("Начало, секунды", "Start, seconds")); _chapters.Columns.Add("title", L("Название главы", "Chapter title"));
             var import = new Button { Text = L("Импорт файла глав…", "Import chapter file…"), AutoSize = true }; var export = new Button { Text = L("Экспорт глав…", "Export chapters…"), AutoSize = true };
             import.Click += (s, e) => ImportChapters(); export.Click += (s, e) => ExportChapters();
             Page(L("Главы", "Chapters"), Panel(_chapters, new Control[] { import, export }));
@@ -69,10 +71,10 @@ namespace Nikse.SubtitleEdit.Forms
             try
             {
                 var info = await ClassicMediaJobs.Probe(file, _operation.Token); if (!info.Streams.Any(s => s.Type == "video")) throw new InvalidOperationException("No video stream.");
-                var chapters = JObject.Parse(await ClassicMediaJobs.Capture(Path.Combine(Path.GetDirectoryName(Configuration.Settings.General.FFmpegLocation), "ffprobe.exe"), "-v error -show_chapters -of json " + ClassicMediaJobs.Q(file), _operation.Token));
+                var chapters = JObject.Parse(await ClassicMediaJobs.Capture(ClassicMediaJobs.ProbePath, "-v error -show_chapters -of json " + ClassicMediaJobs.Q(file), _operation.Token));
                 _info = info; _path.Text = file; _streams.Items.Clear(); _audio.Items.Clear(); _audio.Items.Add(L("Без звука", "No audio"));
                 foreach (var stream in info.Streams.Where(s => s.Type == "video" || s.Type == "audio" || s.Type == "subtitle")) { _streams.Items.Add(new ClassicMappedStream { File = file, Stream = stream }, true); if (stream.Type == "audio") _audio.Items.Add(stream); }
-                _audio.SelectedIndex = _audio.Items.Count > 1 ? 1 : 0; _cuts.Rows.Clear(); _cuts.Rows.Add(0, info.Seconds.ToString("0.###", CultureInfo.CurrentCulture)); _chapters.Rows.Clear();
+                _audio.SelectedIndex = _audio.Items.Count > 1 ? 1 : 0; _cuts.Rows.Clear(); _cuts.Rows.Add(0, (info.Seconds/_cutClockFactor).ToString("0.######", CultureInfo.CurrentCulture)); _chapters.Rows.Clear();
                 foreach (var c in chapters["chapters"] ?? new JArray()) _chapters.Rows.Add(((double?)c["start_time"] ?? 0).ToString(CultureInfo.CurrentCulture), (string)c["tags"]?["title"] ?? "");
                 _status.Text = L("Длительность: ", "Duration: ") + TimeSpan.FromSeconds(info.Seconds) + " | " + info.Width + "×" + info.Height;
             }
@@ -106,6 +108,7 @@ namespace Nikse.SubtitleEdit.Forms
         }
         private async Task Run()
         {
+            using var taskbarWork=new ClassicTaskbarWork(this);
             if (_operation != null || _info == null) return; _cuts.EndEdit(); _chapters.EndEdit();
             using (var d = new SaveFileDialog { Filter = "Matroska|*.mkv|MP4|*.mp4|QuickTime|*.mov|MPEG captions (video/audio will be converted)|*.mpg", FileName = Path.GetFileNameWithoutExtension(_path.Text) + "_edited" })
             {
@@ -113,9 +116,9 @@ namespace Nikse.SubtitleEdit.Forms
                 _operation = new CancellationTokenSource(); Busy(true); _status.Text = L("Обработка…", "Processing…");
                 try
                 {
-                    if (_tabs.SelectedIndex == 0) { var clips = _cuts.Rows.Cast<DataGridViewRow>().Where(r => !r.IsNewRow).Select(r => new ClassicCutSegment { Start = Seconds(r.Cells[0].Value), End = Seconds(r.Cells[1].Value) }).ToList(); await ClassicVideoTools.Cut(_path.Text, d.FileName, clips, (_audio.SelectedItem as ClassicMediaStream)?.Index ?? -1, (double)_fade.Value, (string)_transition.SelectedItem, _info.Seconds, _operation.Token); }
+                    if (_tabs.SelectedIndex == 0) { var clips = _cuts.Rows.Cast<DataGridViewRow>().Where(r => !r.IsNewRow).Select(r => new ClassicCutSegment { Start = Seconds(r.Cells[0].Value)*_cutClockFactor, End = Seconds(r.Cells[1].Value)*_cutClockFactor }).ToList(); await ClassicVideoTools.Cut(_path.Text, d.FileName, clips, (_audio.SelectedItem as ClassicMediaStream)?.Index ?? -1, (double)_fade.Value, (string)_transition.SelectedItem, _info.Seconds, _operation.Token); }
                     else if (_tabs.SelectedIndex == 1) await ClassicVideoTools.Reencode(_path.Text, d.FileName, _streams.CheckedItems.Cast<ClassicMappedStream>().Where(s => s.File == _path.Text && s.Stream.Type == "audio").Select(s => s.Stream.Index), _profile.SelectedIndex, _operation.Token);
-                    else if (_tabs.SelectedIndex == 2) await ClassicVideoTools.Remux(_path.Text, d.FileName, _streams.CheckedItems.Cast<ClassicMappedStream>().ToList(), _mix.Checked, _operation.Token);
+                    else if (_tabs.SelectedIndex == 2) await ClassicVideoTools.Remux(_path.Text, d.FileName, _streams.CheckedItems.Cast<ClassicMappedStream>().ToList(), _mix.Checked, _operation.Token, (double)_captionOffset.Value);
                     else await ClassicVideoTools.Chapters(_path.Text, d.FileName, ReadChapters(), _info.Seconds, _operation.Token);
                     _status.Text = L("Сохранено: ", "Saved: ") + d.FileName;
                 }

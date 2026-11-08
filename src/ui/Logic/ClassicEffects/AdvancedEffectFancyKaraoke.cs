@@ -1,17 +1,14 @@
 using System.Drawing;
-
 using Nikse.SubtitleEdit.Core.Common;
-
-
-
+using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Nikse.SubtitleEdit.Logic.ClassicEffects {
+namespace Nikse.SubtitleEdit.Logic.ClassicEffects
+{
 
 /// <summary>
 /// Fancy karaoke effect for subtitles with a pre-marked active word (via {\u1} underline
@@ -23,8 +20,8 @@ namespace Nikse.SubtitleEdit.Logic.ClassicEffects {
 /// </summary>
 public class AdvancedEffectFancyKaraoke : IAdvancedEffectDisplay
 {
-    public string Name => Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Караоке — выделение активного слова","Karaoke - active word pop");
-    public string Description => Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Улучшает субтитры с заранее отмеченным активным словом (подчеркиванием \\u1 или цветом выделения) — приглушает неактивные слова и добавляет к активному слову анимацию свечения","Enhances subtitles with a pre-marked active word (via \\u1 underline or highlight color) — dims inactive words and applies a pop-glow animation to the active word");
+    public string Name => "Karaoke - active word pop";
+    public string Description => "Enhances subtitles with a pre-marked active word (via \\u1 underline or highlight color) — dims inactive words and applies a pop-glow animation to the active word";
     public bool UsesAudio => false;
 
     private static readonly Regex UnderlineTagRegex = new(@"\\u1", RegexOptions.Compiled);
@@ -46,12 +43,12 @@ public class AdvancedEffectFancyKaraoke : IAdvancedEffectDisplay
     /// <summary>
     /// Glow color used for the active word's 3c (ASS BGR).
     /// </summary>
-    public Color GlowColor { get; set; } = System.Drawing.Color.FromArgb(0xFF, 0xDD, 0x00); // &H00DDFF& in ASS BGR
+    public Color GlowColor { get; set; } = Color.FromArgb(0xFF, 0xDD, 0x00); // &H00DDFF& in ASS BGR
 
     /// <summary>
     /// Color used for the active word's primary color (\1c). Default white.
     /// </summary>
-    public Color ActiveWordColor { get; set; } = System.Drawing.Color.FromArgb(0xFF, 0xFF, 0xFF);
+    public Color ActiveWordColor { get; set; } = Color.FromArgb(0xFF, 0xFF, 0xFF);
 
     /// <summary>
     /// Color used for inactive words' primary color (\1c). Default dim gray.
@@ -70,7 +67,7 @@ public class AdvancedEffectFancyKaraoke : IAdvancedEffectDisplay
     private static string ToAssColor(Color color) => $"&H{color.B:X2}{color.G:X2}{color.R:X2}&";
 
     public List<SubtitleLineViewModel> ApplyEffect(
-        string header, List<SubtitleLineViewModel> subtitles, int width, int height, WavePeakData wavePeaks)
+        string header, List<SubtitleLineViewModel> subtitles, int width, int height, WavePeakData? wavePeaks)
     {
         var result = new List<SubtitleLineViewModel>();
         var sb = new StringBuilder();
@@ -361,7 +358,7 @@ public class AdvancedEffectFancyKaraoke : IAdvancedEffectDisplay
         string rawActive = segments[activeIdx].Text;
         string after = string.Concat(segments.Skip(activeIdx + 1).Select(s => s.Text));
         string active = rawActive.Trim();
-        string leadingSpaces = rawActive.Substring(0,rawActive.Length - rawActive.TrimStart().Length);
+        string leadingSpaces = rawActive.Substring(0, rawActive.Length - rawActive.TrimStart().Length);
         string trailingSpaces = rawActive.Substring(rawActive.TrimEnd().Length);
         return (before + leadingSpaces, active, trailingSpaces + after);
     }
@@ -392,7 +389,7 @@ public class AdvancedEffectFancyKaraoke : IAdvancedEffectDisplay
                 // consume the rest as plain text to guarantee the scan terminates.
                 pos = text.Length;
             }
-            string plainText = text.Substring(textStart,pos-textStart);
+            string plainText = text.Substring(textStart, pos - textStart);
             if (tags.Length > 0 || !string.IsNullOrEmpty(plainText))
             {
                 result.Add((tags.ToString(), plainText));
@@ -408,12 +405,11 @@ public class AdvancedEffectFancyKaraoke : IAdvancedEffectDisplay
         {
             return false;
         }
-        int b = Convert.ToInt32(hex.Substring(0,2), 16);
-        int g = Convert.ToInt32(hex.Substring(2,2), 16);
-        int r = Convert.ToInt32(hex.Substring(4,2), 16);
+        int b = Convert.ToInt32(hex.Substring(0, 2), 16);
+        int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        int r = Convert.ToInt32(hex.Substring(4, 2), 16);
         return Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)) > 40;
     }
 }
 
 }
-

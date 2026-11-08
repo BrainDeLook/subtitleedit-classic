@@ -27,7 +27,7 @@ namespace Nikse.SubtitleEdit.Forms.BeautifyTimeCodes
         private int _changeAt = -1, _previewAudioTrack;
         private bool _previewReady, _previewDirty, _syncPreviewWave, _previewCloseRequested, _extractingExact;
         private bool PreviewRu => (Configuration.Settings.General.Language ?? "").StartsWith("ru", StringComparison.OrdinalIgnoreCase);
-        private string P(string ru, string en) => PreviewRu ? ru : en;
+        private string P(string ru, string en) => Nikse.SubtitleEdit.Logic.ClassicLocalization.Text(ru,en);
         private static AudioVisualizer PreviewWave(Color color) => new AudioVisualizer { ReadOnlyView = true, Dock = DockStyle.Fill, Locked = true, AllowNewSelection = false, ShowGridLines = true, ShowWaveform = true, BackgroundColor = Color.FromArgb(24,24,24), Color = Color.LimeGreen, SelectedColor = Color.YellowGreen, ParagraphColor = color, TextColor = Color.White, CursorColor = Color.OrangeRed, GridColor = Color.FromArgb(60,60,60), TextSize = 9 };
 
         private void InitializeLivePreview(WavePeakData peaks, int audioTrack)

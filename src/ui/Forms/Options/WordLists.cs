@@ -26,6 +26,9 @@ namespace Nikse.SubtitleEdit.Forms.Options
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
+            ConfigureWordListNavigation(listViewNames, () => ButtonRemoveNameEtcClick(null, EventArgs.Empty));
+            ConfigureWordListNavigation(listBoxUserWordLists, () => ButtonRemoveUserWordClick(null, EventArgs.Empty));
+            ConfigureWordListNavigation(listBoxOcrFixList, () => ButtonRemoveOcrFixClick(null, EventArgs.Empty));
             UiUtil.FixFonts(this);
 
             var language = LanguageSettings.Current.Settings;
@@ -47,6 +50,12 @@ namespace Nikse.SubtitleEdit.Forms.Options
             buttonOK.Text = LanguageSettings.Current.General.Ok;
             buttonCancel.Text = LanguageSettings.Current.General.Cancel;
 
+            var regexRules = new Button { Text = Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Regex-правила…", "Regex rules…"), Left = listBoxOcrFixList.Left, Top = buttonAddOcrFix.Top, Width = listBoxOcrFixList.Width, Anchor = AnchorStyles.Bottom | AnchorStyles.Left };
+            regexRules.Click += (sender, args) => { LoadOcrFixList(false); if (_ocrFixReplaceList == null) return; using (var form = new ClassicOcrRegexRulesForm(_ocrFixReplaceList)) form.ShowDialog(this); LoadOcrFixList(true); };
+            groupBoxOcrFixList.Controls.Add(regexRules);
+            var removed=new Button{Name="classicRemovedDictionaryWords",Text=Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Исключённые слова…","Removed dictionary words…"),Left=listBoxUserWordLists.Left,Top=listBoxUserWordLists.Top,Width=listBoxUserWordLists.Width,Height=25,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right};
+            listBoxUserWordLists.Top+=29;listBoxUserWordLists.Height-=29;groupBoxUserWordList.Controls.Add(removed);
+            removed.Click+=(sender,e)=>{var selected=GetCurrentWordListLanguage();if(selected==null)return;using(var form=new ClassicRemovedWordsForm(selected))form.ShowDialog(this);};
             InitComboBoxWordListLanguages();
             labelStatus.Text = string.Empty;
 
@@ -55,6 +64,45 @@ namespace Nikse.SubtitleEdit.Forms.Options
             textBoxNamesOnline.Text = wordListSettings.NamesUrl;
 
             Text = LanguageSettings.Current.Settings.WordLists;
+        }
+
+        private void ConfigureWordListNavigation(Control control, Action remove)
+        {
+            control.KeyPress += (sender, args) =>
+            {
+                if (char.IsControl(args.KeyChar)) return;
+                args.Handled = true;
+                if ((DateTime.UtcNow - _listBoxSearchStringLastUsed).TotalMilliseconds > 1800) _listBoxSearchString = string.Empty;
+                _listBoxSearchString += args.KeyChar;
+                _listBoxSearchStringLastUsed = DateTime.UtcNow;
+                if (control is ListView view) FindAndSelectListViewItem(view);
+                else
+                {
+                    var list = (ListBox)control;
+                    for (var index = 0; index < list.Items.Count; index++)
+                        if (Convert.ToString(list.Items[index]).StartsWith(_listBoxSearchString, StringComparison.CurrentCultureIgnoreCase)) { list.ClearSelected(); list.SelectedIndex = index; break; }
+                }
+            };
+            var menu = new ContextMenuStrip();
+            menu.Items.Add(LanguageSettings.Current.Settings.Remove, null, (sender, args) => remove());
+            control.ContextMenuStrip = menu;
+            control.MouseDown += (sender, args) =>
+            {
+                if (args.Button != MouseButtons.Right) return;
+                if (control is ListView view)
+                {
+                    var item = view.GetItemAt(args.X, args.Y);
+                    if (item != null && !item.Selected) { view.SelectedItems.Clear(); item.Selected = true; }
+                    menu.Items[0].Enabled = view.SelectedItems.Count > 0;
+                }
+                else
+                {
+                    var list = (ListBox)control; var index = list.IndexFromPoint(args.Location);
+                    if (index >= 0 && !list.GetSelected(index)) { list.ClearSelected(); list.SetSelected(index, true); }
+                    menu.Items[0].Enabled = list.SelectedItems.Count > 0;
+                }
+            };
+            control.Disposed += (sender, args) => menu.Dispose();
         }
 
         private void InitComboBoxWordListLanguages()
@@ -259,6 +307,7 @@ namespace Nikse.SubtitleEdit.Forms.Options
 
         private void LoadUserWords(string language, bool reloadListBox)
         {
+            Nikse.SubtitleEdit.Logic.SpellCheck.ClassicRemovedDictionaryWords.Refresh(language);
             _userWordList = new List<string>();
             Utilities.LoadUserWordList(_userWordList, language);
             _userWordList.Sort();
@@ -544,13 +593,7 @@ namespace Nikse.SubtitleEdit.Forms.Options
                             return;
                         }
 
-                        doc.DocumentElement.RemoveAll();
-                        foreach (var word in words)
-                        {
-                            XmlNode node = doc.CreateElement("word");
-                            node.InnerText = word;
-                            doc.DocumentElement?.AppendChild(node);
-                        }
+                        UserDictionaryXml.WriteWords(doc,words);
                         doc.Save(userWordFileName);
                         LoadUserWords(language, false); // reload
                         buttonRemoveUserWord.Enabled = false;
@@ -677,38 +720,7 @@ namespace Nikse.SubtitleEdit.Forms.Options
 
         private void listViewNames_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Escape ||
-                e.KeyCode == Keys.Tab ||
-                e.KeyCode == Keys.Return ||
-                e.KeyCode == Keys.Enter ||
-                e.KeyCode == Keys.Down ||
-                e.KeyCode == Keys.Up ||
-                e.KeyCode == Keys.PageDown ||
-                e.KeyCode == Keys.PageUp ||
-                e.KeyCode == Keys.None ||
-                e.KeyCode == UiUtil.HelpKeys ||
-                e.KeyCode == Keys.Home ||
-                e.KeyCode == Keys.End)
-            {
-                return;
-            }
-
-            e.SuppressKeyPress = true;
-            if (TimeSpan.FromTicks(_listBoxSearchStringLastUsed.Ticks).TotalMilliseconds + 1800 <
-                TimeSpan.FromTicks(Stopwatch.GetTimestamp()).TotalMilliseconds)
-            {
-                _listBoxSearchString = string.Empty;
-            }
-
-            if (e.KeyCode == Keys.Delete)
-            {
-                ButtonRemoveNameEtcClick(null, null);
-                return;
-            }
-
-            _listBoxSearchString += e.KeyCode.ToString();
-            _listBoxSearchStringLastUsed = DateTime.UtcNow;
-            FindAndSelectListViewItem(sender as ListView);
+            if (e.KeyCode == Keys.Delete) { e.SuppressKeyPress = true; ButtonRemoveNameEtcClick(sender, e); }
         }
 
         private void FindAndSelectListViewItem(ListView listView)
@@ -849,74 +861,12 @@ namespace Nikse.SubtitleEdit.Forms.Options
 
         private void listBoxUserWordLists_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Escape ||
-                e.KeyCode == Keys.Tab ||
-                e.KeyCode == Keys.Return ||
-                e.KeyCode == Keys.Enter ||
-                e.KeyCode == Keys.Down ||
-                e.KeyCode == Keys.Up ||
-                e.KeyCode == Keys.PageDown ||
-                e.KeyCode == Keys.PageUp ||
-                e.KeyCode == Keys.None ||
-                e.KeyCode == UiUtil.HelpKeys ||
-                e.KeyCode == Keys.Home ||
-                e.KeyCode == Keys.End)
-            {
-                return;
-            }
-
-            e.SuppressKeyPress = true;
-            if (TimeSpan.FromTicks(_listBoxSearchStringLastUsed.Ticks).TotalMilliseconds + 1800 <
-                TimeSpan.FromTicks(Stopwatch.GetTimestamp()).TotalMilliseconds)
-            {
-                _listBoxSearchString = string.Empty;
-            }
-
-            if (e.KeyCode == Keys.Delete)
-            {
-                ButtonRemoveUserWordClick(null, null);
-                return;
-            }
-
-            _listBoxSearchString += e.KeyCode.ToString();
-            _listBoxSearchStringLastUsed = DateTime.UtcNow;
-            FindAndSelectListViewItem(sender as ListView);
+            if (e.KeyCode == Keys.Delete) { e.SuppressKeyPress = true; ButtonRemoveUserWordClick(sender, e); }
         }
 
         private void listBoxOcrFixList_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Escape ||
-                e.KeyCode == Keys.Tab ||
-                e.KeyCode == Keys.Return ||
-                e.KeyCode == Keys.Enter ||
-                e.KeyCode == Keys.Down ||
-                e.KeyCode == Keys.Up ||
-                e.KeyCode == Keys.PageDown ||
-                e.KeyCode == Keys.PageUp ||
-                e.KeyCode == Keys.None ||
-                e.KeyCode == UiUtil.HelpKeys ||
-                e.KeyCode == Keys.Home ||
-                e.KeyCode == Keys.End)
-            {
-                return;
-            }
-
-            e.SuppressKeyPress = true;
-            if (TimeSpan.FromTicks(_listBoxSearchStringLastUsed.Ticks).TotalMilliseconds + 1800 <
-                TimeSpan.FromTicks(Stopwatch.GetTimestamp()).TotalMilliseconds)
-            {
-                _listBoxSearchString = string.Empty;
-            }
-
-            if (e.KeyCode == Keys.Delete)
-            {
-                ButtonRemoveOcrFixClick(null, null);
-                return;
-            }
-
-            _listBoxSearchString += e.KeyCode.ToString();
-            _listBoxSearchStringLastUsed = DateTime.UtcNow;
-            FindAndSelectListViewItem(sender as ListView);
+            if (e.KeyCode == Keys.Delete) { e.SuppressKeyPress = true; ButtonRemoveOcrFixClick(sender, e); }
         }
     }
 }

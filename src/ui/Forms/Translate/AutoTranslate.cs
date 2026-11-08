@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Controls;
+﻿using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Translate;
@@ -37,9 +37,15 @@ namespace Nikse.SubtitleEdit.Forms.Translate
         private CancellationTokenSource _cancellationTokenSource;
 
         public AutoTranslate(Subtitle subtitle, Subtitle targetLines, string title, Encoding encoding)
+            : this(subtitle, targetLines, title, encoding, null)
+        {
+        }
+
+        public AutoTranslate(Subtitle subtitle, Subtitle targetLines, string title, Encoding encoding, int[] selectedRows)
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
+            InitializeClassicTranslation54();
             UiUtil.FixFonts(this);
 
             Text = LanguageSettings.Current.Main.VideoControls.AutoTranslate;
@@ -86,6 +92,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
             _subtitle = new Subtitle(subtitle, false);
             _encoding = encoding;
+            _classicInitialSelection = selectedRows?.ToArray();
 
             InitializeAutoTranslatorEngines();
 
@@ -112,6 +119,12 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             AutoTranslate_Resize(null, null);
             UpdateTranslation();
             MergeAndSplitHelper.MergeSplitProblems = false;
+            if (_classicInitialSelection != null)
+            {
+                buttonTranslate.Width = Math.Max(buttonTranslate.Width, 145);
+                buttonTranslate.Text = ClassicSelectedTranslateButtonText;
+                AutoTranslate_Resize(null, null);
+            }
         }
 
         private void InitializeAutoTranslatorEngines()
@@ -677,20 +690,22 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             }
         }
 
-        private void SetupLanguageSettings()
+        private void SetupLanguageSettings(string preferredSource = null, string preferredTarget = null)
         {
             var sourceLanguages = _autoTranslator.GetSupportedSourceLanguages();
             FillComboWithLanguages(comboBoxSource, sourceLanguages);
             var sourceLanguageIsoCode = EvaluateDefaultSourceLanguageCode(_encoding, _subtitle, sourceLanguages);
-            SelectLanguageCode(comboBoxSource, sourceLanguageIsoCode);
+            SelectLanguageCode(comboBoxSource, preferredSource ?? sourceLanguageIsoCode);
 
             FillComboWithLanguages(comboBoxTarget, _autoTranslator.GetSupportedTargetLanguages());
             var targetLanguageIsoCode = EvaluateDefaultTargetLanguageCode(sourceLanguageIsoCode);
-            SelectLanguageCode(comboBoxTarget, targetLanguageIsoCode);
+            SelectLanguageCode(comboBoxTarget, preferredTarget ?? targetLanguageIsoCode);
         }
 
         public static void SelectLanguageCode(NikseComboBox comboBox, string languageIsoCode)
         {
+            var exact = comboBox.Items.OfType<TranslationPair>().FirstOrDefault(item => string.Equals(item.Code, languageIsoCode, StringComparison.OrdinalIgnoreCase));
+            if (exact != null) { comboBox.SelectedItem = exact; return; }
             var i = 0;
             var threeLetterLanguageCode = Iso639Dash2LanguageCode.GetThreeLetterCodeFromTwoLetterCode(languageIsoCode);
 
@@ -923,23 +938,23 @@ namespace Nikse.SubtitleEdit.Forms.Translate
         {
             if (_translationInProgress)
             {
-                _translationInProgress = false;
                 _cancellationTokenSource.Cancel();
                 _breakTranslation = true;
                 buttonTranslate.Enabled = false;
-                buttonStrategy.Enabled = true;
-                buttonOK.Enabled = true;
-                buttonCancel.Enabled = true;
                 Application.DoEvents();
                 buttonOK.Refresh();
                 _singleLineMode = false;
                 return;
             }
 
+            if (_classicInitialSelection != null && !_singleLineMode)
+            {
+                await TranslateClassicSelection(_classicSelectedTranslationView);
+                return;
+            }
+
             if (!EnsureClassicTranslatorReady()) { _singleLineMode = false; return; }
 
-            _translationInProgress = true;
-            _cancellationTokenSource = new CancellationTokenSource();
             _autoTranslator = GetCurrentEngine();
             var engineType = _autoTranslator.GetType();
 
@@ -959,9 +974,11 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 return;
             }
 
-            try { SaveSettings(engineType); }
+            try { SaveSettings(engineType); _autoTranslator.Initialize(); }
             catch(Exception error){_translationInProgress=false;_singleLineMode=false;MessageBox.Show(this,error.Message,Text);return;}
 
+            _translationInProgress = true;
+            _cancellationTokenSource = new CancellationTokenSource();
             buttonStrategy.Enabled = false;
             buttonOK.Enabled = false;
             buttonCancel.Enabled = false;
@@ -972,8 +989,6 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             progressBar1.Maximum = TranslatedSubtitle.Paragraphs.Count;
             progressBar1.Visible = true;
             labelPleaseWait.Visible = true;
-
-            _autoTranslator.Initialize();
 
             var timerUpdate = new Timer();
             timerUpdate.Interval = 1500;
@@ -996,8 +1011,8 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 TwoLetterIsoTarget = target.TwoLetterIsoLanguageName;
                 var mergeErrorCount = 0;
 
-                Configuration.Settings.Tools.GoogleTranslateLastSourceLanguage = source.TwoLetterIsoLanguageName ?? source.Code;
-                Configuration.Settings.Tools.GoogleTranslateLastTargetLanguage = target.TwoLetterIsoLanguageName ?? target.Code;
+                Configuration.Settings.Tools.GoogleTranslateLastSourceLanguage = source.Code ?? source.TwoLetterIsoLanguageName;
+                Configuration.Settings.Tools.GoogleTranslateLastTargetLanguage = target.Code ?? target.TwoLetterIsoLanguageName;
                 try
                 {
                     var start = subtitleListViewTarget.SelectedIndex >= 0 ? subtitleListViewTarget.SelectedIndex : 0;
@@ -1097,6 +1112,8 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             buttonTranslate.Enabled = true;
             buttonTranslate.Text = LanguageSettings.Current.GoogleTranslate.Translate;
             _translationInProgress = false;
+            _cancellationTokenSource.Dispose();
+            _cancellationTokenSource = null;
 
             timerUpdate.Dispose();
             _translationProgressDirty = true;
@@ -1473,8 +1490,10 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private async void nikseComboBoxEngine_SelectedIndexChanged(object sender, EventArgs e)
         {
+            var source = (comboBoxSource.SelectedItem as TranslationPair)?.Code;
+            var target = (comboBoxTarget.SelectedItem as TranslationPair)?.Code;
             SetAutoTranslatorEngine();
-            SetupLanguageSettings();
+            SetupLanguageSettings(source, target);
 
             if (GetCurrentEngine().GetType() == typeof(OllamaTranslate))
             {
@@ -1625,7 +1644,10 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                 var index = listViewSelected.SelectedItems[0].Index;
                 if (index < listViewOther.Items.Count)
                 {
-                    listViewOther.SelectIndexAndEnsureVisible(index, false);
+                    listViewOther.BeginUpdate();
+                    listViewOther.SelectedIndices.Clear();
+                    foreach (int selectedIndex in listViewSelected.SelectedIndices) if (selectedIndex < listViewOther.Items.Count) listViewOther.Items[selectedIndex].Selected = true;
+                    listViewOther.EndUpdate();
                     listViewSelected.FocusedItem = listViewSelected.Items[index];
                     if (first >= 0)
                     {
@@ -1736,7 +1758,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private void buttonStrategy_Click(object sender, EventArgs e)
         {
-            if(GetCurrentEngine() is ClassicNewTranslator classic){try{SaveSettings(classic.GetType());using(var form=new ClassicTranslationForm(classic.Id))form.ShowDialog(this);SetAutoTranslatorEngine();}catch(Exception error){MessageBox.Show(this,error.Message,Text);}return;}
+            if(GetCurrentEngine() is ClassicNewTranslator classic){try{SaveSettings(classic.GetType());using(var form=new ClassicTranslationForm(classic.Id, _subtitle))form.ShowDialog(this);SetAutoTranslatorEngine();}catch(Exception error){MessageBox.Show(this,error.Message,Text);}return;}
 
             using (var form = new AutoTranslateSettings(_autoTranslator.GetType(), _autoTranslator.Name))
             {
@@ -1841,6 +1863,15 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private void AutoTranslate_Shown(object sender, EventArgs e)
         {
+            if (_classicInitialSelection != null)
+            {
+                foreach (var view in new[] { subtitleListViewSource, subtitleListViewTarget })
+                {
+                    view.SelectedIndices.Clear();
+                    foreach (var index in _classicInitialSelection) view.Items[index].Selected = true;
+                    view.EnsureVisible(_classicInitialSelection[0]);
+                }
+            }
             buttonTranslate.Focus();
         }
 

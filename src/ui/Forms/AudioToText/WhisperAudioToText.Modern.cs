@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.AudioToText;
+﻿using Nikse.SubtitleEdit.Core.AudioToText;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Logic;
@@ -180,7 +180,9 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             }
             var installed = File.Exists(ClassicSpeechCatalog.Executable(engine, _modernOptions.Variant));
             var model = comboBoxModels.SelectedItem as SpeechModel;
-            var modelInstalled = model != null && File.Exists(ClassicSpeechCatalog.ModelPath(engine, model));
+            var custom=engine.Family=="qwen" && !string.IsNullOrEmpty(_modernOptions.CustomQwenModel);
+            comboBoxModels.Enabled=!custom;
+            var modelInstalled = custom?File.Exists(_modernOptions.CustomQwenModel):model != null && File.Exists(ClassicSpeechCatalog.ModelPath(engine, model));
             _modernStatus.Text = "v" + ClassicSpeechCatalog.PinnedVersion(engine) + " · " + _modernOptions.Variant + " · " + ClassicSpeechSettings.L(installed ? "движок установлен" : "движок не скачан", installed ? "engine installed" : "engine not downloaded") +
                 " · " + (engine.Family == "whisperx" ? ClassicSpeechSettings.L("модель загружается при запуске", "model loads on first use") :
                     ClassicSpeechSettings.L(modelInstalled ? "модель установлена" : "модель не скачана", modelInstalled ? "model installed" : "model not downloaded"));
@@ -199,7 +201,12 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
         {
             if(engine.Family=="compatible-api"){(engine.Backend=="api"?ClassicCompatibleAsrSettings.Load():ClassicCloudAsrSettings.Load(engine.Backend).Api).Validate();return;}
             await ClassicSpeechDownload.EnsureRuntimeAsync(engine, _modernOptions.Variant, cancel, progress);
-            await ClassicSpeechDownload.EnsureModelAsync(engine, model, cancel, progress);
+            if(engine.Family=="qwen" && !string.IsNullOrEmpty(_modernOptions.CustomQwenModel))
+            {
+                var reason=Qwen3AsrCppModelValidator.GetIncompatibilityReason(_modernOptions.CustomQwenModel);
+                if(reason!=null)throw new System.IO.InvalidDataException(reason);
+            }
+            else await ClassicSpeechDownload.EnsureModelAsync(engine, model, cancel, progress);
             var aligner = ModernAligner(engine);
             if (aligner != null) await ClassicSpeechDownload.EnsureModelAsync(engine, aligner, cancel, progress);
             await ClassicSpeechExtras.EnsureAsync(engine, _modernOptions, cancel, progress);

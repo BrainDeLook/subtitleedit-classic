@@ -6,6 +6,8 @@ namespace Nikse.SubtitleEdit.Logic.ClassicEffects
     public sealed class SubtitleLineViewModel
     {
         private readonly Paragraph _paragraph;
+        public string MarginV { get => _paragraph.MarginV; set => _paragraph.MarginV = value; }
+        public string Style { get => _paragraph.Extra; set => _paragraph.Extra = value; }
         public string Text {get;set;}=string.Empty;
         public TimeSpan StartTime {get;set;}
         public TimeSpan EndTime {get;set;}

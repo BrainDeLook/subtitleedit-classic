@@ -2,6 +2,9 @@
 {
     public class ImageSplitterItem
     {
+        public int SpacePixels { get; set; }
+        public int? Baseline { get; set; }
+        public int HeightAboveBaseline => Baseline.HasValue && NikseBitmap != null ? System.Math.Min(NikseBitmap.Height, Baseline.Value - Top) : NikseBitmap?.Height ?? 0;
         public int X { get; set; }
         public int Y { get; set; }
         public int ParentY { get; set; }

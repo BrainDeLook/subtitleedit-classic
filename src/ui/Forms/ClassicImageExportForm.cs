@@ -33,7 +33,7 @@ namespace Nikse.SubtitleEdit.Forms
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 265)); root.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); root.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));
             var settings = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, AutoScroll = true };
             settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 22)); settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28)); settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 22)); settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
-            _format.Items.AddRange(new object[] { "IMSC 1.1 image (TTML + PNG)", "BDN XML + RGBA PNG", "BDN XML + 8-bit PNG", "DVD SUP (PAL/NTSC)" }); _format.SelectedIndex = 0;
+            _format.Items.AddRange(new object[] { "IMSC 1.1 image (TTML + PNG)", "BDN XML + RGBA PNG", "BDN XML + 8-bit PNG", "DVD SUP (PAL/NTSC)", "D-Cinema SMPTE 2014 MXF (images)", "D-Cinema SMPTE 2014 PNG" }); _format.SelectedIndex = 0;
             _effect.DataSource = Enum.GetValues(typeof(TextEffectPreset)); _stereo.DataSource = Enum.GetValues(typeof(Export3DMode));
             Add(settings, 0, 0, L("Формат", "Format"), _format); Add(settings, 2, 0, L("Эффект", "Effect"), _effect);
             Add(settings, 0, 1, L("Ширина", "Width"), _width); Add(settings, 2, 1, L("Высота", "Height"), _height);

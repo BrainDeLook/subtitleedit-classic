@@ -1024,6 +1024,8 @@ namespace Nikse.SubtitleEdit.Core.Common
             return Color.FromArgb(_bitmapData[_pixelAddress + 3], _bitmapData[_pixelAddress + 2], _bitmapData[_pixelAddress + 1], _bitmapData[_pixelAddress]);
         }
 
+        public ReadOnlySpan<byte> GetPixelData() => _bitmapData;
+
         public byte[] GetPixelColors(int x, int y)
         {
             _pixelAddress = (x * 4) + (y * _widthX4);
@@ -1035,6 +1037,9 @@ namespace Nikse.SubtitleEdit.Core.Common
             _pixelAddress += 4;
             return Color.FromArgb(_bitmapData[_pixelAddress + 3], _bitmapData[_pixelAddress + 2], _bitmapData[_pixelAddress + 1], _bitmapData[_pixelAddress]);
         }
+
+        public void SetAlpha(int x, int y, byte alpha)
+        { var color = GetPixel(x, y); SetPixel(x, y, Color.FromArgb(alpha, color.R, color.G, color.B)); }
 
         public void SetPixel(int x, int y, Color color)
         {

@@ -251,6 +251,19 @@ namespace Nikse.SubtitleEdit.Core.ContainerFormats.Mp4
                 VttcSubtitle = merged;
             }
 
+            if(Moov?.Mvhd?.TimeScale>0)
+            {
+                foreach(var track in Moov.Tracks)
+                {
+                    var entries=track.Edts?.Elst?.Entries;var paragraphs=track.Mdia?.Minf?.Stbl?.Paragraphs;
+                    if(entries==null || paragraphs==null || track.Mdia.IsVobSubSubtitle || track.Mdia.Mdhd==null || track.Mdia.Mdhd.TimeScale==0)continue;
+                    double empty=0,media=0;
+                    foreach(var edit in entries){if(edit.MediaTime==-1)empty+=edit.SegmentDuration*1000d/Moov.Mvhd.TimeScale;else{media=edit.MediaTime*1000d/track.Mdia.Mdhd.TimeScale;break;}}
+                    var offset=empty-media;if(Math.Abs(offset)<.001)continue;
+                    foreach(var cue in paragraphs){cue.StartTime.TotalMilliseconds=Math.Max(0,cue.StartTime.TotalMilliseconds+offset);cue.EndTime.TotalMilliseconds+=offset;}
+                    paragraphs.RemoveAll(cue=>cue.EndTime.TotalMilliseconds<=0);
+                }
+            }
             CheckForTrunCea608();
         }
 

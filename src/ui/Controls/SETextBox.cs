@@ -87,6 +87,7 @@ namespace Nikse.SubtitleEdit.Controls
             textBox.Leave += (sender, args) => BackColor = SystemColors.WindowFrame;
             textBox.TextChanged += (sender, args) => OnTextChanged(args);
             textBox.KeyDown += (sender, args) => OnKeyDown(args);
+            textBox.KeyPress += (sender,args)=>OnKeyPress(args);
             textBox.MouseClick += (sender, args) => OnMouseClick(args);
             textBox.Enter += (sender, args) => OnEnter(args);
             textBox.KeyUp += (sender, args) => OnKeyUp(args);

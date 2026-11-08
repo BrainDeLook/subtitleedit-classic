@@ -1,0 +1,3921 @@
+{
+  "date": "2026-11-07",
+  "reference_tag": "v5.4.0",
+  "reference_commit": "57273b2",
+  "classic_head": "238754413",
+  "classic_local_build": "4.0.28.57",
+  "entry_count": 334,
+  "unique_feature_count": null,
+  "status_counts": {
+    "classic_scope_exclusion": 44,
+    "implementation_recorded": 150,
+    "audit_finding_addressed": 98,
+    "classic_equivalent": 29,
+    "targeted_case_reviewed": 13
+  },
+  "note": "Pinned v5.4.0 scope. Repeated summary/beta/RC entries are retained. The 33 findings are implemented with recorded evidence; seven targeted cases are reviewed with explicit Classic equivalents and validation limits. implementation_recorded entries are not individually re-certified. See CLASSIC_54_COMPLETION.md and localization coverage.",
+  "items": [
+    {
+      "id": "54-012",
+      "line": 12,
+      "version": "v5.4.0",
+      "area": "Look and feel",
+      "item": "A more compact and polished UI - almost all windows redesigned in one modern editor look, with live theme switching",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-013",
+      "line": 13,
+      "version": "v5.4.0",
+      "area": "Look and feel",
+      "item": "New SVG icons in all themes and the About window, sharp at any display scale",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-014",
+      "line": 14,
+      "version": "v5.4.0",
+      "area": "Look and feel",
+      "item": "New themes: Nord, Midnight Cinema and Sakura - Pastel and Nord also get their own icon sets",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-015",
+      "line": 15,
+      "version": "v5.4.0",
+      "area": "Look and feel",
+      "item": "Visual theme picker with preview cards (Settings > Appearance) and a \"Cycle theme\" shortcut",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-016",
+      "line": 16,
+      "version": "v5.4.0",
+      "area": "Look and feel",
+      "item": "Background art for the video player and waveform (new art for the Classic theme too)",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-017",
+      "line": 17,
+      "version": "v5.4.0",
+      "area": "Look and feel",
+      "item": "One field look for text boxes, combo boxes and lists; UI font size in px, followed by dialog text",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-018",
+      "line": 18,
+      "version": "v5.4.0",
+      "area": "Look and feel",
+      "item": "More consistent dialogs: Escape, button order (Cancel left, OK right), error icons; layout thumbnails in theme colors",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-019",
+      "line": 19,
+      "version": "v5.4.0",
+      "area": "Look and feel",
+      "item": "Full screen video controls fade in over the video and are bigger, also on native players",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-022",
+      "line": 22,
+      "version": "v5.4.0",
+      "area": "New features",
+      "item": "Sync subtitle to audio (ffsubsync-style offset and frame rate detection) and Sync audio track with live preview",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-023",
+      "line": 23,
+      "version": "v5.4.0",
+      "area": "New features",
+      "item": "YouTube timed text (.ytt/srv3): pens, positions, preview and a styles window",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-024",
+      "line": 24,
+      "version": "v5.4.0",
+      "area": "New features",
+      "item": "Export D-Cinema SMPTE 2014 as MXF track file, and Excel dialogue list (.xlsx) with chosen columns",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-025",
+      "line": 25,
+      "version": "v5.4.0",
+      "area": "New features",
+      "item": "Check for updates: install and restart (Windows installer, Linux tarball, macOS)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-026",
+      "line": 26,
+      "version": "v5.4.0",
+      "area": "New features",
+      "item": "Custom error rules (regex), auto-wrap while typing, and reload/ask when the file is changed by another program",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-027",
+      "line": 27,
+      "version": "v5.4.0",
+      "area": "New features",
+      "item": "Record speech to the text box via microphone (off by default)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-028",
+      "line": 28,
+      "version": "v5.4.0",
+      "area": "New features",
+      "item": "Bookmarks list: import and export",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-029",
+      "line": 29,
+      "version": "v5.4.0",
+      "area": "New features",
+      "item": "Many new shortcuts: split line and play, move lines one frame, push-neighbour \"Move start/end X ms\", copy plain text",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F14"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-032",
+      "line": 32,
+      "version": "v5.4.0",
+      "area": "Video player and waveform",
+      "item": "Optional playback speed, previous/next subtitle and toggle subtitles buttons",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-033",
+      "line": 33,
+      "version": "v5.4.0",
+      "area": "Video player and waveform",
+      "item": "FFmpeg player subtitle overlay closer to the mpv preview; faster layout 14 timeline",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-034",
+      "line": 34,
+      "version": "v5.4.0",
+      "area": "Video player and waveform",
+      "item": "Waveform: ASSA lines with the same times move and resize together; pause when stepping one frame",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-037",
+      "line": 37,
+      "version": "v5.4.0",
+      "area": "Auto-translate and AI",
+      "item": "Source and translation side by side, translate selected rows together with context, find and replace in the translation column",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-038",
+      "line": 38,
+      "version": "v5.4.0",
+      "area": "Auto-translate and AI",
+      "item": "New Opper engine, Bing Region field, llama.cpp CPU/Vulkan builds on Linux, and Generate with AI for the synopsis",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-041",
+      "line": 41,
+      "version": "v5.4.0",
+      "area": "OCR",
+      "item": "Optional video preview in the OCR window, Video OCR of chosen time ranges, keep existing lines in video OCR",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-042",
+      "line": 42,
+      "version": "v5.4.0",
+      "area": "OCR",
+      "item": "New llama.cpp OCR models: LightOnOCR-3 (4B/0.8B), LFM3-VL 2B and QARI-OCR (Arabic)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-043",
+      "line": 43,
+      "version": "v5.4.0",
+      "area": "OCR",
+      "item": "nOCR: many recognition improvements for Latin and Cyrillic; fixed OCR replace list rules in 10 languages",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F01"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-046",
+      "line": 46,
+      "version": "v5.4.0",
+      "area": "Subtitle formats and export",
+      "item": "SubRip reader rewritten: tolerant of damaged files, 2.6-12x faster; parser crashes found by fuzzing fixed",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-047",
+      "line": 47,
+      "version": "v5.4.0",
+      "area": "Subtitle formats and export",
+      "item": "Image-based export draws ASSA lines with their own style and many more ASSA tags (also in Batch convert and seconv)",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F05"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-048",
+      "line": 48,
+      "version": "v5.4.0",
+      "area": "Subtitle formats and export",
+      "item": "Blu-ray sup: HDR (BT.2020 PQ) palette option and smarter palette split",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-049",
+      "line": 49,
+      "version": "v5.4.0",
+      "area": "Subtitle formats and export",
+      "item": "Remux video: CEA-608/708 as SEI captions in .mp4, caption time offset for .scc/.mcc",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-050",
+      "line": 50,
+      "version": "v5.4.0",
+      "area": "Subtitle formats and export",
+      "item": "iTunes Timed Text export presets and header template",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-053",
+      "line": 53,
+      "version": "v5.4.0",
+      "area": "ASSA",
+      "item": "ASSA draw: text and shapes, groups, in/out and loop animations, many new (also animated) clip arts",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F08"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-054",
+      "line": 54,
+      "version": "v5.4.0",
+      "area": "ASSA",
+      "item": "CapCut-style \"Apply advanced effect\" gallery with six new caption effects",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-055",
+      "line": 55,
+      "version": "v5.4.0",
+      "area": "ASSA",
+      "item": "Styles, properties, attachments, Set position and Set background redesigned; fonts from [Fonts] previewed",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F06",
+        "F09"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-058",
+      "line": 58,
+      "version": "v5.4.0",
+      "area": "Tools and editing",
+      "item": "Multiple replace works like SE4: categories, flat rule list with type-in row, \"Add rules\" window, edit in place",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-059",
+      "line": 59,
+      "version": "v5.4.0",
+      "area": "Tools and editing",
+      "item": "Spell check: remove words from the dictionary; editable word list regex",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-060",
+      "line": 60,
+      "version": "v5.4.0",
+      "area": "Tools and editing",
+      "item": "Batch convert: run batch-capable plugins, search box for functions, plain text options",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-061",
+      "line": 61,
+      "version": "v5.4.0",
+      "area": "Tools and editing",
+      "item": "Get plugins: search box and a bigger window",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-064",
+      "line": 64,
+      "version": "v5.4.0",
+      "area": "Translations and engines",
+      "item": "All language files synced with English; new Romanian and Croatian UI translations",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-065",
+      "line": 65,
+      "version": "v5.4.0",
+      "area": "Translations and engines",
+      "item": "Updated engines: Crisp ASR v0.8.50, llama.cpp b12110, CrispEmbed v0.17.14, audio.cpp v0.9.4, Qwen3 ASR v0.1.11, yt-dlp 2026.10.26 and Avalonia 12.1.5",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-074",
+      "line": 74,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Image-based export: draw ASSA lines with their own style (also in Batch convert and seconv)",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F05"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-075",
+      "line": 75,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Image-based export: support ASSA \\r, \\rStyle, \\fsp, \\blur, \\be, \\fscx, \\fscy, \\frz, underline and strikeout",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F05"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-076",
+      "line": 76,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Image-based export: an undrawable ASSA tag no longer drops the line's italic/bold/colour/font",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F05"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-077",
+      "line": 77,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Copy plain text keeps an empty line between lines (like SE4) - thx OmrSi",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-078",
+      "line": 78,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Fix Go to video position ignoring the video offset - thx accessallareas",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-079",
+      "line": 79,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Fix OCR to ASSA losing line breaks and tagging tall bottom text as middle - thx robinfire110",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-080",
+      "line": 80,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Fix Improve time codes preview playing the default audio track - thx VaLvOnAuTa1981",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-081",
+      "line": 81,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Update llama.cpp to b12110",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-082",
+      "line": 82,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Update CrispEmbed to v0.17.14",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-083",
+      "line": 83,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Update Whisper.cpp advanced-parameter help to 1.9.5 - thx GitGianluc",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F29"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-084",
+      "line": 84,
+      "version": "v5.4.0-rc4",
+      "area": "",
+      "item": "Update translations: new strings in all languages (machine translated, needs review)",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-090",
+      "line": 90,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "llama.cpp advanced translate: add Generate with AI button for the synopsis - thx fraternl",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-091",
+      "line": 91,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Hide the Actor column for formats that do not keep actors - thx accessallareas",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-092",
+      "line": 92,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Pause video when stepping one frame back/forward - thx accessallareas",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-093",
+      "line": 93,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Improve time codes: one prompt for missing models, no dead Download button - thx GitGianluc",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F31"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-094",
+      "line": 94,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Blu-ray sup: split the palette by need between two objects",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-095",
+      "line": 95,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Settings window opens faster",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-096",
+      "line": 96,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Fix Auto-translate accepting replies shifted and padded with \"...\" - thx fraternl",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-097",
+      "line": 97,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Fix Qwen3 ASR instant crash on Linux (engine v0.1.11) - thx JavierSanchezQ",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-098",
+      "line": 98,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Fix Cut video ignoring SMPTE timing - thx OmrSi",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-099",
+      "line": 99,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Fix long names cut off in Waveform toolbar items dialog - thx GitGianluc",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V06"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-100",
+      "line": 100,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Fix stacked images in About window cross-fade - thx GitGianluc",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-101",
+      "line": 101,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Update CrispASR to v0.8.50",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-102",
+      "line": 102,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Update Finnish translation - thx KarvaMaha",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-103",
+      "line": 103,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Update German translation - thx FunkyKnilch",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-104",
+      "line": 104,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Update Hungarian translation",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-105",
+      "line": 105,
+      "version": "v5.4.0-rc3",
+      "area": "",
+      "item": "Update Italian translation - thx GitGianluc",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-111",
+      "line": 111,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Auto-translate: translate selected rows together, with context - thx mmmsh-125",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-112",
+      "line": 112,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Auto-translate: find and replace in the translation column - thx mmmsh-125",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-113",
+      "line": 113,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Auto-translate: skip more music/lyric line layouts - thx lordvorkosigan1968-cloud",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F17"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-114",
+      "line": 114,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Blu-ray sup: add HDR (BT.2020 PQ) palette option - thx Victory61",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-115",
+      "line": 115,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Bookmarks list: add import and export",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-116",
+      "line": 116,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Source view: Ctrl+Enter (Cmd+Enter on macOS) applies changes - thx pdjdev",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-117",
+      "line": 117,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Add Croatian UI translation (machine draft, needs review) - thx lordvorkosigan1968-cloud",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-118",
+      "line": 118,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Update Avalonia to 12.1.5",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-119",
+      "line": 119,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Fix Auto-translate shifting translations when the engine merges two rows - thx mmmsh-125",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-120",
+      "line": 120,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Fix List errors time codes ignoring video offset and leading zero hours - thx accessallareas",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-121",
+      "line": 121,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Fix toolbar drop-downs hidden under undocked tool windows - thx GrampaWildWilly",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-122",
+      "line": 122,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Fix macOS Ctrl+click collapsing a multi-row selection",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-123",
+      "line": 123,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Fix SMPTE timing not being applied until refresh - thx OmrSi",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-124",
+      "line": 124,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Fix copy text shortcuts adding a trailing new line - thx OmrSi",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-125",
+      "line": 125,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Update Chinese Traditional translation - thx love80312",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-126",
+      "line": 126,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Update Italian translation - thx bovirus",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-127",
+      "line": 127,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-128",
+      "line": 128,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Update Korean translation - thx 12si27",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-129",
+      "line": 129,
+      "version": "v5.4.0-rc2",
+      "area": "",
+      "item": "Update Polish translation - thx potplayer-fanpack",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-135",
+      "line": 135,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "New SVG icons in all themes and the About window, sharp at any display scale",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-136",
+      "line": 136,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "New layout picker thumbnails drawn in theme colors, restyled spell check and change casing",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-137",
+      "line": 137,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Auto-translate: show source and translation side by side, with more room for text",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-138",
+      "line": 138,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Auto-translate: let CrispASR MADLAD use GPU builds - thx SMAP-git",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-139",
+      "line": 139,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Fix common errors: more compact rules with clearer examples",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-140",
+      "line": 140,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Improve Choose alignment, Go to line number and Command palette",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-141",
+      "line": 141,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "More consistent dialogs: Escape, button order, error icons",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-142",
+      "line": 142,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Save as: list favorite subtitle formats first - thx accessallareas",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F32"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-143",
+      "line": 143,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "More dialog text can now be translated",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-144",
+      "line": 144,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Fix \"Save as\" doubling the file extension on macOS (.srt.srt) - thx accessallareas",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-145",
+      "line": 145,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Fix OCR line breaks of separated top and bottom text with Auto-break - thx robinfire110",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-146",
+      "line": 146,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Fix error log entry from stopping mpv before it started - thx GrampaWildWilly",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-147",
+      "line": 147,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Fix Auto-translate changing the subtitle when no text is returned - thx Blackspirits",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-148",
+      "line": 148,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Fix Auto-translate losing language variants like pt-PT when switching provider - thx Blackspirits",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F18"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-149",
+      "line": 149,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-150",
+      "line": 150,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Update Polish translation - thx potplayer-fanpack",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-151",
+      "line": 151,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Update Portuguese translation - thx Blackspirits",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-152",
+      "line": 152,
+      "version": "v5.4.0-rc1",
+      "area": "",
+      "item": "Update Turkish translation - thx bilimiyorum",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-158",
+      "line": 158,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "FFmpeg player: subtitle overlay closer to the mpv preview (per-line alignment, inline colors, bold/italic, RTL, second subtitle style, opaque box, justify)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-159",
+      "line": 159,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "llama.cpp: pick CPU or Vulkan on Linux, switch builds from the engine settings - thx SMAP-git",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-160",
+      "line": 160,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Bing translate: add Region field for regional Azure resources, show the real token error",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-161",
+      "line": 161,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Classic theme: new video and waveform background art",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-162",
+      "line": 162,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Improve performance of layout 14 timeline and FFmpeg player subtitle preview",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-163",
+      "line": 163,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Improve help: recommended local models for translating from English",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-164",
+      "line": 164,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Fix waveform click selecting the source line instead of its duplicate - thx Rafatenshii",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V03"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-165",
+      "line": 165,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Fix \"Generate background boxes\" emptying the original subtitle - thx bichitoxxx",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-166",
+      "line": 166,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Fix error log entries + Themes.zip unpacked on every start with the System theme - thx GrampaWildWilly",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-167",
+      "line": 167,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Fix Multiple replace ticking excluded preview lines again",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-168",
+      "line": 168,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Fix \"push neighbour\" shortcuts lengthening a neighbour already under minimum duration",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-169",
+      "line": 169,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Fix OCR ASSA auto-alignment tagging top and bottom text as middle in tall images - thx robinfire110",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-170",
+      "line": 170,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Fix AutoCompleteBox and Source view borders - thx pdjdev",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-171",
+      "line": 171,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "seconv: fix LFM vision models losing their OCR prompt",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-172",
+      "line": 172,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "seconv: fix --ollama-url with a bare host:port",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F24"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-173",
+      "line": 173,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-174",
+      "line": 174,
+      "version": "v5.4.0-beta12",
+      "area": "",
+      "item": "Update German translation - thx FunkyKnilch",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-180",
+      "line": 180,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Add \"Move start/end X ms\" shortcuts that push the neighbour line (no default key) - thx doom9 forum",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-181",
+      "line": 181,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Second subtitle: add font name picker",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F11"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-182",
+      "line": 182,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Second subtitle: auto-detect if the video offset applies - thx Jamestankw",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F12"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-183",
+      "line": 183,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Multiple replace: edit rules directly in the list (Enter/F2/double-click), more compact window",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-184",
+      "line": 184,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "ASSA/SSA styles: preview fonts attached in [Fonts]",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-185",
+      "line": 185,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Use Silero VAD for CrispASR Granite by default (better accuracy)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-186",
+      "line": 186,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Fix spell check undo of \"Add to names list\" - thx bptrsn",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-187",
+      "line": 187,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Fix arrow keys after type-ahead in Options > Word lists - thx FunkyKnilch",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-188",
+      "line": 188,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Fix uneven 500 ms / custom video steps on quick presses - thx vitonique",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V01"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-189",
+      "line": 189,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Fix read-only original moving in waveform/timeline while retiming translation - thx pdjdev",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V03"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-190",
+      "line": 190,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Fix \"Save as\" ignoring format picked via format picker (e.g. Sub Station Alpha/.ssa)",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-191",
+      "line": 191,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-192",
+      "line": 192,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Update German translation - thx FunkyKnilch",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-193",
+      "line": 193,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Update Italian translation - thx bovirus",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-194",
+      "line": 194,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Update Korean translation - thx 12si27",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-195",
+      "line": 195,
+      "version": "v5.4.0-beta11",
+      "area": "",
+      "item": "Update CrispASR to v0.8.48",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-201",
+      "line": 201,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Add full support for YouTube timed text (.ytt/srv3): pens, positions, preview + styles window",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-202",
+      "line": 202,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Add Opper auto-translate engine - thx Felixkw12",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-203",
+      "line": 203,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Replace LFM2.5-VL 3B with LFM3-VL 2B in llama.cpp OCR models",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-204",
+      "line": 204,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "\"Replace all\" now starts at selected line and asks before continuing from top (like SE4) - thx kadrimarzouki",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-205",
+      "line": 205,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Fix opening secondary subtitle (with offset) - thx Jamestankw",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F12"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-206",
+      "line": 206,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "OCR: prompt before delete, Mac delete key + context menu",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-207",
+      "line": 207,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Fix OCR layout squeezed when video preview is off - thx FunkyKnilch",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-208",
+      "line": 208,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Fix right/middle click on video area toggling play/pause",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-209",
+      "line": 209,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Fix Nord/Midnight Cinema icons being recolored",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-210",
+      "line": 210,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Fix \"Fix common errors\" delete not applied for \"Fix common errors in selected lines\"",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-211",
+      "line": 211,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Rename multi-state \"Toggle\" shortcuts to \"Cycle\"",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-212",
+      "line": 212,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-213",
+      "line": 213,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Update German translation - thx FunkyKnilch",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-214",
+      "line": 214,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Update Italian translation - thx bovirus",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-215",
+      "line": 215,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Update Korean translation - thx 12si27",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-216",
+      "line": 216,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Update llama.cpp to b11968",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-217",
+      "line": 217,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Update audio.cpp to v0.9.3",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-218",
+      "line": 218,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Update CrispASR to v0.8.46",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-219",
+      "line": 219,
+      "version": "v5.4.0-beta10",
+      "area": "",
+      "item": "Update yt-dlp to 2026.10.26",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-225",
+      "line": 225,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Add background images for video player and waveform (also check the \"Cycle theme\" shortcut)",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-226",
+      "line": 226,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Clicking on the video area with no video loaded, an open video prompt will appear ",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-227",
+      "line": 227,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Add subtitle context menu for delete line in \"Fix common errors\" - thx skylinekiller",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-228",
+      "line": 228,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Improve Portuguese ansi encoding detection - thx Pemicope",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-229",
+      "line": 229,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Update Chinese Traditional translation - thx love80312",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-230",
+      "line": 230,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Update German translation - thx FunkyKnilch",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-231",
+      "line": 231,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Update Korean translation - thx 12si27",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-232",
+      "line": 232,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-233",
+      "line": 233,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Update Italian translation - thx bovirus",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-234",
+      "line": 234,
+      "version": "v5.4.0-beta9",
+      "area": "",
+      "item": "Update Polish translation - thx potplayer-fanpack",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-240",
+      "line": 240,
+      "version": "v5.4.0-beta8",
+      "area": "",
+      "item": "Add editing word list regex in Options > Word lists",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-241",
+      "line": 241,
+      "version": "v5.4.0-beta8",
+      "area": "",
+      "item": "Extend taskbar and Dock progress indicators to more tasks - thx pdjdev",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-242",
+      "line": 242,
+      "version": "v5.4.0-beta8",
+      "area": "",
+      "item": "Do not uppercase \"iFuera\" in \"Fix first letter to uppercase after paragraph\" - thx fraternl/Ironship",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-243",
+      "line": 243,
+      "version": "v5.4.0-beta8",
+      "area": "",
+      "item": "Add some missing language tags - thx FunkyKnilch",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-244",
+      "line": 244,
+      "version": "v5.4.0-beta8",
+      "area": "",
+      "item": "Fix audio-track for preview video player in \"Improve time codes\" - thx VaLvOnAuTa1981",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-245",
+      "line": 245,
+      "version": "v5.4.0-beta8",
+      "area": "",
+      "item": "Update German translation - thx FunkyKnilch",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-251",
+      "line": 251,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Add option to keep existing line in video OCR - thx IvanaGyro",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-252",
+      "line": 252,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Add optional video preview to OCR window",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-253",
+      "line": 253,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Fix for new original text not showing up in waveform",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V03"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-254",
+      "line": 254,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Add ASSA draw loop animation \"shake horizontal\"",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-255",
+      "line": 255,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Improve language auto-detect - thx Makar8000",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-256",
+      "line": 256,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Fix right-to-left text in the \"Smooth fill\" ASSA effect - thx ayouqi",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-257",
+      "line": 257,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Adjust switch control label color to match chrome theme - thx kadrimarzouki ",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-258",
+      "line": 258,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Improve translation result split for Chinese/Japanese - thx a5768549",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-259",
+      "line": 259,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "seconv fallback reading to text formats for mp4 files - thx heniowise",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-260",
+      "line": 260,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Update Italian translation - thx bovirus",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-261",
+      "line": 261,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-262",
+      "line": 262,
+      "version": "v5.4.0-beta7",
+      "area": "",
+      "item": "Update German translation - thx FunkyKnilch",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-268",
+      "line": 268,
+      "version": "v5.4.0-beta6",
+      "area": "",
+      "item": "Fix duration for aac audio files in the mpv player - thx benshgit",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V02"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-269",
+      "line": 269,
+      "version": "v5.4.0-beta6",
+      "area": "",
+      "item": "Improve language auto-detect for Korean - thx minsk999",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-270",
+      "line": 270,
+      "version": "v5.4.0-beta6",
+      "area": "",
+      "item": "Add --merge-continuation-lines to seconv - thx svarga91",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-271",
+      "line": 271,
+      "version": "v5.4.0-beta6",
+      "area": "",
+      "item": "Add setting for subtitle file watcher",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-272",
+      "line": 272,
+      "version": "v5.4.0-beta6",
+      "area": "",
+      "item": "Update Turkish translation - thx bilimiyorum",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-273",
+      "line": 273,
+      "version": "v5.4.0-beta6",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-274",
+      "line": 274,
+      "version": "v5.4.0-beta6",
+      "area": "",
+      "item": "Update Polish translation - thx potplayer-fanpack",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-275",
+      "line": 275,
+      "version": "v5.4.0-beta6",
+      "area": "",
+      "item": "Update yt-dlp to 2026.10.21",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-281",
+      "line": 281,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Add Video OCR: scan only chosen time ranges - thx kadrimarzouki",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-282",
+      "line": 282,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Add Auto-translate: \"Translate rows\" context menu item for multiple selected rows",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-283",
+      "line": 283,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Add Settings: Windows window rendering mode (fixes desktop background bleeding through) - thx 114562175",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-284",
+      "line": 284,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Add ASSA draw: \"Animated clip art\" section in Shapes",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-285",
+      "line": 285,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Add Pastel and Nord themes: own icon sets",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-286",
+      "line": 286,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "UI font size is now set in px, and dialog text follows it - thx GrampaWildWilly",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-287",
+      "line": 287,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Full screen video: controls fade in over the video, bigger, also on native players - thx benshgit",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-288",
+      "line": 288,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Set position: frame taken from the paused player, faster ffmpeg fallback - thx 114562175",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F10"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-289",
+      "line": 289,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Forced aligner: show why the engine failed, stop early on repeated crashes",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F31"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-290",
+      "line": 290,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Multiple replace: Enter in filter and empty type-in row, regex whole word",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-291",
+      "line": 291,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Language auto-detect: Persian with Arabic ye/kaf, Russian with hard sign",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-292",
+      "line": 292,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Text to speech: audio.cpp model downloads pinned to a fixed revision - thx ProjectKTC",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-293",
+      "line": 293,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix VibeVoice (CrispASR) Q8_0/Q4_K model integrity check failure - thx mh82",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-294",
+      "line": 294,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix rule profile applied at startup without being chosen",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V07"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-295",
+      "line": 295,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix failed reload of a file changed outside SE letting the next save overwrite it",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-296",
+      "line": 296,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix column paste ignoring the video offset from copy",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F13"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-297",
+      "line": 297,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix Set position click-to-place snapping to top-left or undoing other edits",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-298",
+      "line": 298,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix SubRip reader regressions and ITT header timing round trip",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-299",
+      "line": 299,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix OCR fix removing space before French closing quote",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-300",
+      "line": 300,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix main window fields not following a UI font size change",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-301",
+      "line": 301,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Fix Settings category navigation scroll alignment - thx pdjdev",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-302",
+      "line": 302,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Update Italian translation - thx bovirus",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-303",
+      "line": 303,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-304",
+      "line": 304,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Update Korean translation - thx 12si27",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-305",
+      "line": 305,
+      "version": "v5.4.0-beta5",
+      "area": "",
+      "item": "Update Polish translation - thx potplayer-fanpack",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-310",
+      "line": 310,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Add Midnight Cinema and Sakura themes, theme background art for video/waveform, Cycle theme shortcut",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-311",
+      "line": 311,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Add Syntax coloring: color the gap when it falls inside a user-defined range (ms or frames)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-312",
+      "line": 312,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Add Set position: SE4-style click-to-place mode, toggle to hide selection box, remember window size - thx 114562175",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F10"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-313",
+      "line": 313,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Add Video player: optional playback speed button - thx benshgit",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-314",
+      "line": 314,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Add Spell check: remove words from the dictionary (Word lists \"Removed from dictionary\") - thx fraternl",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-315",
+      "line": 315,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Add setting: split at video and text box position keeps text at caret end - thx kadrimarzouki",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-316",
+      "line": 316,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Copy from the grid includes the video offset, pasting SE's own copy removes it again",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F13"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-317",
+      "line": 317,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "One 13 px text size for all windows, main window in the editor look - thx GrampaWildWilly",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-318",
+      "line": 318,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "SubRip reader rewritten: tolerant of damaged files, 2.6-12x faster",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-319",
+      "line": 319,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Set position: opens at once, frame rendered in the background, arrow keys nudge right away",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F10"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-320",
+      "line": 320,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Batch convert: change frame rate saves at the target frame rate - thx michi987654",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F21"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-321",
+      "line": 321,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "ITT: source header timing parameters follow the current frame rate - thx michi987654",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-322",
+      "line": 322,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "OCR replace lists: fix rules that damage correct text (10 languages), Dutch GLM-OCR word errors - thx fraternl",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-323",
+      "line": 323,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "OCR fix: keep Dutch \"Eén\" - thx fraternl",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-324",
+      "line": 324,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Text to speech: context line on its own row, long video names trimmed",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-325",
+      "line": 325,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Performance: name casing, speech to text names, teletext, OCR splitter",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-326",
+      "line": 326,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Fix crashes and hangs found by fuzzing subtitle format parsers",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-327",
+      "line": 327,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Update Hungarian translation",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-328",
+      "line": 328,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Update Italian translation - thx bovirus",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-329",
+      "line": 329,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-330",
+      "line": 330,
+      "version": "v5.4.0-beta4",
+      "area": "",
+      "item": "Update Polish translation - thx potplayer-fanpack",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-335",
+      "line": 335,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Add Settings: visual theme picker with preview cards",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-336",
+      "line": 336,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Add Nord theme",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-337",
+      "line": 337,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Add iTunes Timed Text: export presets, template-file header source and default color in File > Properties - thx michi987654",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-338",
+      "line": 338,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Add Speech to text: Danish fine-tuned Qwen3 ASR 0.6B model",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-339",
+      "line": 339,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Add ASSA/SSA styles: category picker back, font name + color sample columns, resizable lists - thx bichitoxxx",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-340",
+      "line": 340,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Multiple replace: category list + flat rules list with a type-in row, like SE4 - thx kadrimarzouki",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-341",
+      "line": 341,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Editor look now follows the Font scale (%) setting - thx bichitoxxx",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-342",
+      "line": 342,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Language auto-detect: everyday words for 30 languages, letter rules for Cyrillic (incl. Macedonian/Serbian), Baltic, Afrikaans/Dutch and Arabic script",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-343",
+      "line": 343,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Qwen3 ASR: update qwen3-asr.cpp to v0.1.10 (mel filterbank fix, beam search), pass the selected language",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-344",
+      "line": 344,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "OCR fix engine: image-matcher I/l and spacing repairs, lone slash kept - thx fraternl",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-345",
+      "line": 345,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "More windows use the shared editor look helpers (button bars, check-box cells, video dialog switches) - thx ivandrofly",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-346",
+      "line": 346,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Fix Qwen3 ASR \"<asr_text>\" marker in output with older engine builds",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-347",
+      "line": 347,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Fix compact numeric field borders in the editor look - thx pdjdev",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-348",
+      "line": 348,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Add Romanian translation - thx cosstell62-hash",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-349",
+      "line": 349,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Update Italian translation - thx bovirus",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-350",
+      "line": 350,
+      "version": "v5.4.0-beta3",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-355",
+      "line": 355,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add Multiple replace: \"Add rules\" window for typing a list of find/replace pairs, toolbar \"New rule\" button, F2 and Cmd shortcuts - thx kadrimarzouki",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-356",
+      "line": 356,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add setting for what to do when the subtitle file is changed by another program: reload if nothing is unsaved, always ask, or do nothing - thx kadrimarzouki",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-357",
+      "line": 357,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add ask before saving over a subtitle file changed outside Subtitle Edit - thx kadrimarzouki",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-358",
+      "line": 358,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add waveform toolbar item \"Rule profile\" (hidden by default, enable in Configure toolbar items) - thx torvchen",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-359",
+      "line": 359,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add \"Ignore custom tags (regex)\" rule setting for character counts and CPS - thx chip00-dot",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-360",
+      "line": 360,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add Speech to text: custom GGUF models for Qwen3 ASR CPP with header validation - thx ScienceZone",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-361",
+      "line": 361,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add Text box: record speech to text box button via microphone (off by default, Options > Appearance)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-362",
+      "line": 362,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add Remux video: caption time offset for broadcast .scc/.mcc files (suggested from the first time code) - thx MaxBunny1786",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-363",
+      "line": 363,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add Check for updates: settings gear for startup check and release channel - thx ivandrofly",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-364",
+      "line": 364,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add Batch convert: search box for the functions, shorter rows, presets below the list",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-365",
+      "line": 365,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add Batch convert: resizable splitter between file list and functions - thx ivandrofly",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F23"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-366",
+      "line": 366,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Add nOCR: more Latin.nocr glyphs (Avatar periods/commas, em dash, short-tailed Q, touching pairs)",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F01"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-367",
+      "line": 367,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Editor look palette now follows the theme, dark background color and system accent - thx pdjdev",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-368",
+      "line": 368,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Editor look for the message box and the transcription progress window; more minor UI fixes (download title, burn-in effect switches, disabled text boxes, OCR database, move captions)",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-369",
+      "line": 369,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Prevent sleep during the remaining long video jobs (generate/re-encode/cut/remux video, embedded subtitles, transparent subtitles, shot changes, video OCR, sync audio, background music) - thx ArcherLegend",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-370",
+      "line": 370,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Batch convert/seconv: skip \"Fix right-to-left\" on subtitles without right-to-left text",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F22"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-371",
+      "line": 371,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "MCC/SMPTE 291M: parse CDP packets with an optional time code section - thx MaxBunny1786",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-372",
+      "line": 372,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "nOCR: challenge a loose upright match with the straightened glyph, split touching italic letters, match baseline marks by baseline, italic word spacing, dashes beside quotes, false spaces inside numbers, lost spaces after overhanging f/r/t - thx fraternl, Codling",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-373",
+      "line": 373,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "OCR fix engine: slash as italic i/I/l, \"#\" between letters as apostrophe, closing tag slash, sans-serif capital I (\"lk\" -> \"Ik\"), wide-set ellipsis \". . .\" - thx fraternl",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-374",
+      "line": 374,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Auto-wrap while typing: leave pre-existing long lines alone - thx kadrimarzouki",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-375",
+      "line": 375,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Export plain text: label merge option \"Merge all lines\" like SE4 - thx vivadavid",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-376",
+      "line": 376,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Update audio.cpp runtime to v0.9.2-drama3 (2026-10-19)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-377",
+      "line": 377,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Fix waveform click inside a subtitle shifting its timing - thx 114562175, ChristosBouronikos",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V03"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-378",
+      "line": 378,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Fix \"Select current subtitle while playing\" lost after a settings import - thx kadrimarzouki",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V04"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-379",
+      "line": 379,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Fix imported layout sizes and waveform zoom lost after a settings import - thx kadrimarzouki",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V04"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-380",
+      "line": 380,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Fix live spell check underlining the original text column in translation mode - thx kadrimarzouki",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F15"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-381",
+      "line": 381,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Fix nOCR 2x2 \"character\" prompted for the foot cut off \"a\", \"R\", \"x\" - thx Codling",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-382",
+      "line": 382,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Fix nOCR \"Number of pixels is space\" combo not showing the selected value - thx Codling",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-383",
+      "line": 383,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Fix DashScope OSS multipart uploads for Qwen3-ASR - thx Gh-Shinku",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F30"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-384",
+      "line": 384,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Update Japanese translation - thx hisui3393",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-385",
+      "line": 385,
+      "version": "v5.4.0-beta2",
+      "area": "",
+      "item": "Update Korean translation - thx 12si27",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-391",
+      "line": 391,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Sync subtitle to audio\" (Video > More): ffsubsync-style offset and frame rate detection",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-392",
+      "line": 392,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Sync audio track\" (Video > More): shift one audio track with live preview",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-393",
+      "line": 393,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add export of D-Cinema SMPTE 2014 as MXF track file (SMPTE ST 429-5), text and image subtitles, also in seconv",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-394",
+      "line": 394,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Export Excel dialogue list\" (.xlsx) with chosen columns",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-395",
+      "line": 395,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add Remux video: CEA-608/708 as SEI captions in .mp4 - thx MaxBunny1786",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-396",
+      "line": 396,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Check for updates\": install and restart (Windows installer, Linux tarball, macOS)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-397",
+      "line": 397,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add Voxtral TTS (audio.cpp) engine, audio.cpp runtime 2026-10-16 (v0.9.2)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-398",
+      "line": 398,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Custom error rules\": regex rules that color lines as errors - thx JohnLawes",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-399",
+      "line": 399,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Auto-wrap while typing\" setting (Options > General) - thx kadrimarzouki",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-400",
+      "line": 400,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Apply advanced effect\": CapCut-style gallery and six new caption effects",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-401",
+      "line": 401,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add Batch convert: plain text options - thx vivadavid",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-402",
+      "line": 402,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add Batch convert: run batch-capable plugins",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-403",
+      "line": 403,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Open from URL\": cookies from browser and bot-check hint - thx aresstokrat",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F28"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-404",
+      "line": 404,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add video player: optional previous/next subtitle and toggle subtitles buttons - thx benshgit",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-405",
+      "line": 405,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add llama.cpp OCR models QARI-OCR 0.2.2.1 (Arabic), LightOnOCR-3 4B and 0.8B; thin border instead of square for HunyuanOCR and QARI - thx fraternl",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-406",
+      "line": 406,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add shortcuts \"split line at video position / text box cursor / both, go to second part and play\" - thx LeonCheung",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-407",
+      "line": 407,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add shortcuts to move selected/following/all lines one frame back/forward - thx Kimsihong",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F14"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-408",
+      "line": 408,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add shortcut \"move text before cursor position to previous subtitle\" - thx LeonCheung",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-409",
+      "line": 409,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add shortcuts to copy plain text (text and original)",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-410",
+      "line": 410,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add \"Has errors\" rule to Modify selection - thx fointypinger",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F25"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-411",
+      "line": 411,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add case conversion escapes (\\u \\l \\U \\L \\E) in Multiple replace regex replacements",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-412",
+      "line": 412,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add image color picker in the color dialog - thx pdjdev",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F26"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-413",
+      "line": 413,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add Uninstall button to Spell check > Get dictionaries - thx ivandrofly",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F27"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-414",
+      "line": 414,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add type-ahead and right-click Remove in Options > Word lists - thx FunkyKnilch, ivandrofly",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-415",
+      "line": 415,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add Re-copy button in Copy-paste translate",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-416",
+      "line": 416,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add OCR: Ctrl+mouse wheel and Ctrl+0 for image thumbnail zoom, progress text below the progress bar",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F03"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-417",
+      "line": 417,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add Image viewer: step prev/next in place instead of reopening the window",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F04"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-418",
+      "line": 418,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Add seconv: --burn-in-video, --burn-in-ffmpeg-args and --burn-in-effects - thx zbcoding",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-419",
+      "line": 419,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "ASSA draw: text and shapes, groups, rubber-band selection, Ctrl+click, in/out and loop animations, many new clip arts (also animated and colored), delete point, arrow nudge",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F08"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-420",
+      "line": 420,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "ASSA windows in the ASSA draw look: styles, properties, attachments (drop files to attach), Set position (anchor grid, rotation), Set background (style gallery, 12 new borders), progress bar (16 new bar styles), apply override tags, resampler, font collector, style picker, tag history - also SSA and WebVTT styles, following the app theme",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F06",
+        "F07",
+        "F09",
+        "F10"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-421",
+      "line": 421,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Editor look for the remaining windows (burn-in, video, sync, edit, spell check, OCR, tools, settings) with live theme switching",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-422",
+      "line": 422,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "One field look for text boxes, combo boxes and lists; time controls with arrows on hover",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-423",
+      "line": 423,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Waveform: ASSA lines with the same times move and resize together",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-424",
+      "line": 424,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Select line at play-head while paused without requiring \"center\" - thx jojorne",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-425",
+      "line": 425,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Choose layout: arrow Up/Down and Enter",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-426",
+      "line": 426,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Change casing: dim normal casing options unless \"Normal casing\" is selected - thx ivandrofly",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-427",
+      "line": 427,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Advanced llama.cpp translate: turn thinking off after a reasoning-only reply; refresh auto-translate model lists",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F19",
+        "F20"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-428",
+      "line": 428,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "nOCR: many recognition improvements for Latin and Cyrillic (ligatures, period/dash and comma/apostrophe by baseline, touching letters, accent case, word spaces, italic, 0/O from neighbours)",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F01"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-429",
+      "line": 429,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Minor UI fixes in many dialogs",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-430",
+      "line": 430,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix auto-sized windows clamped to a short screen (scroll) - thx vivadavid",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V06"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-431",
+      "line": 431,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix SCC save: monotonic timeline, load after previous display - thx tmwiscon",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-432",
+      "line": 432,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix fullscreen video keyboard focus, UI hang on PageUp in the menu bar and fullscreen previous/next line shortcuts - thx vitonique",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V05"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-433",
+      "line": 433,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix 500 ms / custom ms steps moving only a few frames after play/pause - thx chip00-dot",
+      "status": "targeted_case_reviewed",
+      "evidence": [
+        "V01"
+      ],
+      "audit_baseline_status": "targeted_check_pending",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-434",
+      "line": 434,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix crash on close with libmpv (destroy the core after the render context)",
+      "status": "implementation_recorded",
+      "evidence": [
+        "UPSTREAM_5_4_STATUS.md coverage and prior validation; not a new per-entry runtime certification"
+      ]
+    },
+    {
+      "id": "54-435",
+      "line": 435,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix Spell check window not remembering its position - thx Numbergod",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F16"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-436",
+      "line": 436,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix Word lists Language combo changes not announced to screen readers - thx Shaima-Almarzooqi",
+      "status": "classic_scope_exclusion",
+      "evidence": [
+        "Windows Forms presentation/platform boundary; not a missing command"
+      ]
+    },
+    {
+      "id": "54-437",
+      "line": 437,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix seconv splitting a file name with commas into patterns",
+      "status": "classic_equivalent",
+      "evidence": [
+        "Retained Classic implementation; see Existing equivalents below"
+      ]
+    },
+    {
+      "id": "54-438",
+      "line": 438,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Fix seconv/Batch convert VobSub colour isolation for nOCR and BinaryOCR",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F02"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-439",
+      "line": 439,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Update Bulgarian and Russian translation - thx jekovcar",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-440",
+      "line": 440,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Update Korean translation - thx 12si27",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    },
+    {
+      "id": "54-441",
+      "line": 441,
+      "version": "v5.4.0-beta1",
+      "area": "",
+      "item": "Update Polish translation - thx potplayer-fanpack",
+      "status": "audit_finding_addressed",
+      "evidence": [
+        "F33"
+      ],
+      "audit_baseline_status": "gap_or_partial",
+      "resolution_record": "CLASSIC_54_COMPLETION.md"
+    }
+  ],
+  "completion_date": "2026-11-08"
+}

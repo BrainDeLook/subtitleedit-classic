@@ -321,6 +321,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void buttonGenerate_Click(object sender, EventArgs e)
         {
+            using var taskbarWork=new ClassicTaskbarWork(this);
+            using var preventSleep=ClassicPowerRequest.Acquire("Processing subtitles and media");
             if (BatchMode && _batchItems.Count == 0)
             {
                 MessageBox.Show("No subtitle files added for batch.");

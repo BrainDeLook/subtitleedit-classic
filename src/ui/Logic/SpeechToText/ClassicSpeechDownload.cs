@@ -16,13 +16,13 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
     {
         private static readonly Dictionary<string, string> RuntimeHashes = new Dictionary<string, string>
         {
-            ["crispasr-windows-x86_64-cpu.zip"] = "997bc39f541e5d5d0bd14144159c038bd95d6ab8b523718c34a54e03ab404f47",
-            ["crispasr-windows-x86_64-cpu-legacy.zip"] = "be0f4978d0613999954215090c2345e613c055d94ab59de0f436487933eae9ba",
-            ["crispasr-windows-x86_64-vulkan.zip"] = "9294c7c6cca319714da2ae913a8839d81d53e2e9583020162ff9573c47654fc8",
-            ["crispasr-windows-x86_64-cuda13.zip"] = "3cc113e6bf5efd4481ed666dc7d46946f06c9ef31a9340c6abb8d3d747bdf812",
-            ["crispasr-windows-x86_64-cuda.zip"] = "94c292069a339e76109e17cc7218b17ceeb70eabf15eb8e1b1afdf7b9ee2b1b0",
-            ["qwen3-asr-cpp-win64.zip"] = "ad9c196aa52ceb42a3f46946644e4145fc7e297c84fa54e4cdf7fd9c22556300",
-            ["qwen3-asr-cpp-win64-vulkan.zip"] = "a9971a24ba08765568c8a83a547924e42f15bd576b2cf594f6757fff66baf244",
+            ["crispasr-windows-x86_64-cpu.zip"] = "03565a3c60249ead81b6934f719af3ef09f48d28121d4231490db1c43522c53e",
+            ["crispasr-windows-x86_64-cpu-legacy.zip"] = "4f5d6ef087a6bd6ba5d88fcecb4485320a88c7b762aee1a4b856350484f39ba7",
+            ["crispasr-windows-x86_64-vulkan.zip"] = "ac6fbfd527d782d7b999a135721dd131d76b18016283256c842b8f12411b1978",
+            ["crispasr-windows-x86_64-cuda13.zip"] = "f26ded177372f584f87f2644340d94ece7346ce7b7b8bc4c068a09333bd6b120",
+            ["crispasr-windows-x86_64-cuda.zip"] = "a65777ec0149114f54546a3b6b146059b744ae7b9024b35e30e29fcff8729da0",
+            ["qwen3-asr-cpp-win64.zip"] = "a1f1bac36aac521a27f7f4ed71e252f0fa3577415c3e846984fe5264ac85610f",
+            ["qwen3-asr-cpp-win64-vulkan.zip"] = "67e6fb19d27630a7a8857e97c937385eee3c5dad8821be6ce45d4e27e64eedb5",
             ["whisper-vulkan-x64.zip"] = "89f2c36455939ad42e08b2107bd6b47105b6d9c1a2b0916cbb500ec27deb520a",
             ["whisperx-standalone-windows-x64.7z"] = "ec1d0e9eff0c2abfbb7331ee321618823b247190323d38aa577f228262c9254d"
         };

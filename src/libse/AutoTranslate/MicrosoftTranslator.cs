@@ -1,15 +1,15 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Http;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Core.Translate;
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Nikse.SubtitleEdit.Core.AutoTranslate
 {
@@ -22,33 +22,58 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
         public const string GoToUrl = "https://www.bing.com/translator";
         private const string LanguagesUrl = "https://api.cognitive.microsofttranslator.com/languages?api-version=3.0&scope=translation";
         private const string TranslateUrl = "translate?api-version=3.0&from={0}&to={1}";
+        private const string RegionalTokenEndpoint = "https://{0}.api.cognitive.microsoft.com/sts/v1.0/issueToken";
         private const string SecurityHeaderName = "Ocp-Apim-Subscription-Key";
-        private static List<TranslationPair> _translationPairs;
-        private string _accessToken;
-        private string _category;
-        private IDownloader _httpClient;
+        // Azure issues tokens valid for 10 minutes; refresh with a margin so
+        // long translation runs do not start failing with 401 mid-run.
+        private static readonly TimeSpan AccessTokenLifetime = TimeSpan.FromMinutes(8);
+        private static List<TranslationPair>? _translationPairs;
+        private string _accessToken = string.Empty;
+        private DateTime _accessTokenFetchedUtc;
+        private string _apiKey = string.Empty;
+        private string _tokenEndpoint = string.Empty;
+        private string _category = string.Empty;
+        private HttpClient _httpClient = null!;
 
         public static string StaticName { get; set; } = "Bing Microsoft Translator";
         public override string ToString() => StaticName;
         public string Name => StaticName;
         public string Url => "https://www.bing.com/translator";
-        public string Error { get; set; }
+        public string Error { get; set; } = string.Empty;
         public int MaxCharacters => 1500;
 
         public void Initialize()
         {
-            var apiKey = Configuration.Settings.Tools.MicrosoftTranslatorApiKey;
-            var tokenEndpoint = Configuration.Settings.Tools.MicrosoftTranslatorTokenEndpoint;
+            _apiKey = Configuration.Settings.Tools.MicrosoftTranslatorApiKey;
+            _tokenEndpoint = GetTokenEndpoint(Configuration.Settings.Tools.MicrosoftTranslatorTokenEndpoint, Configuration.Settings.Tools.MicrosoftTranslatorRegion);
             _category = Configuration.Settings.Tools.MicrosoftTranslatorCategory;
 
             try
             {
-                _accessToken = GetAccessToken(apiKey, tokenEndpoint);
+                _accessToken = GetAccessToken(_apiKey, _tokenEndpoint);
+                _accessTokenFetchedUtc = DateTime.UtcNow;
             }
             catch (Exception e)
             {
-                throw new Exception("Can't get Access Token", e);
+                throw new Exception("Can't get Access Token: " + e.Message, e);
             }
+        }
+
+        /// <summary>
+        /// Regional and multi-service Azure resources must get their token from a URL with the
+        /// region in the host name. The Azure portal shows "global" for global resources, which
+        /// use the configured endpoint like an empty region does.
+        /// </summary>
+        public static string GetTokenEndpoint(string tokenEndpoint, string? region)
+        {
+            var normalizedRegion = (region ?? string.Empty).Replace(" ", string.Empty).ToLowerInvariant();
+            if (normalizedRegion.Length == 0 || normalizedRegion == "global")
+            {
+                return tokenEndpoint;
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(normalizedRegion, "^[a-z0-9-]{1,64}$")) throw new ArgumentException("Invalid Azure Translator region.", nameof(region));
+            return string.Format(RegionalTokenEndpoint, normalizedRegion);
         }
 
         public List<TranslationPair> GetSupportedSourceLanguages()
@@ -61,7 +86,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             return GetTranslationPairs();
         }
 
-        public Task<string> Translate(string text, string sourceLanguageCode, string targetLanguageCode, CancellationToken cancellationToken)
+        public async Task<string> Translate(string text, string sourceLanguageCode, string targetLanguageCode, CancellationToken cancellationToken)
         {
             var url = string.Format(TranslateUrl, sourceLanguageCode, targetLanguageCode);
             if (!string.IsNullOrEmpty(_category))
@@ -79,13 +104,13 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
             var json = jsonBuilder.ToString();
             var content = new StringContent(json, Encoding.UTF8);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-            var result = httpClient.PostAsync(url, content).Result;
+            var result = await httpClient.PostAsync(url, content, cancellationToken);
             var parser = new JsonParser();
-            var jsonResult = result.Content.ReadAsStringAsync().Result;
+            var jsonResult = await result.Content.ReadAsStringAsync();
 
             if (!result.IsSuccessStatusCode)
             {
-                Error = json;
+                Error = jsonResult;
 
                 if (result.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -111,14 +136,21 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                 }
             }
 
-            return Task.FromResult(string.Join(Environment.NewLine, results));
+            return string.Join(Environment.NewLine, results);
         }
 
-        private IDownloader GetTranslateClient()
+        private HttpClient GetTranslateClient()
         {
+            if (_httpClient != null && DateTime.UtcNow - _accessTokenFetchedUtc > AccessTokenLifetime)
+            {
+                _accessToken = GetAccessToken(_apiKey, _tokenEndpoint);
+                _accessTokenFetchedUtc = DateTime.UtcNow;
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+            }
+
             if (_httpClient == null)
             {
-                _httpClient = DownloaderFactory.MakeHttpClient();
+                _httpClient = DownloaderFactory.CreateHttpClient();
                 _httpClient.BaseAddress = new Uri("https://api.cognitive.microsofttranslator.com/");
                 _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
@@ -129,19 +161,26 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
 
         private static string GetAccessToken(string apiKey, string tokenEndpoint)
         {
-            using (var httpClient = DownloaderFactory.MakeHttpClient())
+            return Task.Run(async () =>
             {
-                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                httpClient.DefaultRequestHeaders.TryAddWithoutValidation(SecurityHeaderName, apiKey);
-                var response = httpClient.PostAsync(tokenEndpoint, new StringContent(string.Empty)).Result;
-                var result = response.Content.ReadAsStringAsync().Result;
-                if (!response.IsSuccessStatusCode)
+                using (var httpClient = DownloaderFactory.CreateHttpClient())
                 {
-                    SeLogger.Error($"{StaticName}: Error getting access token via {tokenEndpoint} and API key {apiKey}: {result}");
-                }
+                    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    httpClient.DefaultRequestHeaders.TryAddWithoutValidation(SecurityHeaderName, apiKey);
+                    var response = await httpClient.PostAsync(tokenEndpoint, new StringContent(string.Empty)).ConfigureAwait(false);
+                    var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        SeLogger.Error($"{StaticName}: Error getting access token via {tokenEndpoint}: status code={response.StatusCode} {result}");
+                        var hint = response.StatusCode == HttpStatusCode.Unauthorized
+                            ? " Check the API key and, for a regional or multi-service Azure resource, the region."
+                            : string.Empty;
+                        throw new Exception($"Could not get access token via {tokenEndpoint}: {result}{hint}");
+                    }
 
-                return response.Content.ReadAsStringAsync().Result;
-            }
+                    return result;
+                }
+            }).GetAwaiter().GetResult();
         }
 
         private static List<TranslationPair> GetTranslationPairs()
@@ -151,13 +190,29 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                 return _translationPairs;
             }
 
-            using (var httpClient = DownloaderFactory.MakeHttpClient())
+            // Unlike the other engines this list is not hardcoded - it is fetched from the service,
+            // so it is current by construction. The flip side is that picking the engine with no
+            // network (or behind a blocking proxy) used to throw straight out of this synchronous
+            // call and into the language combo box; answer with an empty list instead, and do not
+            // cache it, so the next attempt tries again.
+            try
             {
-                httpClient.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36");
-                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=UTF-8");
-                var json = httpClient.GetStringAsync(LanguagesUrl).Result;
-                _translationPairs = FillTranslationPairsFromJson(json);
-                return _translationPairs;
+                return Task.Run(async () =>
+                {
+                    using (var httpClient = DownloaderFactory.CreateHttpClient())
+                    {
+                        httpClient.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36");
+                        httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=UTF-8");
+                        var json = await httpClient.GetStringAsync(LanguagesUrl).ConfigureAwait(false);
+                        _translationPairs = FillTranslationPairsFromJson(json);
+                        return _translationPairs;
+                    }
+                }).GetAwaiter().GetResult();
+            }
+            catch (Exception exception)
+            {
+                SeLogger.Error(exception, $"{StaticName}: could not fetch the language list from {LanguagesUrl}");
+                return new List<TranslationPair>();
             }
         }
 
@@ -174,7 +229,7 @@ namespace Nikse.SubtitleEdit.Core.AutoTranslate
                     {
                         if (v[innerKey] is Dictionary<string, object> l)
                         {
-                            list.Add(new TranslationPair(l["name"].ToString(), innerKey, innerKey));
+                            list.Add(new TranslationPair(l["name"]?.ToString() ?? string.Empty, innerKey, innerKey));
                         }
                     }
                 }

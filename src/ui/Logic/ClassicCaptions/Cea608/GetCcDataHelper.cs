@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -66,7 +66,8 @@ namespace Nikse.SubtitleEdit.Logic.ClassicCaptions.Cea608
                 return fieldData;
             }
 
-            var length = (int)size;
+            if(startPos>=(ulong)fs.Length)return fieldData;
+            var length=(int)Math.Min(size,(ulong)fs.Length-startPos);
 
             // Read the sample once instead of seeking and reading 5 bytes per NAL unit.
             // The walk below only ever moves forward inside the sample, so a single

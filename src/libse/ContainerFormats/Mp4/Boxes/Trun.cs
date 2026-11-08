@@ -13,6 +13,9 @@ namespace Nikse.SubtitleEdit.Core.ContainerFormats.Mp4.Boxes
         public List<TimeSegment> Samples { get; set; }
         public uint? DataOffset { get; set; }
 
+        // Far above a real fragment (a three-hour 60 fps video in a single fragment is ~650k samples).
+        private const ulong MaxSamplesWithoutPerSampleFields = 1_000_000;
+
         public Trun(Stream fs, ulong maximumLength)
         {
             Samples = new List<TimeSegment>();
@@ -49,7 +52,9 @@ namespace Nikse.SubtitleEdit.Core.ContainerFormats.Mp4.Boxes
                 DataOffset = GetUInt(0);
             }
 
-            var sampleLength = Math.Min(sampleCount * 16 + 24, maximumLength);
+            var bytesLeft=fs.Length>fs.Position?(ulong)(fs.Length-fs.Position):0UL;
+            if((flags & (0x000100 | 0x000200 | 0x000400 | 0x000800))==0)sampleCount=(uint)Math.Min(sampleCount,Math.Min(bytesLeft,MaxSamplesWithoutPerSampleFields));
+            var sampleLength=Math.Min(Math.Min((ulong)sampleCount*16UL+24UL,bytesLeft),(ulong)int.MaxValue);
             Buffer = new byte[sampleLength];
             readCount = fs.Read(Buffer, 0, Buffer.Length);
             if (readCount < 4)

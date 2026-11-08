@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -11,6 +11,7 @@ namespace Nikse.SubtitleEdit.Logic.ClassicDraw
         public byte A {get;} public byte R {get;} public byte G {get;} public byte B {get;}
         private DrawColor(byte a,byte r,byte g,byte b){A=a;R=r;G=g;B=b;}
         public static DrawColor FromArgb(byte a,byte r,byte g,byte b)=>new DrawColor(a,r,g,b);
+        public static DrawColor Parse(string text) { if (TryParse(text, out var color)) return color; throw new FormatException("Invalid draw color."); }
         public static bool TryParse(string text,out DrawColor color)
         {
             try

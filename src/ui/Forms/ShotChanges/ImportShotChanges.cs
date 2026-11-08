@@ -379,6 +379,8 @@ namespace Nikse.SubtitleEdit.Forms.ShotChanges
 
         private void buttonImportWithFfmpeg_Click(object sender, EventArgs e)
         {
+            using var taskbarWork=new ClassicTaskbarWork(this);
+            using var preventSleep=ClassicPowerRequest.Acquire("Processing subtitles and media");
             if (_videoFileName != null && (_videoFileName.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                                            _videoFileName.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
             {

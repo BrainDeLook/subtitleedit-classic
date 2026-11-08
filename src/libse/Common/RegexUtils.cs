@@ -1,20 +1,46 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Nikse.SubtitleEdit.Core.Common
 {
-    public static class RegexUtils
+    public static partial class RegexUtils
     {
+        /// <summary>
+        /// Match timeout for user-entered regular expressions. A pattern with catastrophic backtracking
+        /// (e.g. "(a+)+b" on a long line without a "b") runs for practically forever, and as find/replace
+        /// matches on the UI thread that means a frozen program with no way out. SE 4 used the same five
+        /// seconds in its find/replace helper; callers treat the timeout as "no match".
+        /// </summary>
+        /// <remarks>
+        /// Settable only so the tests that prove the timeout works do not have to wait it out - fourteen
+        /// of them sat on the full five seconds, close to half the whole UI suite. Nothing in the program
+        /// writes it; callers read it when they build the Regex, so a test sets it before the pattern is
+        /// compiled and puts it back afterwards.
+        /// </remarks>
+        public static TimeSpan UserPatternMatchTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
         // Others classes may want to use this regex.
+#if NET7_0_OR_GREATER
+        [GeneratedRegex(@"\bi\b")]
+        private static partial Regex LittleIRegexGen();
+        public static readonly Regex LittleIRegex = LittleIRegexGen();
+#else
         public static readonly Regex LittleIRegex = new Regex(@"\bi\b", RegexOptions.Compiled);
+#endif
 
         /// <summary>
         /// Will be constructed only once.
         /// </summary>
-        public static class DanishLetterI
+        public static partial class DanishLetterI
         {
+#if NET7_0_OR_GREATER
+            [GeneratedRegex(@"\bi(dag|går|morgen|alt|gang|stand|øvrigt)\b")]
+            private static partial Regex DanishLetterIRegexGen();
+            public static readonly Regex DanishLetterIRegex = DanishLetterIRegexGen();
+#else
             public static readonly Regex DanishLetterIRegex = new Regex(@"\bi(dag|går|morgen|alt|gang|stand|øvrigt)\b", RegexOptions.Compiled);
+#endif
 
             private static readonly IList<Regex> RegexList;
 
@@ -36,7 +62,7 @@ namespace Nikse.SubtitleEdit.Core.Common
                     RegexFactory(@"\bburde i (?:gøre|ikke|købe|løbe|se|sig|tage)\b"),
                     RegexFactory(@"\bfanden vil i\?"),
                     RegexFactory(@"\b[Ff]or ser i\b"),
-                    RegexFactory(@"\b[Db]a i (?:ankom|forlod|fik|gik|kom|dræbte|ikke|gjorde|har|havde|så)\b"),
+                    RegexFactory(@"\b[Dd]a i (?:ankom|forlod|fik|gik|kom|dræbte|ikke|gjorde|har|havde|så)\b"),
                     RegexFactory(@"\b[Dd]et (?:får i|har i|må i|gør i|gjorde i)\b"),
                     RegexFactory(@"\b[Dd]et må i (?:fandme|ikke|sgu|gerne|selv|da|faktisk)\b"),
                     RegexFactory(@"\b[Dd]et Det kan i sgu"),
@@ -124,7 +150,7 @@ namespace Nikse.SubtitleEdit.Core.Common
                     RegexFactory(@"\b[Tt]og i (?:bilen|liften|toget)\b"),
                     RegexFactory(@"\b[Tt]ræder i frem\b"),
                     RegexFactory(@"\b[Tt]ror i (?:at|det|jeg|på|virkelig)\b"),
-                    RegexFactory(@"\b[Tr]ror i(?:, | på\b)"),
+                    RegexFactory(@"\b[Tt]ror i(?:, | på\b)"),
                     RegexFactory(@"\b[Vv]ar i blevet\b"),
                     RegexFactory(@"\b[Vv]ed i (?:alle|allesammen|er|ikke|hvad|hvem|hvor|hvorfor|hvordan|var|ville|har|havde|hvem|hvad|hvor|mente|tror)\b"),
                     RegexFactory(@"\b[Vv]enter i på\b"),
@@ -172,14 +198,29 @@ namespace Nikse.SubtitleEdit.Core.Common
             }
         }
 
-        public static Regex MakeWordSearchRegex(string word)
+        /// <summary>
+        /// A pattern that finds <paramref name="searchText"/> as a whole word. A word character at an
+        /// edge gets a word boundary (<c>\b</c>); punctuation at an edge (e.g. "|t" or "'Tis") must not
+        /// touch a word character either. White space at an edge already separates the text from its
+        /// neighbour, so that side gets no check at all - otherwise "Zeyn " could never match
+        /// "Zeyn is here", as the white space would have to be followed by a non-word character.
+        /// </summary>
+        public static string BuildWholeWordPattern(string searchText)
         {
-            string s = word.Replace("\\", "\\\\");
-            s = s.Replace("*", "\\*");
-            s = s.Replace(".", "\\.");
-            s = s.Replace("?", "\\?");
-            return new Regex(@"\b" + s + @"\b", RegexOptions.Compiled);
+            var escaped = Regex.Escape(searchText);
+            if (searchText.Length == 0)
+            {
+                return @"(?<!\w)(?!\w)";
+            }
+
+            var first = searchText[0];
+            var last = searchText[searchText.Length - 1];
+            var prefix = IsWordChar(first) ? @"\b" : char.IsWhiteSpace(first) ? string.Empty : @"(?<!\w)";
+            var suffix = IsWordChar(last) ? @"\b" : char.IsWhiteSpace(last) ? string.Empty : @"(?!\w)";
+            return prefix + escaped + suffix;
         }
+
+        private static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c == '_';
 
         public static string GetRegExGroup(string pattern)
         {
@@ -200,8 +241,13 @@ namespace Nikse.SubtitleEdit.Core.Common
         }
 
         /// <summary>
-        /// Changes "\\r\\n" and "\\n" to "\n", which hopefully makes it simpler for
-        /// the user who can use both "\\n" and "\\r\\n" for new line.
+        /// Normalizes the new-line escapes a user typed in a regular expression (<c>\r\n</c>, <c>\n</c>
+        /// or <c>\r</c>) to a single line-feed, so a rule matches regardless of which escape was typed
+        /// and regardless of the platform line-ending. Subtitle text is matched line-feed normalized too
+        /// (see <see cref="ReplaceNewLineSafe(Regex, string, string)"/>), keeping the pattern and the text
+        /// in sync. The previous
+        /// behavior expanded these to Environment.NewLine (CRLF on Windows), which no longer matched the
+        /// line-feed text used in v5, so cross-line regex rules silently stopped working (#11956).
         /// </summary>
         public static string FixNewLine(string pattern)
         {
@@ -210,12 +256,19 @@ namespace Nikse.SubtitleEdit.Core.Common
                 return pattern;
             }
 
-            return pattern.Replace("\\r\\n", Environment.NewLine).Replace("\\n", Environment.NewLine);
+            return pattern.Replace("\\r\\n", "\n").Replace("\\n", "\n").Replace("\\r", "\n");
+        }
+
+        public static string EscapeNewLines(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+            return text.Replace("\r\n", "\\n").Replace("\n", "\\n").Replace("\r", "\\n");
         }
 
         /// <summary>
-        /// Performs replace on regular expression. Line breaks are converted to just "\n" during the replace
-        /// and line breaks are returned as Environment.NewLine.
+        /// Performs replace on regular expression. Line breaks are normalized to "\n" for both the match
+        /// and the returned text, so the pattern and the text agree regardless of \n vs \r\n.
         /// </summary>
         /// <param name="regularExpression">Regular expression to perform replace on</param>
         /// <param name="text">Text perform replace on</param>
@@ -227,8 +280,9 @@ namespace Nikse.SubtitleEdit.Core.Common
         }
 
         /// <summary>
-        /// Performs replace on regular expression. Line breaks are converted to just "\n" during the replace
-        /// and line breaks are returned as Environment.NewLine.
+        /// Performs replace on regular expression. The match runs against line-feed-normalized text,
+        /// so the pattern's \n (see <see cref="FixNewLine"/>) matches regardless of \n vs \r\n; the
+        /// returned text uses <see cref="Environment.NewLine"/> like all other paragraph text.
         /// </summary>
         /// <param name="regularExpression">Regular expression to perform replace on</param>
         /// <param name="text">Text perform replace on</param>
@@ -238,13 +292,206 @@ namespace Nikse.SubtitleEdit.Core.Common
         /// <returns>Input string with regular expression replace applied</returns>
         public static string ReplaceNewLineSafe(Regex regularExpression, string text, string replaceWith, int count, int startIndex)
         {
-            text = regularExpression.Replace(string.Join(Environment.NewLine, text.SplitToLines()), replaceWith, count, startIndex);
+            // Match with line-feed-normalized line breaks so a pattern's \n (see FixNewLine)
+            // matches regardless of whether the in-memory text uses \n or \r\n (#11956).
+
+            // Fast path (runs per replace rule per subtitle line): text without \r or U+2028 round-trips
+            // unchanged through the SplitToLines+Join normalization, so skip the four allocations.
+            if (!ContainsNonLineFeedNewLine(text) && !ContainsNonLineFeedNewLine(replaceWith))
+            {
+                return RestorePlatformNewLines(Replace(regularExpression, text, replaceWith, count, startIndex));
+            }
+
+            text = Replace(regularExpression, string.Join("\n", text.SplitToLines()), replaceWith, count, startIndex);
+            return RestorePlatformNewLines(text);
+        }
+
+        private static string Replace(Regex regularExpression, string text, string replaceWith, int count, int startIndex)
+        {
+            var parts = ParseCaseConversionReplacement(replaceWith);
+            if (parts == null)
+            {
+                return regularExpression.Replace(text, replaceWith, count, startIndex);
+            }
+
+            return regularExpression.Replace(text, m => ApplyCaseConversion(m, parts), count, startIndex);
+        }
+
+        private enum CaseConversion
+        {
+            None,
+            UpperNext,
+            LowerNext,
+            Upper,
+            Lower,
+            End,
+        }
+
+        private readonly struct ReplacementPart
+        {
+            public ReplacementPart(string text, CaseConversion conversion)
+            {
+                Text = text;
+                Conversion = conversion;
+            }
+
+            public string Text { get; }
+            public CaseConversion Conversion { get; }
+        }
+
+        /// <summary>
+        /// Splits a replacement on the Perl-style case conversion escapes \u, \l (next character to
+        /// upper/lower case), \U, \L (upper/lower case until \E or the end) and \E (#16033), so a
+        /// rule like "^Um,\s*(\w)" -> "\u$1" can capitalize the word left at the start. "\\u" keeps
+        /// a literal "\u". Returns null when the replacement has none of them - plain .NET replace.
+        /// </summary>
+        private static List<ReplacementPart> ParseCaseConversionReplacement(string replaceWith)
+        {
+            if (string.IsNullOrEmpty(replaceWith) || replaceWith.IndexOf('\\') < 0)
+            {
+                return null;
+            }
+
+            List<ReplacementPart> parts = null;
+            var sb = new System.Text.StringBuilder();
+            for (var i = 0; i < replaceWith.Length; i++)
+            {
+                var ch = replaceWith[i];
+                if (ch != '\\' || i + 1 >= replaceWith.Length)
+                {
+                    sb.Append(ch);
+                    continue;
+                }
+
+                var next = replaceWith[i + 1];
+                if (next == '\\' && i + 2 < replaceWith.Length && GetCaseConversion(replaceWith[i + 2]) != CaseConversion.None)
+                {
+                    // "\\u" is an escaped backslash followed by a plain "u".
+                    sb.Append('\\').Append(replaceWith[i + 2]);
+                    i += 2;
+                    parts = parts ?? new List<ReplacementPart>();
+                    continue;
+                }
+
+                var conversion = GetCaseConversion(next);
+                if (conversion == CaseConversion.None ||
+                    conversion != CaseConversion.End && i + 2 < replaceWith.Length && char.IsDigit(replaceWith[i + 2]))
+                {
+                    // A digit after \u, \l, \U or \L is an ASSA tag like {\u1} (underline), not a case escape.
+                    sb.Append(ch);
+                    continue;
+                }
+
+                parts = parts ?? new List<ReplacementPart>();
+                parts.Add(new ReplacementPart(sb.ToString(), conversion));
+                sb.Clear();
+                i++;
+            }
+
+            if (parts == null)
+            {
+                return null;
+            }
+
+            parts.Add(new ReplacementPart(sb.ToString(), CaseConversion.None));
+            return parts;
+        }
+
+        private static CaseConversion GetCaseConversion(char ch)
+        {
+            switch (ch)
+            {
+                case 'u': return CaseConversion.UpperNext;
+                case 'l': return CaseConversion.LowerNext;
+                case 'U': return CaseConversion.Upper;
+                case 'L': return CaseConversion.Lower;
+                case 'E': return CaseConversion.End;
+                default: return CaseConversion.None;
+            }
+        }
+
+        /// <summary>
+        /// Builds one match's replacement: each part's text is expanded with <see cref="Match.Result"/>
+        /// (so $1 etc. work), then cased by the \U/\L mode in effect, then the first character after a
+        /// \u/\l gets that one-shot conversion - so "\u\L$1" gives "Word" like in Perl.
+        /// </summary>
+        private static string ApplyCaseConversion(Match match, List<ReplacementPart> parts)
+        {
+            var sb = new System.Text.StringBuilder();
+            var mode = CaseConversion.None;
+            var oneShot = CaseConversion.None;
+            foreach (var part in parts)
+            {
+                var expanded = part.Text.Length == 0 ? string.Empty : match.Result(part.Text);
+                if (mode == CaseConversion.Upper)
+                {
+                    expanded = expanded.ToUpperInvariant();
+                }
+                else if (mode == CaseConversion.Lower)
+                {
+                    expanded = expanded.ToLowerInvariant();
+                }
+
+                if (oneShot != CaseConversion.None && expanded.Length > 0)
+                {
+                    var first = oneShot == CaseConversion.UpperNext
+                        ? char.ToUpperInvariant(expanded[0])
+                        : char.ToLowerInvariant(expanded[0]);
+                    expanded = first + expanded.Substring(1);
+                    oneShot = CaseConversion.None;
+                }
+
+                sb.Append(expanded);
+
+                switch (part.Conversion)
+                {
+                    case CaseConversion.UpperNext:
+                    case CaseConversion.LowerNext:
+                        oneShot = part.Conversion;
+                        break;
+                    case CaseConversion.Upper:
+                    case CaseConversion.Lower:
+                        mode = part.Conversion;
+                        break;
+                    case CaseConversion.End:
+                        mode = CaseConversion.None;
+                        break;
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Re-joins line-feed-normalized text with <see cref="Environment.NewLine"/>. The rest of
+        /// libse keeps paragraph text with platform newlines, and the format writers rely on it -
+        /// e.g. ASSA folds line breaks via <c>Replace(Environment.NewLine, "\\N")</c>, so a bare
+        /// \n left behind by the match normalization above was written as a physical newline
+        /// inside the Dialogue line, corrupting the saved file on Windows (#12620).
+        /// </summary>
+        public static string RestorePlatformNewLines(string text)
+        {
+            if (Environment.NewLine == "\n" || text.IndexOf('\n') < 0)
+            {
+                return text;
+            }
+
             return string.Join(Environment.NewLine, text.SplitToLines());
         }
 
         public static int CountNewLineSafe(Regex regularExpression, string text)
         {
-            return regularExpression.Matches(string.Join(Environment.NewLine, text.SplitToLines())).Count;
+            if (!ContainsNonLineFeedNewLine(text))
+            {
+                return regularExpression.Matches(text).Count;
+            }
+
+            return regularExpression.Matches(string.Join("\n", text.SplitToLines())).Count;
+        }
+
+        private static bool ContainsNonLineFeedNewLine(string text)
+        {
+            return text.Contains('\r') || text.Contains('\u2028');
         }
     }
 }

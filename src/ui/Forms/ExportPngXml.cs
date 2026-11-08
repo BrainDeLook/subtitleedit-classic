@@ -29,6 +29,7 @@ namespace Nikse.SubtitleEdit.Forms
 {
     public sealed partial class ExportPngXml : PositionAndSizeForm
     {
+        private ClassicSupCompositionWriter _classicSupComposition;
         internal class ExportFormats
         {
             internal const string BluraySup = "BLURAYSUP";
@@ -49,6 +50,8 @@ namespace Nikse.SubtitleEdit.Forms
 
         internal class MakeBitmapParameter
         {
+            public Subtitle SourceSubtitle { get; set; }
+            public System.Collections.Generic.List<Nikse.SubtitleEdit.Logic.ClassicFontFile> Fonts { get; set; }
             public Bitmap Bitmap { get; set; }
             public Paragraph P { get; set; }
             public string Type { get; set; }
@@ -87,6 +90,7 @@ namespace Nikse.SubtitleEdit.Forms
             public int ShadowAlpha { get; set; }
             public Dictionary<string, int> LineHeight { get; set; }
             public bool Forced { get; set; }
+            public int HdrWhiteNits { get; set; }
             public bool FullFrame { get; set; }
             public Color FullFrameBackgroundColor { get; set; }
 
@@ -96,7 +100,11 @@ namespace Nikse.SubtitleEdit.Forms
             }
         }
 
+        private readonly FlowLayoutPanel _hdrPanel = new FlowLayoutPanel { AutoSize = true, Anchor = AnchorStyles.Bottom | AnchorStyles.Left };
+        private readonly CheckBox _hdrPalette = new CheckBox { Text = "HDR (BT.2020 PQ)", AutoSize = true };
+        private readonly NumericUpDown _hdrNits = new NumericUpDown { Minimum = 80, Maximum = 1000, Value = 203, Width = 80, Enabled = false };
         private Subtitle _subtitle;
+        private System.Collections.Generic.List<Nikse.SubtitleEdit.Logic.ClassicFontFile> _classicExportFonts;
         private SubtitleFormat _format;
         private static string _formatName;
         private Color _subtitleColor;
@@ -133,6 +141,12 @@ namespace Nikse.SubtitleEdit.Forms
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
+            _hdrPanel.Location = new Point(13, buttonExport.Top);
+            _hdrPanel.Controls.Add(_hdrPalette); _hdrPanel.Controls.Add(_hdrNits); _hdrPanel.Controls.Add(new Label { Text = "nits", AutoSize = true });
+            _hdrPalette.CheckedChanged += (sender, args) => _hdrNits.Enabled = _hdrPalette.Checked;
+            Controls.Add(_hdrPanel); _hdrPanel.Visible = false;
+            progressBar1.VisibleChanged += (sender, args) => _hdrPanel.Visible = _exportType == ExportFormats.BluraySup && !progressBar1.Visible;
+
             UiUtil.FixFonts(this);
 
             var toolTip = new ToolTip { ShowAlways = true };
@@ -399,6 +413,7 @@ namespace Nikse.SubtitleEdit.Forms
                 Width = param.ScreenWidth,
                 Height = param.ScreenHeight,
                 IsForced = param.Forced,
+                HdrWhiteNits = param.HdrWhiteNits,
                 CompositionNumber = param.P.Number * 2,
             };
             if (param.FullFrame)
@@ -482,7 +497,10 @@ namespace Nikse.SubtitleEdit.Forms
 
             var parameter = new MakeBitmapParameter
             {
+                SourceSubtitle = _subtitle,
+                Fonts = _classicExportFonts ?? (_classicExportFonts = ClassicFontCollection.Scan(_subtitle, CancellationToken.None)),
                 Type = _exportType,
+                HdrWhiteNits = _hdrPalette.Checked ? (int)_hdrNits.Value : 0,
                 SubtitleColor = _subtitleColor,
                 SubtitleFontName = _subtitleFontName,
                 SubtitleFontSize = _subtitleFontSize,
@@ -602,6 +620,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private void ButtonExportClick(object sender, EventArgs e)
         {
+            using var preventSleep = Nikse.SubtitleEdit.Logic.ClassicPowerRequest.Acquire("Processing subtitles and media");
             FixStartEndWithSameTimeCode();
             var singleFile = false;
 
@@ -739,6 +758,8 @@ namespace Nikse.SubtitleEdit.Forms
                     vobSubWriter = new VobSubWriter(saveFileDialog1.FileName, width, height, GetBottomMarginInPixels(p), GetLeftMarginInPixels(p), 32, _subtitleColor, _borderColor, !checkBoxTransAntiAliase.Checked, (DvdSubtitleLanguage)comboBoxLanguage.SelectedItem);
                 }
 
+                using var supComposition=_exportType==ExportFormats.BluraySup?new ClassicSupCompositionWriter(binarySubtitleFile,width,height,FrameRate,_hdrPalette.Checked?(int)_hdrNits.Value:0):null;
+                _classicSupComposition=supComposition;
                 progressBar1.Value = 0;
                 progressBar1.Maximum = _subtitle.Paragraphs.Count - 1;
                 progressBar1.Visible = true;
@@ -901,6 +922,7 @@ namespace Nikse.SubtitleEdit.Forms
                 progressBar1.Visible = false;
                 if (_exportType == ExportFormats.BluraySup)
                 {
+                    supComposition.Flush();_classicSupComposition=null;
                     binarySubtitleFile.Close();
                     MessageBox.Show(string.Format(LanguageSettings.Current.Main.SavedSubtitleX, saveFileDialog1.FileName));
                 }
@@ -1519,7 +1541,32 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
                 {
                     if (!param.Saved)
                     {
-                        binarySubtitleFile.Write(param.Buffer, 0, param.Buffer.Length);
+                        if(_classicSupComposition==null)binarySubtitleFile.Write(param.Buffer,0,param.Buffer.Length);
+                        else
+                        {
+                            using(var memory=new MemoryStream())
+                            {
+                                param.Bitmap.Save(memory,ImageFormat.Png);
+                                using(var image=SkiaSharp.SKBitmap.Decode(memory.ToArray()))
+                                {
+                                    var align=param.Alignment;
+                                    var x=align==ContentAlignment.TopLeft || align==ContentAlignment.MiddleLeft || align==ContentAlignment.BottomLeft?param.LeftMargin:
+                                        align==ContentAlignment.TopRight || align==ContentAlignment.MiddleRight || align==ContentAlignment.BottomRight?param.ScreenWidth-param.RightMargin-image.Width:(param.ScreenWidth-image.Width)/2;
+                                    var y=align==ContentAlignment.TopLeft || align==ContentAlignment.TopCenter || align==ContentAlignment.TopRight?param.BottomMargin:
+                                        align==ContentAlignment.MiddleLeft || align==ContentAlignment.MiddleCenter || align==ContentAlignment.MiddleRight?(param.ScreenHeight-image.Height)/2:param.ScreenHeight-param.BottomMargin-image.Height;
+                                    if(param.OverridePosition.HasValue){x=param.OverridePosition.Value.X;y=param.OverridePosition.Value.Y;}
+                                    if(param.FullFrame)
+                                    {
+                                        using(var full=new SkiaSharp.SKBitmap(param.ScreenWidth,param.ScreenHeight))
+                                        {
+                                            using(var canvas=new SkiaSharp.SKCanvas(full)){var c=param.FullFrameBackgroundColor;canvas.Clear(new SkiaSharp.SKColor(c.R,c.G,c.B,c.A));canvas.DrawBitmap(image,x,y);}
+                                            _classicSupComposition.Add((long)Math.Round(param.P.StartTime.TotalMilliseconds),(long)Math.Round(param.P.EndTime.TotalMilliseconds),full,0,0,new SkiaSharp.SKColor(param.SubtitleColor.R,param.SubtitleColor.G,param.SubtitleColor.B,param.SubtitleColor.A),param.Forced);
+                                        }
+                                    }
+                                    else _classicSupComposition.Add((long)Math.Round(param.P.StartTime.TotalMilliseconds),(long)Math.Round(param.P.EndTime.TotalMilliseconds),image,x,y,new SkiaSharp.SKColor(param.SubtitleColor.R,param.SubtitleColor.G,param.SubtitleColor.B,param.SubtitleColor.A),param.Forced);
+                                }
+                            }
+                        }
                     }
                     param.Saved = true;
                 }
@@ -1582,8 +1629,8 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
                                         }
 
                                         if (param.OverridePosition.HasValue &&
-                                            param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.Bitmap.Width &&
-                                            param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.Bitmap.Height)
+                                            param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.ScreenWidth &&
+                                            param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.ScreenHeight)
                                         {
                                             left = param.OverridePosition.Value.X;
                                             top = param.OverridePosition.Value.Y;
@@ -1633,8 +1680,8 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
                             }
 
                             if (param.OverridePosition.HasValue &&
-                                param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.Bitmap.Width &&
-                                param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.Bitmap.Height)
+                                param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.ScreenWidth &&
+                                param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.ScreenHeight)
                             {
                                 left = param.OverridePosition.Value.X;
                                 top = param.OverridePosition.Value.Y;
@@ -2081,8 +2128,8 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
                             }
 
                             if (param.OverridePosition.HasValue &&
-                                param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.Bitmap.Width &&
-                                param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.Bitmap.Height)
+                                param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.ScreenWidth &&
+                                param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.ScreenHeight)
                             {
                                 left = param.OverridePosition.Value.X;
                                 top = param.OverridePosition.Value.Y;
@@ -2254,8 +2301,8 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
             }
 
             if (param.OverridePosition.HasValue &&
-                param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.Bitmap.Width &&
-                param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.Bitmap.Height)
+                param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.ScreenWidth &&
+                param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.ScreenHeight)
             {
                 x = param.OverridePosition.Value.X;
                 y = param.OverridePosition.Value.Y;
@@ -2314,8 +2361,8 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
             }
 
             if (param.OverridePosition.HasValue &&
-                param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.Bitmap.Width &&
-                param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.Bitmap.Height)
+                param.OverridePosition.Value.X >= 0 && param.OverridePosition.Value.X < param.ScreenWidth &&
+                param.OverridePosition.Value.Y >= 0 && param.OverridePosition.Value.Y < param.ScreenHeight)
             {
                 left = param.OverridePosition.Value.X;
                 top = param.OverridePosition.Value.Y;
@@ -2589,7 +2636,8 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
 
         private Bitmap GenerateImageFromTextWithStyle(Paragraph p, out MakeBitmapParameter mbp)
         {
-            mbp = new MakeBitmapParameter { P = p };
+            mbp = new MakeBitmapParameter { P = p, SourceSubtitle = _subtitle,
+                Fonts = _classicExportFonts ?? (_classicExportFonts = ClassicFontCollection.Scan(_subtitle, CancellationToken.None)) };
 
             if (_vobSubOcr != null)
             {
@@ -2959,6 +3007,10 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
 
         internal static Bitmap GenerateImageFromTextWithStyle(MakeBitmapParameter parameter)
         {
+            if (parameter.SourceSubtitle != null && !parameter.SimpleRendering &&
+                (parameter.SourceSubtitle.Header?.IndexOf("[V4+ Styles]", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 parameter.SourceSubtitle.Header?.IndexOf("[V4 Styles]", StringComparison.OrdinalIgnoreCase) >= 0))
+                return RenderClassicImage(parameter);
             Bitmap bmp = null;
             if (!parameter.SimpleRendering && parameter.P.Text.Contains(Environment.NewLine) && (parameter.BoxSingleLine || parameter.P.Text.Contains(BoxSingleLineText)))
             {
@@ -4142,6 +4194,7 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
             checkBoxFullFrameImage.Checked = false;
             checkBoxFullFrameImage.Visible = false;
             _exportType = exportType;
+            _hdrPanel.Visible = exportType == ExportFormats.BluraySup && !progressBar1.Visible;
             _fileName = fileName;
             _format = format;
             _formatName = _format != null ? _format.Name : string.Empty;
@@ -5992,100 +6045,9 @@ $DROP=[DROPVALUE]" + Environment.NewLine + Environment.NewLine +
 
         private void linkLabelPreview_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            linkLabelPreview.Enabled = false;
-            Cursor = Cursors.WaitCursor;
-            try
-            {
-                GetResolution(out var width, out var height);
-                using (var bmp = new Bitmap(width, height))
-                {
-                    using (var g = Graphics.FromImage(bmp))
-                    {
-                        var index = _lastIndex;
-                        var p = _subtitle.Paragraphs[index];
-                        FillPreviewBackground(bmp, g, p);
-
-                        var nBmp = new NikseBitmap(pictureBox1.Image as Bitmap);
-                        nBmp.CropSidesAndBottom(100, Color.Transparent, true);
-                        using (var textBmp = nBmp.GetBitmap())
-                        {
-                            var bp = MakeMakeBitmapParameter(index, width, height);
-                            var alignment = GetAlignmentFromParagraph(bp, _format, _subtitle);
-                            if (comboBoxHAlign.Visible && alignment == ContentAlignment.BottomCenter && _format.GetType() != typeof(AdvancedSubStationAlpha) && _format.GetType() != typeof(SubStationAlpha))
-                            {
-                                if (comboBoxHAlign.SelectedIndex == 0)
-                                {
-                                    alignment = ContentAlignment.BottomLeft;
-                                }
-                                else if (comboBoxHAlign.SelectedIndex == 2)
-                                {
-                                    alignment = ContentAlignment.BottomRight;
-                                }
-                            }
-
-                            var x = (bmp.Width - textBmp.Width) / 2;
-                            if (alignment == ContentAlignment.BottomLeft || alignment == ContentAlignment.MiddleLeft || alignment == ContentAlignment.TopLeft)
-                            {
-                                x = GetBottomMarginInPixels(p);
-                            }
-                            else if (alignment == ContentAlignment.BottomRight || alignment == ContentAlignment.MiddleRight || alignment == ContentAlignment.TopRight)
-                            {
-                                x = bmp.Width - textBmp.Width - GetBottomMarginInPixels(p);
-                            }
-
-                            var y = bmp.Height - textBmp.Height - GetBottomMarginInPixels(p);
-                            if (alignment == ContentAlignment.BottomLeft || alignment == ContentAlignment.MiddleLeft || alignment == ContentAlignment.TopLeft)
-                            {
-                                x = GetBottomMarginInPixels(p);
-                            }
-                            else if (alignment == ContentAlignment.BottomRight || alignment == ContentAlignment.MiddleRight || alignment == ContentAlignment.TopRight)
-                            {
-                                x = bmp.Width - textBmp.Width - GetBottomMarginInPixels(p);
-                            }
-
-                            if (alignment == ContentAlignment.MiddleLeft || alignment == ContentAlignment.MiddleCenter || alignment == ContentAlignment.MiddleRight)
-                            {
-                                y = (groupBoxExportImage.Height - 4 - textBmp.Height) / 2;
-                            }
-                            else if (alignment == ContentAlignment.TopLeft || alignment == ContentAlignment.TopCenter || alignment == ContentAlignment.TopRight)
-                            {
-                                y = GetBottomMarginInPixels(p);
-                            }
-
-                            g.DrawImageUnscaled(textBmp, new Point(x, y));
-                        }
-                    }
-
-                    bool showPrev;
-                    bool showNext;
-                    var idx = _lastIndex;
-                    using (var form = new ExportPngXmlPreview(bmp))
-                    {
-                        Cursor = Cursors.Default;
-                        form.AllowNext = idx < _subtitle.Paragraphs.Count - 1;
-                        form.AllowPrevious = idx > 0;
-                        form.ShowDialog(this);
-                        showPrev = form.PreviousPressed;
-                        showNext = form.NextPressed;
-                    }
-
-                    if (showPrev || showNext)
-                    {
-                        idx = showPrev ? Math.Max(0, idx - 1) : Math.Min(subtitleListView1.Items.Count - 1, idx + 1);
-                        subtitleListView1.SelectedIndices.Clear();
-                        subtitleListView1.Items[idx].Selected = true;
-                        subtitleListView1.Items[idx].Focused = true;
-                        subtitleListView1.Items[idx].EnsureVisible();
-                        Application.DoEvents();
-                        linkLabelPreview_LinkClicked(null, null);
-                    }
-                }
-            }
-            finally
-            {
-                Cursor = Cursors.Default;
-                linkLabelPreview.Enabled = true;
-            }
+            if (_subtitle.Paragraphs.Count == 0) return;
+            using (var viewer = new ExportPngXmlPreview(CreateClassicExportPreviewFrame, _lastIndex, _subtitle.Paragraphs.Count,
+                index => SubtitleListView1SelectIndexAndEnsureVisible(index))) viewer.ShowDialog(this);
         }
 
         private void comboBoxLeftRightMargin_SelectedIndexChanged(object sender, EventArgs e)

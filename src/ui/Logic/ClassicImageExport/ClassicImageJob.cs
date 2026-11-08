@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -27,12 +27,12 @@ namespace Nikse.SubtitleEdit.Logic.ClassicImageExport
 
     public static class ClassicImageJob
     {
-        public static ImageParameter Render(Subtitle subtitle, Paragraph cue, ClassicImageOptions options)
+        public static ImageParameter Render(Subtitle subtitle, Paragraph cue, ClassicImageOptions options, ImageParameter defaults = null)
         {
             options.Fonts = options.Fonts ?? ClassicFontCollection.Scan(subtitle, CancellationToken.None);
             using (FontFaces.UseFonts(options.Fonts))
             {
-            var ip = new ImageParameter { Text = ExportTextTags.ToRenderableText(cue.Text), StartTime = cue.StartTime.TimeSpan,
+            var ip = defaults ?? new ImageParameter { Text = ExportTextTags.ToRenderableText(cue.Text), StartTime = cue.StartTime.TimeSpan,
                 EndTime = cue.EndTime.TimeSpan, ScreenWidth = options.Width, ScreenHeight = options.Height,
                 FontName = options.FontName, FontSize = options.FontSize, FontColor = SKColors.White,
                 OutlineColor = SKColors.Black, OutlineWidth = 2, ShadowColor = SKColors.Black, ShadowWidth = 1,
@@ -41,22 +41,13 @@ namespace Nikse.SubtitleEdit.Logic.ClassicImageExport
                 LeftRightMargin = options.Margin, FramesPerSecond = options.FrameRate,
                 Mode3D = options.Stereo, Depth3D = options.Depth, IsForced = cue.Forced };
             var resolution = ExportTextTags.GetScriptResolution(subtitle.Header);
-            if (options.UseAssStyles && !string.IsNullOrWhiteSpace(subtitle.Header) && subtitle.Header.Contains("[V4+ Styles]"))
+            var styles = options.UseAssStyles ? ExportAssaStyles.FromHeader(subtitle.Header) : null;
+            if (styles != null)
             {
-                var style = AdvancedSubStationAlpha.GetSsaStyle(cue.Extra, subtitle.Header);
-                if (style != null)
-                {
-                    var scale = resolution.Height > 0 ? options.Height / (float)resolution.Height : 1;
-                    ip.FontName = style.FontName; ip.FontSize = (float)style.FontSize * scale; ip.IsBold = style.Bold;
-                    ip.FontColor = Color(style.Primary); ip.OutlineColor = Color(style.Outline); ip.ShadowColor = Color(style.Background);
-                    ip.OutlineWidth = (double)style.OutlineWidth * scale; ip.ShadowWidth = (double)style.ShadowWidth * scale;
-                    ip.Alignment = ExportTextTags.GetAlignment("{\\an" + style.Alignment + "}", ip.Alignment);
-                    ip.BottomTopMargin=(int)(style.MarginVertical*scale);
-                    ip.LeftRightMargin=(int)((style.Alignment=="3" || style.Alignment=="6" || style.Alignment=="9"?style.MarginRight:style.MarginLeft)*(resolution.Width>0?options.Width/(float)resolution.Width:1));
-                    if(style.BorderStyle=="3"){ip.BackgroundColor=Color(style.Outline);ip.BoxType=ExportBoxType.OneBox;}
-                    ip.Text = (style.Italic ? "<i>" : "") + ip.Text + (style.Italic ? "</i>" : "");
-                }
+                styles.Apply(ip, cue.Extra, cue.Text, cue.MarginL, cue.MarginR, cue.MarginV);
+                resolution = styles.ScriptResolution;
             }
+            ip.Text = ExportTextTags.ToRenderableText(cue.Text, styles, cue.Extra);
             ip.Alignment = ExportTextTags.GetAlignment(cue.Text, ip.Alignment);
             ExportTextTags.ApplyStyleOverrideTags(ip, cue.Text, resolution.Height);
             ExportTextTags.ApplyTransparencyTags(ip, cue.Text);
@@ -84,10 +75,10 @@ namespace Nikse.SubtitleEdit.Logic.ClassicImageExport
                 {
                     if (format == 3 && (options.Width != 720 || (options.Height != 576 && options.Height != 480)))
                         throw new InvalidOperationException("DVD SUP requires 720 x 576 (PAL) or 720 x 480 (NTSC).");
-                    IExportHandler handler = format == 0 ? (IExportHandler)new ExportHandlerImscImage() : new ExportHandlerBdnXml(format == 2);
+                    IExportHandler handler = format == 0 ? (IExportHandler)new ExportHandlerImscImage() : format == 4 ? new ExportHandlerDCinemaSmpte2014Mxf() : format == 5 ? new ExportHandlerDCinemaSmpte2014Png() : new ExportHandlerBdnXml(format == 2);
                     using (var dvd = format == 3 ? new ClassicExport.DvdSupWriter(Path.Combine(stage, "subtitles.sup"), options.Width, options.Height, options.Margin, options.Margin, System.Drawing.Color.White, System.Drawing.Color.Black, true) : null)
                     {
-                        if (dvd == null) handler.WriteHeader(format == 0 ? Path.Combine(stage, "subtitles.ttml") : stage, new ImageParameter { ScreenWidth = options.Width, ScreenHeight = options.Height, FramesPerSecond = options.FrameRate });
+                        if (dvd == null) handler.WriteHeader(format == 0 ? Path.Combine(stage, "subtitles.ttml") : format == 4 ? Path.Combine(stage, "subtitles.mxf") : stage, new ImageParameter { ScreenWidth = options.Width, ScreenHeight = options.Height, FramesPerSecond = options.FrameRate });
                         var count = 0;
                         foreach (var cue in subtitle.Paragraphs)
                         {

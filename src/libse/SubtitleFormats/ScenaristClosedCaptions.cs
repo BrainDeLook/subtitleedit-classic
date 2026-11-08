@@ -1,7 +1,7 @@
 ﻿using Nikse.SubtitleEdit.Core.Common;
+using System.Drawing;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -220,9 +220,9 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             new KeyValuePair<string, string>("4f80 1332",           "Ö" ),
             new KeyValuePair<string, string>("13b3",                "ö" ),
             new KeyValuePair<string, string>("ef80 13b3",           "ö" ),
-            new KeyValuePair<string, string>("1334",                ""  ),
-            new KeyValuePair<string, string>("13b5",                ""  ),
-            new KeyValuePair<string, string>("13b6",                ""  ),
+            new KeyValuePair<string, string>("1334",                "ß" ),
+            new KeyValuePair<string, string>("13b5",                "¥" ),
+            new KeyValuePair<string, string>("13b6",                "¤" ),
             new KeyValuePair<string, string>("1337",                "|" ),
             new KeyValuePair<string, string>("1338",                "Å" ),
             new KeyValuePair<string, string>("13b9",                "å" ),
@@ -244,9 +244,9 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             new KeyValuePair<string, string>("94d6",                ""  ), //94d6=?
             new KeyValuePair<string, string>("94f2",                ""  ),
             new KeyValuePair<string, string>("94f4",                ""  ),
-            new KeyValuePair<string, string>("9723",                " " ), // ?
-            new KeyValuePair<string, string>("97a1",                " " ), // ?
-            new KeyValuePair<string, string>("97a2",                " " ), // ?
+            new KeyValuePair<string, string>("9723",                ""  ), // Tab Offset 3 - positioning only, no glyph
+            new KeyValuePair<string, string>("97a1",                ""  ), // Tab Offset 1
+            new KeyValuePair<string, string>("97a2",                ""  ), // Tab Offset 2
             new KeyValuePair<string, string>("1370",                ""  ), //1370=?
             new KeyValuePair<string, string>("13e0",                ""  ), //13e0=?
             new KeyValuePair<string, string>("13f2",                ""  ), //13f2=?
@@ -404,11 +404,181 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             new KeyValuePair<string, string>("d580 923d 923d",      "Û"),
         };
 
-        private static readonly Dictionary<string, string> LettersCodeLookup = LetterDictionary.ToDictionary(p => p.Key, p => p.Value);
+        private static readonly Dictionary<string, string> LettersCodeLookup = BuildLettersCodeLookup();
+
+        // GetCodeFromLetter used to walk all 339 entries of LetterDictionary with a LINQ
+        // predicate for every character written, which made writing an .scc quadratic in the
+        // table size. These reverse maps answer the same question in one probe; "first entry
+        // wins" matches FirstOrDefault's behaviour for the duplicate values in the table.
+        private static readonly Dictionary<string, string> CodeFromLetterLookup = BuildCodeFromLetterLookup();
+        private static readonly Dictionary<char, string> CodeFromCharLookup = BuildCodeFromCharLookup();
+
+        private static Dictionary<string, string> BuildCodeFromLetterLookup()
+        {
+            var lookup = new Dictionary<string, string>(LetterDictionary.Count, StringComparer.Ordinal);
+            foreach (var p in LetterDictionary)
+            {
+                if (p.Value != null && !lookup.ContainsKey(p.Value))
+                {
+                    lookup.Add(p.Value, p.Key);
+                }
+            }
+
+            return lookup;
+        }
+
+        private static Dictionary<char, string> BuildCodeFromCharLookup()
+        {
+            var lookup = new Dictionary<char, string>(LetterDictionary.Count);
+            foreach (var p in LetterDictionary)
+            {
+                if (p.Value != null && p.Value.Length == 1 && !lookup.ContainsKey(p.Value[0]))
+                {
+                    lookup.Add(p.Value[0], p.Key);
+                }
+            }
+
+            return lookup;
+        }
+
+        // CEA-608 extended characters (the 0x12/0x13 sets) erase the preceding standard
+        // character, so compliant encoders transmit a standard fallback letter first
+        // ("o" + extended "ö"). Generate a "fallback + extended" combined entry for every
+        // extended character so files from compliant encoders decode without doubled letters.
+        private static Dictionary<string, string> BuildLettersCodeLookup()
+        {
+            var lookup = new Dictionary<string, string>();
+            foreach (var p in LetterDictionary)
+            {
+                if (!lookup.ContainsKey(p.Key))
+                {
+                    lookup.Add(p.Key, p.Value);
+                }
+            }
+
+            foreach (var p in LetterDictionary)
+            {
+                if (!IsExtendedCharCode(p.Key) || p.Value.Length != 1)
+                {
+                    continue;
+                }
+
+                var fallback = GetExtendedCharFallback(p.Value[0]);
+                if (fallback == null)
+                {
+                    continue;
+                }
+
+                var fallbackCode = LetterDictionary.FirstOrDefault(x => x.Value == fallback).Key;
+                if (fallbackCode != null && fallbackCode.Length == 2)
+                {
+                    var combined = fallbackCode + "80 " + p.Key;
+                    if (!lookup.ContainsKey(combined))
+                    {
+                        lookup.Add(combined, p.Value);
+                    }
+                }
+            }
+
+            return lookup;
+        }
+
+        private static bool IsExtendedCharCode(string code)
+        {
+            return code.Length == 4 &&
+                   (code.StartsWith("12", StringComparison.Ordinal) ||
+                    code.StartsWith("92", StringComparison.Ordinal) ||
+                    code.StartsWith("13", StringComparison.Ordinal) ||
+                    code.StartsWith("93", StringComparison.Ordinal));
+        }
+
+        private static string GetExtendedCharFallback(char ch)
+        {
+            switch (ch)
+            {
+                case 'ß': return "s";
+                case '«':
+                case '»':
+                case '“':
+                case '”': return "\"";
+                case '‘':
+                case '’': return "'";
+                case '—': return "-";
+            }
+
+            var stripped = new StringBuilder();
+            foreach (var c in ch.ToString().Normalize(NormalizationForm.FormD))
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    stripped.Append(c);
+                }
+            }
+
+            var result = stripped.ToString();
+            return result.Length == 1 && result[0] != ch && result[0] < 0x80 ? result : null;
+        }
+
+        // Writer counterpart of the combined decode entries: insert the standard fallback
+        // letter before each extended character, as CEA-608 decoders erase it again.
+        // Without it, spec-compliant decoders erase the real preceding character instead
+        // ("schön" displayed as "scön").
+        private static readonly Lazy<Dictionary<char, char>> ExtendedCharWriteFallbacks = new Lazy<Dictionary<char, char>>(() =>
+        {
+            // The first dictionary entry per character is what the encoder emits. Some
+            // characters already encode as a multi-word "fallback + extended" sequence
+            // (e.g. ä = "6180 1331 1331") - only characters that encode as a bare
+            // extended code need a fallback inserted.
+            var primaryCodes = new Dictionary<char, string>();
+            foreach (var p in LetterDictionary)
+            {
+                if (p.Value.Length == 1 && !primaryCodes.ContainsKey(p.Value[0]))
+                {
+                    primaryCodes.Add(p.Value[0], p.Key);
+                }
+            }
+
+            var map = new Dictionary<char, char>();
+            foreach (var kvp in primaryCodes)
+            {
+                var ch = kvp.Key;
+                if (ch == '’' || !IsExtendedCharCode(kvp.Value))
+                {
+                    continue; // '’' has its own encode branch
+                }
+
+                var fallback = GetExtendedCharFallback(ch);
+                var fallbackCode = fallback == null ? null : LetterDictionary.FirstOrDefault(x => x.Value == fallback).Key;
+                if (fallbackCode != null && fallbackCode.Length == 2)
+                {
+                    map.Add(ch, fallback[0]);
+                }
+            }
+
+            return map;
+        });
+
+        private static string InsertExtendedCharFallbacks(string text)
+        {
+            var sb = new StringBuilder(text.Length + 4);
+            foreach (var ch in text)
+            {
+                if (ExtendedCharWriteFallbacks.Value.TryGetValue(ch, out var fallback))
+                {
+                    sb.Append(fallback);
+                }
+
+                sb.Append(ch);
+            }
+
+            return sb.ToString();
+        }
 
         public override string Extension => ".scc";
 
         public override string Name => "Scenarist Closed Captions";
+
+        public override SubtitleFormatLimits FormatLimits => new SubtitleFormatLimits { MaxCharactersPerLine = MaxCharactersPerLine, MaxLines = 4 };
 
         private static string FixMax4LinesAndMax32CharsPerLine(string text, string language)
         {
@@ -517,25 +687,448 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             sb.AppendLine("Scenarist_SCC V1.0");
             sb.AppendLine();
             var language = LanguageAutoDetect.AutoDetectGoogleLanguage(subtitle);
-            for (var i = 0; i < subtitle.Paragraphs.Count; i++)
-            {
-                var p = subtitle.Paragraphs[i];
-                sb.AppendLine($"{ToTimeCode(p.StartTime.TotalMilliseconds)}\t94ae 94ae 9420 9420 {ToSccText(p.Text, language)} 942f 942f");
-                sb.AppendLine();
 
-                var next = subtitle.GetParagraphOrDefault(i + 1);
-                if (next == null || Math.Abs(next.StartTime.TotalMilliseconds - p.EndTime.TotalMilliseconds) > 100)
+            // One byte pair is sent per frame, so everything is scheduled on a frame grid:
+            // timecodes must only go forward and two lines must never claim the same frame.
+            // A caption is loaded into non-displayed memory (94ae erases it first), so its
+            // load may only start once the previous caption has been flipped on screen (942f).
+            var cursor = 0; // first frame not yet used by a transmission
+            var pendingClear = -1; // frame of the previous caption's 942c, -1 = none
+            foreach (var p in subtitle.Paragraphs)
+            {
+                var sccText = ToSccText(p.Text, language);
+                var loadCodes = $"94ae 94ae 9420 9420 {sccText}".Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                var startFrame = Math.Max(cursor, MillisecondsToFrame(p.StartTime.TotalMilliseconds));
+
+                // No room for the 942c pair before this caption is flipped on screen: the flip
+                // replaces the displayed caption anyway.
+                if (pendingClear >= 0 && StepFrames(pendingClear, 2) > startFrame)
                 {
-                    sb.AppendLine($"{ToTimeCode(p.EndTime.TotalMilliseconds)}\t942c 942c");
-                    sb.AppendLine();
+                    pendingClear = -1;
                 }
+
+                var loadStart = Math.Max(cursor, StepFrames(startFrame, -(loadCodes.Length + 2)));
+                int loadEnd;
+                if (pendingClear < 0 || loadStart >= StepFrames(pendingClear, 2))
+                {
+                    if (pendingClear >= 0)
+                    {
+                        AppendSccLine(sb, pendingClear, "942c 942c");
+                    }
+
+                    AppendSccLine(sb, loadStart, string.Join(" ", loadCodes));
+                    loadEnd = StepFrames(loadStart, loadCodes.Length);
+                }
+                else
+                {
+                    // The previous caption is cleared while this one should be loading: load it
+                    // before the clear. If there is not enough time for that, the clear waits
+                    // until the load is sent (a load is never split - decoders and our own
+                    // reader treat 942c inside a load differently), or is dropped when the flip
+                    // comes first anyway.
+                    var earlyStart = Math.Max(cursor, StepFrames(pendingClear, -loadCodes.Length));
+                    AppendSccLine(sb, earlyStart, string.Join(" ", loadCodes));
+                    loadEnd = StepFrames(earlyStart, loadCodes.Length);
+                    var clearFrame = Math.Max(pendingClear, loadEnd);
+                    if (StepFrames(clearFrame, 2) <= startFrame)
+                    {
+                        AppendSccLine(sb, clearFrame, "942c 942c");
+                        loadEnd = StepFrames(clearFrame, 2);
+                    }
+                }
+
+                var displayFrame = Math.Max(startFrame, loadEnd);
+                AppendSccLine(sb, displayFrame, "942f 942f");
+                cursor = StepFrames(displayFrame, 2);
+                pendingClear = Math.Max(cursor, MillisecondsToFrame(p.EndTime.TotalMilliseconds));
+            }
+
+            if (pendingClear >= 0)
+            {
+                AppendSccLine(sb, pendingClear, "942c 942c");
             }
 
             return sb.ToString();
         }
 
+        private void AppendSccLine(StringBuilder sb, int frame, string codes)
+        {
+            sb.AppendLine($"{FrameToTimeCode(frame)}\t{codes}");
+            sb.AppendLine();
+        }
+
+        private static int TimeCodeFramesPerSecond => Math.Max(1, (int)Math.Round(Configuration.Settings.General.CurrentFrameRate));
+
+        /// <summary>
+        /// Frame number on the timecode label grid (seconds * fps + frame label), so it
+        /// converts back to the exact label. In drop-frame the skipped labels are numbers
+        /// no frame ever gets.
+        /// </summary>
+        private int MillisecondsToFrame(double totalMilliseconds)
+        {
+            var totalSeconds = (int)Math.Floor(Math.Max(0, totalMilliseconds) / 1000.0);
+            var frame = MillisecondsToFramesMaxFrameRate(Math.Max(0, totalMilliseconds) - totalSeconds * 1000.0);
+            frame = Math.Min(frame, TimeCodeFramesPerSecond - 1);
+            var result = totalSeconds * TimeCodeFramesPerSecond + frame;
+            while (IsDroppedFrameLabel(result))
+            {
+                result++;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 29.97 drop-frame skips frame numbers 00 and 01 at the start of every minute except
+        /// every tenth, so those labels do not exist in a DF file - emitting them produced
+        /// timecodes no DF-aware tool accepts. Same skip MacCaption10's StepToNextFrame and
+        /// <see cref="ParseTimeCode"/> apply.
+        /// </summary>
+        private bool IsDroppedFrameLabel(int frame)
+        {
+            if (!DropFrame || frame % TimeCodeFramesPerSecond >= 2)
+            {
+                return false;
+            }
+
+            var totalSeconds = frame / TimeCodeFramesPerSecond;
+            var minutes = totalSeconds / 60;
+            return totalSeconds % 60 == 0 && minutes % 10 != 0;
+        }
+
+        private int StepFrames(int frame, int count)
+        {
+            var direction = Math.Sign(count);
+            for (var i = Math.Abs(count); i > 0; i--)
+            {
+                do
+                {
+                    frame += direction;
+                }
+                while (IsDroppedFrameLabel(frame));
+            }
+
+            return Math.Max(0, frame);
+        }
+
+        private string FrameToTimeCode(int frame)
+        {
+            var framesPerSecond = TimeCodeFramesPerSecond;
+            var totalSeconds = frame / framesPerSecond;
+            var separator = DropFrame ? ";" : ":";
+            return $"{totalSeconds / 3600:00}:{totalSeconds / 60 % 60:00}:{totalSeconds % 60:00}{separator}{frame % framesPerSecond:00}";
+        }
+
+        // A style change is written as a CEA-608 mid-row code. It is put into the prepared line
+        // as this single marker character so it takes exactly one screen cell - which is what a
+        // mid-row code does when displayed (it shows as a space) - and the code itself is kept
+        // in a parallel list. The marker is from the private use area, so it can never collide
+        // with subtitle text (and has no CEA-608 code of its own).
+        private const char StyleMarker = '\uE000';
+
+        private const string MidRowWhite = "9120";
+        private const string MidRowItalic = "91ae";
+        private const string MidRowItalicUnderline = "912f";
+
+        private static readonly Lazy<Dictionary<Color, string>> MidRowColorCodes = BuildMidRowColorCodes(false);
+        private static readonly Lazy<Dictionary<Color, string>> MidRowColorUnderlineCodes = BuildMidRowColorCodes(true);
+
+        private static Lazy<Dictionary<Color, string>> BuildMidRowColorCodes(bool underline)
+        {
+            return new Lazy<Dictionary<Color, string>>(() =>
+            {
+                var codes = new Dictionary<Color, string>();
+                foreach (var p in SccPositionAndStyleTable.SccPositionAndStyles)
+                {
+                    // Mid-row codes are the entries with no row/column (the italic ones carry no
+                    // color of their own - they are always white per CEA-608).
+                    if (p.X != -1 || p.Y != -1 || p.ForeColor == Color.Transparent ||
+                        (p.Style & SccFontStyle.Italic) == SccFontStyle.Italic ||
+                        ((p.Style & SccFontStyle.Underline) == SccFontStyle.Underline) != underline)
+                    {
+                        continue;
+                    }
+
+                    if (!codes.ContainsKey(p.ForeColor))
+                    {
+                        codes.Add(p.ForeColor, p.Code);
+                    }
+                }
+
+                return codes;
+            });
+        }
+
+        /// <summary>
+        /// The style tags open at the current position while a line is written.
+        /// </summary>
+        private class SccStyle
+        {
+            internal int Italic { get; set; }
+            internal int Underline { get; set; }
+            internal List<Color> Colors { get; } = new List<Color>();
+            internal Color Color => Colors.Count > 0 ? Colors[Colors.Count - 1] : Color.White;
+        }
+
+        private static string GetMidRowCode(SccStyle style)
+        {
+            if (style.Italic > 0)
+            {
+                // CEA-608 encodes italics in the same slot as the colors, so italics is always
+                // white - colored italics do not exist in the format.
+                return style.Underline > 0 ? MidRowItalicUnderline : MidRowItalic;
+            }
+
+            var codes = style.Underline > 0 ? MidRowColorUnderlineCodes : MidRowColorCodes;
+            return codes.Value.TryGetValue(GetNearestSccColor(style.Color), out var code) ? code : MidRowWhite;
+        }
+
+        /// <summary>
+        /// CEA-608 has seven foreground colors - map anything else to the nearest one by
+        /// quantizing each channel, like the EBU/teletext writer does. The threshold follows the
+        /// strongest channel so a dark green still becomes green, and black (no channel at all)
+        /// stays white: there is no black foreground code.
+        /// </summary>
+        private static Color GetNearestSccColor(Color color)
+        {
+            var threshold = Math.Max(64, Math.Max(color.R, Math.Max(color.G, color.B)) / 2);
+            var r = color.R >= threshold;
+            var g = color.G >= threshold;
+            var b = color.B >= threshold;
+
+            if (r && g && b)
+            {
+                return Color.White;
+            }
+
+            if (r && g)
+            {
+                return Color.Yellow;
+            }
+
+            if (r && b)
+            {
+                return Color.Magenta;
+            }
+
+            if (g && b)
+            {
+                return Color.Cyan;
+            }
+
+            if (r)
+            {
+                return Color.Red;
+            }
+
+            if (g)
+            {
+                return Color.Green;
+            }
+
+            if (b)
+            {
+                return Color.Blue;
+            }
+
+            return Color.White;
+        }
+
+        /// <summary>
+        /// Replaces the style tags of one line with <see cref="StyleMarker"/> + the CEA-608
+        /// mid-row code to write for it. Tags with no CEA-608 equivalent are dropped: only
+        /// "&lt;i&gt;" used to be understood here, so every other tag was encoded letter by
+        /// letter and ended up on screen as "&lt;font color=..." (issue #14239).
+        /// </summary>
+        private static string ReplaceStyleTagsWithMidRowCodes(string line, SccStyle style, List<string> codes)
+        {
+            var sb = new StringBuilder(line.Length);
+
+            // A row starts with the style of its Preamble Address Code - white, no underline, no
+            // italics - so a style still open from the previous row must be written again here.
+            var currentCode = MidRowWhite;
+            var styleChanged = true;
+            var i = 0;
+            while (i < line.Length)
+            {
+                if (line[i] == StyleMarker)
+                {
+                    i++; // never in real subtitle text, and it must not be taken for a code marker
+                    continue;
+                }
+
+                if (line[i] == '<')
+                {
+                    var tagEnd = line.IndexOf('>', i + 1);
+                    if (IsTag(line, i, tagEnd))
+                    {
+                        ApplyTag(line.Substring(i + 1, tagEnd - i - 1), style);
+                        styleChanged = true;
+                        i = tagEnd + 1;
+                        continue;
+                    }
+                }
+
+                if (styleChanged)
+                {
+                    // Written only now that a character follows, so a style that is closed at the
+                    // end of a line does not cost a cell for a reset nothing can be seen after.
+                    var newCode = GetMidRowCode(style);
+                    if (newCode != currentCode)
+                    {
+                        sb.Append(StyleMarker);
+                        codes.Add(newCode);
+                        currentCode = newCode;
+                    }
+
+                    styleChanged = false;
+                }
+
+                sb.Append(line[i]);
+                i++;
+            }
+
+            return sb.ToString();
+        }
+
+        private static bool IsTag(string line, int start, int end)
+        {
+            if (end <= start)
+            {
+                return false; // no ">" - a stray "<" is text, e.g. "a < b"
+            }
+
+            var i = start + 1;
+            if (line[i] == '/')
+            {
+                i++;
+            }
+
+            if (i >= end || !char.IsLetter(line[i]))
+            {
+                return false;
+            }
+
+            var nextStart = line.IndexOf('<', start + 1);
+            return nextStart < 0 || nextStart > end;
+        }
+
+        private static void ApplyTag(string tag, SccStyle style)
+        {
+            if (tag.Equals("i", StringComparison.OrdinalIgnoreCase))
+            {
+                style.Italic++;
+            }
+            else if (tag.Equals("/i", StringComparison.OrdinalIgnoreCase))
+            {
+                style.Italic = Math.Max(0, style.Italic - 1);
+            }
+            else if (tag.Equals("u", StringComparison.OrdinalIgnoreCase))
+            {
+                style.Underline++;
+            }
+            else if (tag.Equals("/u", StringComparison.OrdinalIgnoreCase))
+            {
+                style.Underline = Math.Max(0, style.Underline - 1);
+            }
+            else if (tag.StartsWith("font", StringComparison.OrdinalIgnoreCase))
+            {
+                style.Colors.Add(GetFontTagColor(tag));
+            }
+            else if (tag.Equals("c", StringComparison.OrdinalIgnoreCase) || tag.StartsWith("c.", StringComparison.OrdinalIgnoreCase))
+            {
+                style.Colors.Add(GetWebVttClassColor(tag));
+            }
+            else if (tag.Equals("/font", StringComparison.OrdinalIgnoreCase) || tag.Equals("/c", StringComparison.OrdinalIgnoreCase))
+            {
+                if (style.Colors.Count > 0)
+                {
+                    style.Colors.RemoveAt(style.Colors.Count - 1);
+                }
+            }
+
+            // Any other tag (bold, ruby, voice spans...) has no CEA-608 equivalent and is dropped.
+        }
+
+        /// <summary>
+        /// Reads the color of a "font" tag; the value may be double-quoted, single-quoted or bare.
+        /// An unknown color gives white, which is also what a color-less font tag means.
+        /// </summary>
+        private static Color GetFontTagColor(string tag)
+        {
+            var colorStart = tag.IndexOf("color", StringComparison.OrdinalIgnoreCase);
+            if (colorStart < 0)
+            {
+                return Color.White;
+            }
+
+            var equalsSign = tag.IndexOf('=', colorStart);
+            if (equalsSign < 0)
+            {
+                return Color.White;
+            }
+
+            var color = tag.Substring(equalsSign + 1).TrimStart();
+            if (color.Length > 0 && (color[0] == '"' || color[0] == '\''))
+            {
+                var quote = color[0];
+                var closingQuote = color.IndexOf(quote, 1);
+                color = closingQuote > 0 ? color.Substring(1, closingQuote - 1) : color.Substring(1);
+            }
+            else
+            {
+                var space = color.IndexOf(' ');
+                if (space > 0)
+                {
+                    color = color.Substring(0, space);
+                }
+            }
+
+            color = color.Trim();
+            return color.Length == 0 ? Color.White : HtmlUtil.GetColorFromString(color);
+        }
+
+        /// <summary>
+        /// Reads the color of a WebVTT class tag, e.g. "c.yellow" or "c.colorFFFF00" - SubtitleEdit
+        /// keeps those as they are when loading WebVTT, so they arrive here unchanged.
+        /// </summary>
+        private static Color GetWebVttClassColor(string tag)
+        {
+            foreach (var cssClass in tag.Split('.'))
+            {
+                if (cssClass.Length == 0 || cssClass.Equals("c", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var name = cssClass;
+                if (name.StartsWith("color", StringComparison.OrdinalIgnoreCase) && name.Length == "color".Length + 6)
+                {
+                    name = "#" + name.Substring("color".Length);
+                }
+
+                var color = HtmlUtil.GetColorFromString(name);
+                if (color != Color.White)
+                {
+                    return color; // classes that are not colors (languages, "bg_black"...) give white
+                }
+            }
+
+            return Color.White;
+        }
+
         private static string ToSccText(string text, string language)
         {
+            // Transliterate characters CEA-608 has no code for (they would otherwise be
+            // written as spaces and silently disappear). Before the line-length fix-up so
+            // the expanded text is what gets measured.
+            text = text.Replace("…", "...")
+                .Replace("Æ", "AE")
+                .Replace("æ", "ae")
+                .Replace("Œ", "OE")
+                .Replace("œ", "oe")
+                .Replace("€", "EUR");
+
             text = FixMax4LinesAndMax32CharsPerLine(text, language);
             var topAlign = text.StartsWith("{\\an7}", StringComparison.Ordinal) ||
                            text.StartsWith("{\\an8}", StringComparison.Ordinal) ||
@@ -555,43 +1148,36 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
 
             text = Utilities.RemoveSsaTags(text);
             var lines = text.Trim().SplitToLines();
-            int italic = 0;
+            var style = new SccStyle();
+            var styleCodes = new List<string>();
             var sb = new StringBuilder();
             int count = 1;
             foreach (var line in lines)
             {
-                text = line.Trim();
+                styleCodes.Clear();
+                text = ReplaceStyleTagsWithMidRowCodes(line.Trim(), style, styleCodes);
                 if (count > 0)
                 {
                     sb.Append(' ');
                 }
 
-                var centerCodes = GetCenterCodes(HtmlUtil.RemoveHtmlTags(text), count, lines.Count, topAlign, leftAlign, rightAlign, verticalCenter);
+                // The text now holds one marker per mid-row code, and a mid-row code takes one
+                // screen cell (it shows as a space) - so its length is the width to center.
+                var centerCodes = GetCenterCodes(text, count, lines.Count, topAlign, leftAlign, rightAlign, verticalCenter);
                 sb.Append(centerCodes);
                 count++;
+                text = InsertExtendedCharFallbacks(text); // after centering - fallback chars are erased again and take no screen cell
                 int i = 0;
+                int styleCodeIndex = 0;
                 string code = string.Empty;
-                if (italic > 0)
-                {
-                    sb.Append("91ae 91ae "); // italic
-                }
 
                 while (i < text.Length)
                 {
-                    string s = text.Substring(i, 1);
-                    string codeFromLetter = GetCodeFromLetter(s);
                     string newCode;
-                    if (text.Substring(i).StartsWith("<i>", StringComparison.Ordinal))
+                    if (text[i] == StyleMarker)
                     {
-                        newCode = "91ae";
-                        i += 2;
-                        italic++;
-                    }
-                    else if (text.Substring(i).StartsWith("</i>", StringComparison.Ordinal) && italic > 0)
-                    {
-                        newCode = "9120";
-                        i += 3;
-                        italic--;
+                        newCode = styleCodes[styleCodeIndex];
+                        styleCodeIndex++;
                     }
                     else if (text[i] == '’')
                     {
@@ -615,13 +1201,9 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                         code = "9229";
                         newCode = "";
                     }
-                    else if (codeFromLetter == null)
-                    {
-                        newCode = GetCodeFromLetter(" ");
-                    }
                     else
                     {
-                        newCode = codeFromLetter;
+                        newCode = GetCodeFromLetter(text[i]) ?? GetCodeFromLetter(" ");
                     }
 
                     if (code.Length == 2 && newCode.Length == 4)
@@ -692,6 +1274,10 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                 if (code.Length == 4)
                 {
                     sb.Append(code);
+                    if (code.StartsWith('9') || code.StartsWith('8')) // control codes must be double
+                    {
+                        sb.Append(" " + code);
+                    }
                 }
             }
 
@@ -700,13 +1286,16 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
 
         private static string GetCodeFromLetter(string letter)
         {
-            var code = LetterDictionary.FirstOrDefault(x => x.Value == letter);
-            if (code.Equals(new KeyValuePair<string, string>()))
-            {
-                return null;
-            }
+            return letter != null && CodeFromLetterLookup.TryGetValue(letter, out var code) ? code : null;
+        }
 
-            return code.Key;
+        /// <summary>
+        /// <see cref="GetCodeFromLetter(string)"/> for a single character, so the writer does not
+        /// have to allocate a one-character string per character of every line.
+        /// </summary>
+        private static string GetCodeFromLetter(char letter)
+        {
+            return CodeFromCharLookup.TryGetValue(letter, out var code) ? code : null;
         }
 
         private static string GetLetterFromCode(string hexCode)
@@ -736,6 +1325,11 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             else if (rightAlign)
             {
                 left = 32 - text.Length;
+            }
+
+            if (left < 0)
+            {
+                left = 0; // a line wider than the row (mid-row codes take a cell too) starts at column zero
             }
             int columnRest = left % 4;
             int column = left - columnRest;
@@ -788,17 +1382,6 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             return $"{code} {code} ";
         }
 
-        private string ToTimeCode(double totalMilliseconds)
-        {
-            var ts = TimeSpan.FromMilliseconds(totalMilliseconds);
-            if (DropFrame)
-            {
-                return $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00};{MillisecondsToFramesMaxFrameRate(ts.Milliseconds):00}";
-            }
-
-            return $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}:{MillisecondsToFramesMaxFrameRate(ts.Milliseconds):00}";
-        }
-
         private static Dictionary<string, SccPositionAndStyle> _styleLookup;
         public static SccPositionAndStyle GetColorAndPosition(string code)
         {
@@ -820,29 +1403,81 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
         {
             _errorCount = 0;
             Paragraph p = null;
+            string loadedText = null;
             foreach (string line in lines)
             {
                 var s = line.Trim();
                 var match = RegexTimeCodes.Match(s);
-                if (match.Success)
+                if (!match.Success)
                 {
-                    var startTime = ParseTimeCode(s.Substring(0, match.Length - 1));
-                    var text = GetSccText(s.Substring(match.Index).ToLowerInvariant(), ref _errorCount);
+                    continue;
+                }
 
-                    if (text == "942c 942c" || text == "942c")
+                var lineTimeCode = s.Substring(0, match.Length - 1);
+                var payload = s.Substring(match.Length).Trim().ToLowerInvariant();
+                var parts = payload.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                var text = GetSccText(payload, ref _errorCount);
+
+                // Reject rows that are raw CEA-608 data words rendered as text instead of
+                // valid captions (#11341). Real caption text is positioned with a Preamble
+                // Address Code and is at most 32 columns wide, so a row with no PAC that
+                // decodes to an over-long line is garbage and must not be emitted as a cue.
+                if (!string.IsNullOrWhiteSpace(text) && !HasPreambleAddressCode(parts) && AnyLineTooLong(text))
+                {
+                    _errorCount++;
+                    text = string.Empty;
+                }
+
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    loadedText = text;
+                }
+
+                // A line's timecode is the time of its first byte pair only: CEA-608 carries one
+                // pair per frame, so a control code takes effect at the line time plus its index
+                // in the line. Files that pack a whole pop-on caption onto one line put the
+                // display code 20-30 pairs in, which is where broadcast decoders show it (#14703).
+                // Codes are applied in line order - a clear before a display ends the previous
+                // caption first - and the doubled code is the 608 redundancy copy, which a
+                // decoder ignores, so only the first of a pair counts.
+                var hasDisplay = false;
+                for (var i = 0; i < parts.Length; i++)
+                {
+                    var part = parts[i];
+                    var isRepeat = i > 0 && parts[i - 1] == part;
+                    if (part == "942f" && !isRepeat)
+                    {
+                        hasDisplay = true;
+                        var displayTime = ParseTimeCode(lineTimeCode, i);
+                        if (p != null && p.EndTime.TotalMilliseconds <= p.StartTime.TotalMilliseconds)
+                        {
+                            p.EndTime.TotalMilliseconds = displayTime.TotalMilliseconds;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(loadedText))
+                        {
+                            p = new Paragraph(displayTime, new TimeCode(displayTime.TotalMilliseconds), loadedText);
+                            subtitle.Paragraphs.Add(p);
+                        }
+
+                        loadedText = null;
+                    }
+                    else if (part == "942c" && !isRepeat)
                     {
                         if (p != null)
                         {
-                            p.EndTime.TotalMilliseconds = startTime.TotalMilliseconds;
+                            p.EndTime.TotalMilliseconds = ParseTimeCode(lineTimeCode, i).TotalMilliseconds;
+                            p = null;
                         }
                     }
-                    else
-                    {
-                        p = new Paragraph(startTime, new TimeCode(startTime.TotalMilliseconds), text);
-                        subtitle.Paragraphs.Add(p);
-                    }
+                }
+
+                if (!hasDisplay && string.IsNullOrWhiteSpace(text) && ContainsSccCommand(parts, "94ae"))
+                {
+                    loadedText = null;
                 }
             }
+
             for (int i = subtitle.Paragraphs.Count - 2; i >= 0; i--)
             {
                 p = subtitle.GetParagraphOrDefault(i);
@@ -881,6 +1516,80 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             subtitle.Renumber();
         }
 
+        // CEA-608 allows a maximum of 32 characters per line.
+        private const int MaxCharactersPerLine = 32;
+
+        private static bool AnyLineTooLong(string text)
+        {
+            foreach (var line in text.SplitToLines())
+            {
+                if (HtmlUtil.RemoveHtmlTags(line, true).Length > MaxCharactersPerLine)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasPreambleAddressCode(IEnumerable<string> parts)
+        {
+            foreach (var part in parts)
+            {
+                if (IsPreambleAddressCode(part))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // A CEA-608 Preamble Address Code (PAC) positions the caption cursor. Its first byte is
+        // one of the channel-1 row codes and its second byte is a position/data byte (high nibble
+        // 4-7 or c-f). This is how valid caption text is distinguished from a run of raw data words.
+        private static bool IsPreambleAddressCode(string code)
+        {
+            if (code.Length != 4)
+            {
+                return false;
+            }
+
+            // Row-code first byte: low 7 bits in 0x10-0x17 (parity-stripped 10-17), plus the
+            // odd-parity forms that differ (11->91, 12->92, 14->94, 17->97).
+            var firstByte = code.Substring(0, 2);
+            return IsPreambleAddressRowCode(firstByte) && "4567cdef".Contains(code[2]);
+        }
+
+        private static bool IsPreambleAddressRowCode(string firstByte)
+        {
+            // Row-code first byte: low 7 bits in 0x10-0x17 (parity-stripped 10-17), plus the
+            // odd-parity forms that differ (11->91, 12->92, 14->94, 17->97).
+            return firstByte == "10" || firstByte == "11" || firstByte == "12" || firstByte == "13" ||
+                   firstByte == "14" || firstByte == "15" || firstByte == "16" || firstByte == "17" ||
+                   firstByte == "91" || firstByte == "92" || firstByte == "94" || firstByte == "97";
+        }
+
+        // A PAC also carries the row's style. White italic (optionally underlined) is encoded in the
+        // second byte; parity-stripped that byte is 0x4e/0x4f/0x6e/0x6f (#9803). Many real files use
+        // the parity-applied row codes (916e, 92ce, ...) that are not in SccPositionAndStyleTable.
+        private static bool IsItalicPreambleAddressCode(string code)
+        {
+            if (!IsPreambleAddressCode(code))
+            {
+                return false;
+            }
+
+            var secondByte = Convert.ToInt32(code.Substring(2, 2), 16) & 0x7f;
+            return secondByte == 0x4e || secondByte == 0x4f || secondByte == 0x6e || secondByte == 0x6f;
+        }
+
+        // First byte of a two-byte CEA-608 control code (PAC, mid-row, special char): high nibble 1 or 9.
+        private static bool IsControlCodeFirstByte(string twoHex)
+        {
+            return twoHex.Length == 2 && (twoHex[0] == '1' || twoHex[0] == '9');
+        }
+
         public static string GetSccText(string s, ref int errorCount)
         {
             int y = 0;
@@ -898,7 +1607,9 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                 string part = parts[k];
                 if (part.Length == 4)
                 {
-                    if (part != "94ae" && part != "9420" && part != "94ad" && part != "9426" && part != "946e" && part != "91ce" && part != "13ce" && part != "9425" && part != "9429")
+                    // Note: 946e/91ce/13ce are Preamble Address Codes; they are handled as line
+                    // breaks further below (see IsPreambleAddressCode) instead of being skipped. (#9803)
+                    if (part != "94ae" && part != "9420" && part != "94ad" && part != "9426" && part != "9425" && part != "9429")
                     {
 
                         // skewed apostrophe "’"
@@ -945,7 +1656,7 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                         var cp = GetColorAndPosition(part);
                         if (cp != null)
                         {
-                            if (!string.IsNullOrWhiteSpace(sb.ToString()) && cp.Y > 0 && y >= 0 && cp.Y > y && !sb.ToString().EndsWith(Environment.NewLine, StringComparison.Ordinal))
+                            if (!sb.IsNullOrWhiteSpace() && cp.Y > 0 && y >= 0 && cp.Y > y && !sb.EndsWith(Environment.NewLine))
                             {
                                 sb.AppendLine();
                             }
@@ -1023,8 +1734,7 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                             }
                             else if (cp.ForeColor == Color.White && fontOn)
                             {
-                                sb.Append("</font>");
-                                sb.Append("</font>");
+                                sb.Append("</font>"); // once - a white code closes one font tag
                                 fontOn = false;
                             }
                             else if (cp.ForeColor == Color.Black && fontOn)
@@ -1048,9 +1758,18 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                         {
                             switch (part)
                             {
+                                case "97a1":
+                                    x += 1; // Tab Offset 1 - positioning only, no glyph
+                                    break;
+                                case "97a2":
+                                    x += 2; // Tab Offset 2
+                                    break;
+                                case "9723":
+                                    x += 3; // Tab Offset 3
+                                    break;
                                 case "9440":
                                 case "94e0":
-                                    if (!sb.ToString().EndsWith(Environment.NewLine, StringComparison.Ordinal))
+                                    if (!sb.EndsWith(Environment.NewLine))
                                     {
                                         sb.AppendLine();
                                     }
@@ -1078,7 +1797,69 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                                 case "2c52":
                                 case "2c94":
                                     break;
+                                case "91ae": // mid-row code: white italic on
+                                    if (!italicOn)
+                                    {
+                                        sb.Append("<i>");
+                                        italicOn = true;
+                                    }
+                                    break;
+                                case "912f": // mid-row code: white italic+underline on
+                                    if (!italicOn)
+                                    {
+                                        sb.Append("<i>");
+                                        italicOn = true;
+                                    }
+                                    break;
+                                case "9120": // mid-row code: white (reset, italic off)
+                                    if (italicOn)
+                                    {
+                                        sb.Append("</i>");
+                                        italicOn = false;
+                                    }
+                                    break;
                                 default:
+                                    if (IsPreambleAddressCode(part))
+                                    {
+                                        // Unrecognized Preamble Address Code: it repositions the
+                                        // cursor onto a new row, so emit a line break instead of
+                                        // decoding its bytes as stray letters (e.g. "n"/"N"). (#9803)
+                                        if (sb.Length > 0 && !sb.EndsWith(Environment.NewLine))
+                                        {
+                                            sb.AppendLine();
+                                        }
+
+                                        // The PAC also sets the row's style; honour white italic. (#9803)
+                                        if (IsItalicPreambleAddressCode(part) && !italicOn)
+                                        {
+                                            sb.Append("<i>");
+                                            italicOn = true;
+                                        }
+                                        else if (!IsItalicPreambleAddressCode(part) && italicOn)
+                                        {
+                                            sb.Append("</i>");
+                                            italicOn = false;
+                                        }
+
+                                        break;
+                                    }
+
+                                    // A two-byte control code can straddle the SCC word boundary, e.g.
+                                    // " ♪" arrives as "2091 3780" = char(20) + control(9137) + pad(80)
+                                    // instead of the aligned "2080 9137". Re-join it. (#9803)
+                                    if (k < parts.Length - 1 && IsControlCodeFirstByte(part.Substring(2, 2)) &&
+                                        parts[k + 1].EndsWith("80", StringComparison.Ordinal))
+                                    {
+                                        var joined = GetLetterFromCode(part.Substring(2, 2) + parts[k + 1].Substring(0, 2));
+                                        if (joined != null)
+                                        {
+                                            sb.Append(GetLetterFromCode(part.Substring(0, 2)));
+                                            sb.Append(joined);
+                                            k += 2;
+                                            continue;
+                                        }
+                                    }
+
                                     var result = GetLetterFromCode(part);
                                     if (result == null)
                                     {
@@ -1194,10 +1975,63 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             return alignment + HtmlUtil.FixInvalidItalicTags(res);
         }
 
-        private static TimeCode ParseTimeCode(string start)
+        /// <summary>
+        /// Time of the byte pair <paramref name="frameOffset"/> frames after the line timecode.
+        /// The frame field follows the current frame rate like the other frame-based formats
+        /// (SCC is 29.97 by spec, but 23.976/25 fps files exist), and it is not capped at
+        /// 999 ms: frame 29 of a 29.97 file loaded at 23.976 is still a real time.
+        /// </summary>
+        private TimeCode ParseTimeCode(string start, int frameOffset)
         {
             var arr = start.Split(new[] { ':', ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
-            return new TimeCode(int.Parse(arr[0]), int.Parse(arr[1]), int.Parse(arr[2]), FramesToMillisecondsMax999(int.Parse(arr[3])));
+            var hours = int.Parse(arr[0]);
+            var minutes = int.Parse(arr[1]);
+            var seconds = int.Parse(arr[2]);
+            var frames = int.Parse(arr[3]);
+            var framesPerSecond = Math.Max(1, (int)Math.Round(Configuration.Settings.General.CurrentFrameRate));
+            for (var i = 0; i < frameOffset; i++)
+            {
+                frames++;
+                if (frames < framesPerSecond)
+                {
+                    continue;
+                }
+
+                frames = 0;
+                seconds++;
+                if (seconds >= 60)
+                {
+                    seconds = 0;
+                    minutes++;
+                    if (minutes >= 60)
+                    {
+                        minutes = 0;
+                        hours++;
+                    }
+
+                    // Drop-frame labels skip 00 and 01 at the start of every minute except every tenth.
+                    if (DropFrame && minutes % 10 != 0)
+                    {
+                        frames = 2;
+                    }
+                }
+            }
+
+            var totalMilliseconds = hours * 3600000.0 + minutes * 60000.0 + seconds * 1000.0 + FramesToMilliseconds(frames);
+            return new TimeCode(totalMilliseconds);
+        }
+
+        private static bool ContainsSccCommand(IEnumerable<string> parts, string command)
+        {
+            foreach (var part in parts)
+            {
+                if (part == command)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

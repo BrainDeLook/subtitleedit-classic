@@ -1,4 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net48</TargetFramework><OutputType>Exe</OutputType><LangVersion>latest</LangVersion><AssemblyName>seconv</AssemblyName><AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects><GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType><AppConfig>../ui/app.config</AppConfig></PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>seconv</AssemblyName>
+    <ClassicRevision Condition="'$(ClassicRevision)' == ''">0</ClassicRevision>
+    <Version>4.0.29.$(ClassicRevision)</Version>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <AppConfig>../ui/app.config</AppConfig>
+  </PropertyGroup>
   <ItemGroup><ProjectReference Include="../ui/SubtitleEdit.csproj" /><Reference Include="System.Drawing" /><Reference Include="System.Windows.Forms" /></ItemGroup>
 </Project>

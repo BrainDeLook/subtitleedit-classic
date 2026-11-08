@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -33,7 +33,7 @@ namespace Nikse.SubtitleEdit.Forms
         private CancellationTokenSource _operation;
         private SubtitleRetimer.LineResult[] _results;
         public Subtitle EditedSubtitle { get; private set; }
-        private static string L(string ru,string en)=>Configuration.Settings.General.Language.StartsWith("ru",StringComparison.OrdinalIgnoreCase) ? ru : en;
+        private static string L(string ru,string en)=>ClassicLocalization.Text(ru,en);
         public ClassicImproveTimeCodes(Subtitle source,string video,double seconds,double fps,Action<double> preview=null,int audioTrack=0)
         {
             UiUtil.PreInitialize(this);_source=new Subtitle(source);_video=video;_seconds=seconds;_fps=fps;_preview=preview;_audioTrack=audioTrack;
@@ -66,13 +66,23 @@ namespace Nikse.SubtitleEdit.Forms
         private static Label Caption(string text)=>new Label{Text=text,AutoSize=true,Margin=new Padding(5,6,3,3)};
         private async Task Analyze()
         {
-            if(_operation!=null)return;_operation=new CancellationTokenSource();_run.Enabled=_apply.Enabled=false;_grid.Enabled=false;_waveAligned.Locked=true;
+            if(_operation!=null)return;
+            ClassicRetimingJob.Preparation preparation;
+            try
+            {
+                preparation=ClassicRetimingJob.Prepare(_compute.Text,((ClassicSpeechAssetOption)_model.SelectedItem).Choice,_check.Checked,_language.Text);
+                var missing=preparation.MissingAssets();
+                if(missing.Length>0 && MessageBox.Show(this,L("Для выбранной конфигурации нужно скачать:\n\n", "The selected configuration requires these downloads:\n\n")+string.Join("\n",missing)+L("\n\nСкачать и начать выравнивание?", "\n\nDownload and start alignment?"),Text,MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
+            }
+            catch(Exception error){MessageBox.Show(this,error.Message,Text,MessageBoxButtons.OK,MessageBoxIcon.Error);return;}
+            _operation=new CancellationTokenSource();_results=null;_run.Enabled=_apply.Enabled=false;_grid.Enabled=false;_waveAligned.Locked=true;
+            foreach(var control in new Control[]{_compute,_model,_language,_check})control.Enabled=false;
             try
             {
                 var source=new Subtitle(_source);source.Paragraphs.Clear();source.Paragraphs.AddRange(_indices.Select(i=>new Paragraph(_source.Paragraphs[i],false)));
                 var general=Configuration.Settings.General;
                 var options=new SubtitleRetimer.Options{MaxShiftSeconds=(double)_shift.Value,AdjustStart=_starts.Checked,AdjustEnd=_ends.Checked,MinDurationSeconds=general.SubtitleMinimumDisplayMilliseconds/1000.0,MaxDurationSeconds=general.SubtitleMaximumDisplayMilliseconds/1000.0,ReadingCharsPerSecond=(double)general.SubtitleOptimalCharactersPerSeconds,MaxCharsPerSecond=(double)general.SubtitleMaximumCharactersPerSeconds,MinGapSeconds=general.MinimumMillisecondsBetweenLines/1000.0};
-                _results=await new ClassicRetimingJob().RunAsync(source,_video,_seconds,_compute.Text,((ClassicSpeechAssetOption)_model.SelectedItem).Choice,_check.Checked,_language.Text,options,_operation.Token,new Progress<SpeechProgress>(p=>{_status.Text=p.Message;if(p.Percent>=0)_progress.Value=Math.Max(0,Math.Min(100,p.Percent));}),_audioTrack);
+                _results=await new ClassicRetimingJob().RunAsync(source,_video,_seconds,_compute.Text,((ClassicSpeechAssetOption)_model.SelectedItem).Choice,_check.Checked,_language.Text,options,_operation.Token,new Progress<SpeechProgress>(p=>{_status.Text=p.Message;if(p.Percent>=0)_progress.Value=Math.Max(0,Math.Min(100,p.Percent));}),_audioTrack,preparation);
                 for(int i=0;i<_results.Length;i++){var r=_results[i];var row=_grid.Rows[i];row.Cells[0].Value=SubtitleRetimer.IsMove(r.Status) && !SubtitleRetimer.IsUnconfirmed(r.Status);row.Cells[3].Value=Format(r.StartSeconds);row.Cells[4].Value=Format(r.EndSeconds);row.Cells[5].Value=StatusText(r.Status)+(r.HeardRatio.HasValue ? " · "+r.HeardRatio.Value.ToString("P0") : "");}
                 _apply.Enabled=true;_status.Text=L("Проверь изменения и выбери реплики для применения. Исходные тайминги пока не изменены.","Review and select the proposed changes. Original time codes have not changed.");
                 RefreshWaveform();FocusWaveformRow();
@@ -81,8 +91,9 @@ namespace Nikse.SubtitleEdit.Forms
                 if(words>0 && heard/words<0.3)_status.Text=L("В аудио найдено мало слов из субтитров. Проверь, что текст соответствует речи и выбрана нужная аудиодорожка.","Few subtitle words were heard. Check that the text matches the speech and the correct audio track is selected.");
             }
             catch(OperationCanceledException){_status.Text=L("Отменено","Cancelled");}
+            catch(ForcedAlignerException ex){_status.Text=ex.Message;MessageBox.Show(this,ex.Message+(string.IsNullOrWhiteSpace(ex.Details) || ex.Message.Contains(ex.Details) ? "" : Environment.NewLine+ex.Details),Text,MessageBoxButtons.OK,MessageBoxIcon.Error);}
             catch(Exception ex){_status.Text=ex.Message;MessageBox.Show(this,ex.Message,Text,MessageBoxButtons.OK,MessageBoxIcon.Error);}
-            finally{_operation.Dispose();_operation=null;_run.Enabled=_grid.Enabled=true;_apply.Enabled=_results!=null;_waveAligned.Locked=false;if(_waveCloseRequested && _waveOperation==null)Close();}
+            finally{_operation.Dispose();_operation=null;_run.Enabled=_grid.Enabled=true;foreach(var control in new Control[]{_compute,_model,_language,_check})control.Enabled=true;_check.Enabled=ClassicSpeechExtras.CanCheckSpeech(_language.Text);_apply.Enabled=_results!=null;_waveAligned.Locked=false;if(_waveCloseRequested && _waveOperation==null)Close();}
         }
         private void Apply()
         {

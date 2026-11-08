@@ -80,6 +80,27 @@ namespace Nikse.SubtitleEdit.Forms
             UiUtil.FixFonts(this);
 
             Text = LanguageSettings.Current.ColorChooser.Title;
+            var imagePicker = new Button { Name = "classicImageColorPicker", Text = ClassicErrorReport.L("Из изображения…", "From image…"), AutoSize = true, Location = new Point(8, 406), Anchor = AnchorStyles.Bottom | AnchorStyles.Left };
+            imagePicker.Click += (sender, args) =>
+            {
+                using (var file = new OpenFileDialog { Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff" })
+                {
+                    if (file.ShowDialog(this) != DialogResult.OK) return;
+                    using (var bitmap = new Bitmap(file.FileName))
+                    using (var picker = new Assa.ImageColorPicker(new Bitmap(bitmap)))
+                    {
+                        if (picker.ShowDialog(this) != DialogResult.OK) return;
+                        var chosen = picker.Color;
+                        _changeType = ChangeStyle.RGB;
+                        _alphaRedGreenBlue = new ColorHandler.Argb(_showAlpha ? Color.A : 255, chosen.R, chosen.G, chosen.B);
+                        SetRgb(_alphaRedGreenBlue);
+                        _hsv = ColorHandler.RgbToHsv(_alphaRedGreenBlue);
+                        SetHsv(_hsv);
+                        Invalidate();
+                    }
+                }
+            };
+            Controls.Add(imagePicker);
             _labelRed.Text = LanguageSettings.Current.ColorChooser.Red;
             _labelGreen.Text = LanguageSettings.Current.ColorChooser.Green;
             _labelBlue.Text = LanguageSettings.Current.ColorChooser.Blue;

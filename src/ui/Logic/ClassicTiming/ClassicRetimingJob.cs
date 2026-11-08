@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -18,24 +18,65 @@ namespace Nikse.SubtitleEdit.Logic.ClassicTiming
         private int _window;
         public double TotalSeconds { get; private set; }
         private IProgress<SpeechProgress> _progress;
+        public sealed class Preparation
+        {
+            public string Variant { get; }
+            public SpeechModel Aligner { get; }
+            public SpeechModel SpeechCheck { get; }
+            internal Preparation(string variant, SpeechModel aligner, SpeechModel speechCheck)
+            { Variant=variant;Aligner=aligner;SpeechCheck=speechCheck; }
+            public string[] MissingAssets()
+            {
+                var missing=new List<string>();
+                if(!File.Exists(ClassicSpeechCatalog.Executable(Engine,Variant)))missing.Add("CrispASR ("+Variant+")");
+                foreach(var model in new[]{Aligner,SpeechCheck}.Where(item=>item!=null))
+                {
+                    var path=ClassicSpeechCatalog.ModelPath(Engine,model);
+                    if(model.Assets!=null && model.Assets.Length>0)
+                    {
+                        foreach(var asset in model.Assets)
+                        {
+                            var file=Path.Combine(Path.GetDirectoryName(path),asset.File);
+                            if(!File.Exists(file) || new FileInfo(file).Length!=asset.Bytes)missing.Add(asset.File);
+                        }
+                    }
+                    else if(!File.Exists(path) || new FileInfo(path).Length<=1000000)missing.Add(model.Name);
+                }
+                return missing.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            }
+        }
+        public static Preparation Prepare(string variant,string alignerChoice,bool checkSpeech,string language)
+        {
+            if(!new[]{"cpu","cpu-legacy","vulkan","cuda","cuda13"}.Contains(variant))throw new ArgumentException("Select a supported compute build.");
+            var selected=ClassicSpeechExtras.Catalog.Aligners.FirstOrDefault(a=>a.Choice==alignerChoice) ?? throw new ArgumentException("Unknown forced aligner: "+alignerChoice);
+            if(!string.IsNullOrEmpty(selected.Language) && language!="auto" && selected.Language!=language)throw new ArgumentException("The selected wav2vec2 aligner is for "+selected.Language+", not "+language);
+            SpeechModel speechCheck=null;
+            if(checkSpeech)
+            {
+                var speech=ClassicSpeechCatalog.Get(ClassicSpeechCatalog.Crisp,"parakeet");
+                speechCheck=speech.Models.FirstOrDefault(m=>m.Name.StartsWith("parakeet-ultra-") && File.Exists(ClassicSpeechCatalog.ModelPath(speech,m))) ?? speech.Models.First(m=>m.Name=="parakeet-tdt-0.6b-v3-q4_k.gguf");
+            }
+            return new Preparation(variant,selected.Model,speechCheck);
+        }
         public async Task<SubtitleRetimer.LineResult[]> RunAsync(Subtitle subtitle,string video,double seconds,string variant,bool qwen,bool checkSpeech,string language,SubtitleRetimer.Options options,CancellationToken cancel,IProgress<SpeechProgress> progress,int audioTrack=0)
             => await RunAsync(subtitle,video,seconds,variant,qwen ? "qwen3-forced" : "canary-ctc",checkSpeech,language,options,cancel,progress,audioTrack).ConfigureAwait(false);
-        public async Task<SubtitleRetimer.LineResult[]> RunAsync(Subtitle subtitle,string video,double seconds,string variant,string alignerChoice,bool checkSpeech,string language,SubtitleRetimer.Options options,CancellationToken cancel,IProgress<SpeechProgress> progress,int audioTrack=0)
+        public async Task<SubtitleRetimer.LineResult[]> RunAsync(Subtitle subtitle,string video,double seconds,string variant,string alignerChoice,bool checkSpeech,string language,SubtitleRetimer.Options options,CancellationToken cancel,IProgress<SpeechProgress> progress,int audioTrack=0,Preparation preparation=null)
         {
             if(seconds<=0 || !File.Exists(video))throw new ArgumentException("Open a local video or audio file first");
+            preparation=preparation ?? Prepare(variant,alignerChoice,checkSpeech,language);
+            variant=preparation.Variant;
             _folder=Path.Combine(Path.GetTempPath(),"se-retime-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(_folder);
             _progress=progress;TotalSeconds=seconds;
             try
             {
                 await ClassicSpeechDownload.EnsureRuntimeAsync(Engine,variant,cancel,progress).ConfigureAwait(false);
                 _executable=ClassicSpeechCatalog.Executable(Engine,variant);
-                var selected=ClassicSpeechExtras.Catalog.Aligners.FirstOrDefault(a=>a.Choice==alignerChoice) ?? throw new ArgumentException("Unknown forced aligner: "+alignerChoice);
-                if(!string.IsNullOrEmpty(selected.Language) && language!="auto" && selected.Language!=language)throw new ArgumentException("The selected wav2vec2 aligner is for "+selected.Language+", not "+language);
-                await ClassicSpeechDownload.EnsureModelAsync(Engine,selected.Model,cancel,progress).ConfigureAwait(false);
-                _model=ClassicSpeechCatalog.ModelPath(Engine,selected.Model);_audio=Path.Combine(_folder,"source.wav");
+                await ClassicSpeechDownload.EnsureModelAsync(Engine,preparation.Aligner,cancel,progress).ConfigureAwait(false);
+                if(preparation.SpeechCheck!=null)await ClassicSpeechDownload.EnsureModelAsync(Engine,preparation.SpeechCheck,cancel,progress).ConfigureAwait(false);
+                _model=ClassicSpeechCatalog.ModelPath(Engine,preparation.Aligner);_audio=Path.Combine(_folder,"source.wav");
                 await Ffmpeg("-nostdin -y -i "+Q(video)+" -map 0:a:"+Math.Max(0,audioTrack)+" -vn -af aresample=async=1:first_pts=0 -ar 16000 -ac 1 -c:a pcm_s16le "+Q(_audio),cancel).ConfigureAwait(false);
                 List<SpeechToTextCheck.HeardWord> heard=null;
-                if(checkSpeech)heard=await HearAsync(variant,language,cancel).ConfigureAwait(false);
+                if(preparation.SpeechCheck!=null)heard=await HearAsync(preparation.SpeechCheck,language,cancel).ConfigureAwait(false);
                 var lines=subtitle.Paragraphs.Select(p=>new SubtitleRetimer.Line(p.IsComment ? string.Empty : p.Text,p.StartTime.TotalSeconds,p.EndTime.TotalSeconds)).ToList();
                 var synced=lines;RoughSync.Result sync=null;
                 if(heard!=null)
@@ -50,11 +91,9 @@ namespace Nikse.SubtitleEdit.Logic.ClassicTiming
             }
             finally{if(Directory.Exists(_folder))Directory.Delete(_folder,true);}
         }
-        private async Task<List<SpeechToTextCheck.HeardWord>> HearAsync(string variant,string language,CancellationToken cancel)
+        private async Task<List<SpeechToTextCheck.HeardWord>> HearAsync(SpeechModel model,string language,CancellationToken cancel)
         {
             var engine=ClassicSpeechCatalog.Get(ClassicSpeechCatalog.Crisp,"parakeet");
-            var model=engine.Models.FirstOrDefault(m=>m.Name.StartsWith("parakeet-ultra-") && File.Exists(ClassicSpeechCatalog.ModelPath(engine,m))) ?? engine.Models.First(m=>m.Name=="parakeet-tdt-0.6b-v3-q4_k.gguf");
-            await ClassicSpeechDownload.EnsureModelAsync(engine,model,cancel,_progress).ConfigureAwait(false);
             var output=Path.Combine(_folder,"heard");
             var args="--backend parakeet -l "+Q(language)+" -m "+Q(ClassicSpeechCatalog.ModelPath(engine,model))+" -f "+Q(_audio)+" --output-srt -of "+Q(output)+" -ml 1 -sow --print-progress";
             await ClassicSpeechRunner.RunProcessAsync(new ProcessStartInfo(_executable,args){WorkingDirectory=Path.GetDirectoryName(_executable)},cancel,_progress).ConfigureAwait(false);
@@ -75,7 +114,15 @@ namespace Nikse.SubtitleEdit.Logic.ClassicTiming
         {
             var output=Path.ChangeExtension(audioFileName,".aligned.srt");
             var args="--align-only -am "+Q(_model)+" -f "+Q(audioFileName)+" --text-file "+Q(textFileName)+" --align-granularity segment --align-output "+Q(output)+" --no-prints";
-            await ClassicSpeechRunner.RunProcessAsync(new ProcessStartInfo(_executable,args){WorkingDirectory=Path.GetDirectoryName(_executable)},cancellationToken,_progress).ConfigureAwait(false);
+            try
+            {
+                await ClassicSpeechRunner.RunProcessAsync(new ProcessStartInfo(_executable,args){WorkingDirectory=Path.GetDirectoryName(_executable)},cancellationToken,_progress).ConfigureAwait(false);
+            }
+            catch(SpeechEngineProcessException error)
+            {
+                throw new ForcedAlignerException(error.Message,error.Diagnostics,error.ExitCode);
+            }
+            if(!File.Exists(output))throw new ForcedAlignerException("The aligner finished without producing a transcript.");
             return File.ReadAllText(output);
         }
         public async Task<string> ExtractWindowAsync(double startSeconds,double durationSeconds,CancellationToken cancellationToken)

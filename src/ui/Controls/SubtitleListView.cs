@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic;
 using System;
 using System.Collections.Generic;
@@ -608,7 +608,7 @@ namespace Nikse.SubtitleEdit.Controls
             var hits=new List<ClassicGridSpellHit>();
             var text=e.ColumnIndex==ColumnIndexText && e.Item.Tag is Paragraph p?p.Text:e.SubItem.Text;
             _gridPainter.Draw(e.Graphics, bounds, text??string.Empty, e.SubItem.Font ?? Font, foreground, background, e.Item.Selected, rtl, GridFormattingMode, _lineSeparatorString,
-                GridSpelling?.Ready==true?(Func<string,List<Nikse.SubtitleEdit.Core.SpellCheck.SpellCheckWord>>)GridSpelling.Check:null,h=>hits.Add(h));
+                e.ColumnIndex==ColumnIndexText && GridSpelling?.Ready==true?(Func<string,List<Nikse.SubtitleEdit.Core.SpellCheck.SpellCheckWord>>)GridSpelling.Check:null,h=>hits.Add(h));
             if(hits.Count>0)_gridSpellingHits[key]=hits;
         }
 
@@ -1691,11 +1691,11 @@ namespace Nikse.SubtitleEdit.Controls
                     }
                 }
 
-                if (_settings.Tools.ListViewSyntaxColorGap && i >= 0 && i < paragraphs.Count - 1 && ColumnIndexGap >= 0 && !paragraph.StartTime.IsMaxTime)
+                if ((_settings.Tools.ListViewSyntaxColorGap || ClassicSyntaxGap.Enabled) && i >= 0 && i < paragraphs.Count - 1 && ColumnIndexGap >= 0 && !paragraph.StartTime.IsMaxTime)
                 {
                     var next = paragraphs[i + 1];
                     var gapMilliseconds = (int)Math.Round(next.StartTime.TotalMilliseconds - paragraph.EndTime.TotalMilliseconds);
-                    item.SubItems[ColumnIndexGap].BackColor = gapMilliseconds < Configuration.Settings.General.MinimumMillisecondsBetweenLines ? Configuration.Settings.Tools.ListViewSyntaxErrorColor : BackColor;
+                    item.SubItems[ColumnIndexGap].BackColor = gapMilliseconds < Configuration.Settings.General.MinimumMillisecondsBetweenLines ? Configuration.Settings.Tools.ListViewSyntaxErrorColor : ClassicSyntaxGap.Contains(gapMilliseconds)?Color.Khaki:BackColor;
                 }
 
                 if (ColumnIndexTextOriginal >= 0 && item.SubItems.Count >= ColumnIndexTextOriginal)
@@ -1760,6 +1760,11 @@ namespace Nikse.SubtitleEdit.Controls
             catch
             {
                 // ignore
+            }
+            finally
+            {
+                var custom = Nikse.SubtitleEdit.Logic.ClassicCustomErrorRules.Match(paragraph.Text);
+                if (custom != null) item.SubItems[ColumnIndexText].BackColor = Configuration.Settings.Tools.ListViewSyntaxErrorColor;
             }
         }
 
@@ -2310,7 +2315,7 @@ namespace Nikse.SubtitleEdit.Controls
                         var gapMilliseconds = (int)Math.Round(next.StartTime.TotalMilliseconds - paragraph.EndTime.TotalMilliseconds);
                         item.SubItems[ColumnIndexGap].BackColor = gapMilliseconds < Configuration.Settings.General.MinimumMillisecondsBetweenLines
                             ? Configuration.Settings.Tools.ListViewSyntaxErrorColor
-                            : BackColor;
+                            : ClassicSyntaxGap.Contains(gapMilliseconds)?Color.Khaki:BackColor;
                     }
                 }
             }

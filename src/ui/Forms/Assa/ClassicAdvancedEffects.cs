@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -31,12 +31,25 @@ namespace Nikse.SubtitleEdit.Forms.Assa
             _source=new Subtitle(selected,false);_wave=wave;_video=video;
             Text=L("Расширенные ASS-эффекты","Advanced ASS effects");Size=new Size(1050,660);MinimumSize=new Size(760,500);StartPosition=FormStartPosition.CenterParent;
             var root=new TableLayoutPanel {Dock=DockStyle.Fill,Padding=new Padding(10),ColumnCount=2,RowCount=4};root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,290));root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));root.RowStyles.Add(new RowStyle(SizeType.Absolute,35));root.RowStyles.Add(new RowStyle(SizeType.Percent,70));root.RowStyles.Add(new RowStyle(SizeType.Percent,30));root.RowStyles.Add(new RowStyle(SizeType.Absolute,43));
-            root.Controls.Add(_effects,0,0);root.Controls.Add(_properties,0,1);root.SetRowSpan(_properties,2);root.Controls.Add(_preview,1,0);root.SetRowSpan(_preview,2);root.Controls.Add(_report,1,2);
+            var effectPicker=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2};effectPicker.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));effectPicker.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,38));var galleryButton=new Button{Text="▦",Dock=DockStyle.Fill};galleryButton.Click+=(sender,e)=>ShowGallery();effectPicker.Controls.Add(_effects,0,0);effectPicker.Controls.Add(galleryButton,1,0);root.Controls.Add(effectPicker,0,0);root.Controls.Add(_properties,0,1);root.SetRowSpan(_properties,2);root.Controls.Add(_preview,1,0);root.SetRowSpan(_preview,2);root.Controls.Add(_report,1,2);
             var footer=new FlowLayoutPanel {Dock=DockStyle.Fill,FlowDirection=FlowDirection.RightToLeft};var cancel=new Button{Text=L("Отмена","Cancel"),DialogResult=DialogResult.Cancel,AutoSize=true};var apply=new Button{Text=L("Применить","Apply"),AutoSize=true};var play=new Button{Text=L("Предпросмотр","Preview"),AutoSize=true};footer.Controls.Add(cancel);footer.Controls.Add(apply);footer.Controls.Add(play);root.Controls.Add(footer,0,3);root.SetColumnSpan(footer,2);Controls.Add(root);CancelButton=cancel;
             foreach(var effect in AdvancedEffectDisplayFactory.List())_effects.Items.Add(effect);
             _effects.SelectedIndexChanged+=(s,e)=>{_properties.SelectedObject=_effects.SelectedItem;Calculate(false);};_properties.PropertyValueChanged+=(s,e)=>Calculate(false);
             apply.Click+=(s,e)=>{if(Calculate(false)){DialogResult=DialogResult.OK;}};play.Click+=(s,e)=>Calculate(true);_effects.SelectedIndex=0;
             FormClosed+=(s,e)=>{_player?.Dispose();try{if(Directory.Exists(_folder))Directory.Delete(_folder,true);}catch(IOException){}};UiUtil.FixFonts(this);
+        }
+        private void ShowGallery()
+        {
+            using(var gallery=new Form{Text=L("Галерея эффектов","Effect gallery"),Size=new Size(880,650),MinimumSize=new Size(500,400),StartPosition=FormStartPosition.CenterParent})
+            {
+                var cards=new FlowLayoutPanel{Dock=DockStyle.Fill,AutoScroll=true};var search=new TextBox{Dock=DockStyle.Top};gallery.Controls.Add(cards);gallery.Controls.Add(search);
+                foreach(var effect in _effects.Items.Cast<IAdvancedEffectDisplay>())
+                {
+                    var card=new Button{Text=effect.ToString()+Environment.NewLine+Environment.NewLine+effect.Description,Width=250,Height=130,Margin=new Padding(8),TextAlign=ContentAlignment.TopLeft,AutoEllipsis=true,Tag=effect};
+                    card.Click+=(sender,e)=>{_effects.SelectedItem=effect;gallery.DialogResult=DialogResult.OK;};cards.Controls.Add(card);
+                }
+                search.TextChanged+=(sender,e)=>{foreach(Control card in cards.Controls)card.Visible=card.Text.IndexOf(search.Text,StringComparison.CurrentCultureIgnoreCase)>=0;};gallery.ShowDialog(this);
+            }
         }
         private bool Calculate(bool play)
         {
@@ -48,7 +61,9 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 var lines=effect.ApplyEffect(_source.Header,_source.Paragraphs.Select(p=>new SubtitleLineViewModel(p)).ToList(),resolution.Width,resolution.Height,_wave);
                 if(lines.Count==0)throw new InvalidOperationException(L("Эффект не создал событий; исходные реплики сохранены.","The effect produced no events; source subtitles are retained."));
                 if(lines.Count>20000)throw new InvalidOperationException("Effect exceeds 20,000 events.");
-                Result=new Subtitle(_source,false);Result.Paragraphs.Clear();Result.Paragraphs.AddRange(lines.Select(l=>l.ToParagraph()));Result.Renumber();
+                Result=new Subtitle(_source,false);
+                if (effect is IAdvancedEffectHeaderUpdater updater) Result.Header = updater.UpdateHeader(_source.Header, _source.Paragraphs.Select(p=>new SubtitleLineViewModel(p)).ToList());
+                Result.Paragraphs.Clear();Result.Paragraphs.AddRange(lines.Select(l=>l.ToParagraph()));Result.Renumber();
                 _report.Text=effect.Description+Environment.NewLine+L("Событий: ","Events: ")+lines.Count+Environment.NewLine+string.Join(Environment.NewLine,lines.Take(12).Select(l=>l.Text));
                 if(play && File.Exists(_video))
                 {

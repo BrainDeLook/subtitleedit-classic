@@ -11,8 +11,8 @@ namespace Nikse.SubtitleEdit.Forms
 {
     public sealed partial class DownloadYouTubeDl : Form
     {
-        public const string Url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.03.17/yt-dlp.exe";
-        public const string Sha512Hash = "2ba9017431052ff5396598ce5e6c8b3984df816c5d858fd3aa8cd59a814f3b791c145cb4420153911ccb8ff40e8f0ad6a82aba08b7979d5fde22629aaaa07ad0";
+        public const string Url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp.exe";
+        public const string Sha256Hash = "f5389d3698ecde4ef06f4e6b1ce0294fe9ac1396228c8990b8d3416d6d177a7d";
         public bool AutoClose { get; internal set; }
         private readonly CancellationTokenSource _cancellationTokenSource;
 
@@ -105,10 +105,9 @@ namespace Nikse.SubtitleEdit.Forms
 
             downloadStream.Position = 0;
             var bytes = downloadStream.ToArray();
-            var hash = Utilities.GetSha512Hash(bytes);
-            if (hash != Sha512Hash)
+            if (!ClassicRuntimePins.Approved(bytes, Sha256Hash))
             {
-                MessageBox.Show("yt-dlp.exe SHA-512 hash does not match!");
+                MessageBox.Show("yt-dlp.exe SHA-256 hash does not match!");
                 return;
             }
 

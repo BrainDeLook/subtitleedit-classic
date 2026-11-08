@@ -10,6 +10,9 @@ namespace Nikse.SubtitleEdit.Core.Common
 {
     public static class StringExtensions
     {
+        public static bool StartsWithAt(this string s, int index, string value, StringComparison comparison)
+        { return index >= 0 && index <= s.Length - value.Length && string.Compare(s, index, value, 0, value.Length, comparison) == 0; }
+
         public static char[] UnicodeControlChars { get; } = { '\u200E', '\u200F', '\u202A', '\u202B', '\u202C', '\u202D', '\u202E' };
 
         public static bool LineStartsWithHtmlTag(this string text, bool threeLengthTag, bool includeFont = false)

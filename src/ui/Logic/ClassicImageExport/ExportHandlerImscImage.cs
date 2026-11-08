@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using Nikse.SubtitleEdit.Core.Common;
 using System.Globalization;
 using System.Text;
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -19,7 +19,7 @@ namespace Nikse.SubtitleEdit.Logic.ClassicCaptions
                 var info=await ClassicMediaJobs.Probe(input,token);var video=info.Streams.FirstOrDefault(s=>s.Type=="video");var codec=video?.Codec=="h264"?CcVideoCodec.H264:video?.Codec=="hevc"?CcVideoCodec.H265:video?.Codec=="mpeg2video" || video?.Codec=="mpeg1video"?CcVideoCodec.Mpeg2:CcVideoCodec.Unknown;
                 if(codec==CcVideoCodec.Unknown)throw new InvalidDataException("Caption extraction supports MPEG-1/2, H.264 and H.265 video streams.");
                 var stream=Path.Combine(folder,"video.ts");await ClassicMediaJobs.Render("-i "+ClassicMediaJobs.Q(input)+" -map 0:"+video.Index+" -c:v copy -an -sn -streamid 0:256 -muxdelay 0 -muxpreload 0 -f mpegts",stream,token);
-                var start=await ClassicMediaJobs.Capture(Path.Combine(Path.GetDirectoryName(Configuration.Settings.General.FFmpegLocation),"ffprobe.exe"),"-v error -select_streams v:0 -show_entries stream=start_time -of csv=p=0 "+ClassicMediaJobs.Q(stream),token);
+                var start=await ClassicMediaJobs.Capture(ClassicMediaJobs.ProbePath,"-v error -select_streams v:0 -show_entries stream=start_time -of csv=p=0 "+ClassicMediaJobs.Q(stream),token);
                 double.TryParse(start.Trim().Split(new[]{'\r','\n',','},StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(),NumberStyles.Float,CultureInfo.InvariantCulture,out var first);
                 return await Task.Run(()=>
                 {

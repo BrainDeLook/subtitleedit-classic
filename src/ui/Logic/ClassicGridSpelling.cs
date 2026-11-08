@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -21,7 +21,7 @@ namespace Nikse.SubtitleEdit.Logic
         private string _text, _dictionary, _folder, _settingsKey;
         private int CurrentLineIndex => -1;
         public string CurrentLanguage { get; private set; }
-        public bool Ready => _hunspell != null;
+        public bool Ready => _hunspell != null && System.IO.File.Exists(_dictionary + ".dic");
         public string Dictionary => _dictionary;
         private static readonly Regex Special = new Regex(@"(?i)(?:https?://|www\.)[^\s<>]+|[^\s<>@]+@[^\s<>@]+|(?<![\p{L}\p{N}])#[\p{L}\p{N}_]+",RegexOptions.Compiled);
         public void Load(string dictionary)

@@ -21,6 +21,16 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
 
         public override string Name => NameOfFormat;
 
+        internal static bool HasNetflixMarker(List<string> lines, string fileName)
+        {
+            if (fileName != null && !(fileName.EndsWith(".dfxp", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+
+            return string.Join(Environment.NewLine, lines).Contains(">Netflix Subtitle");
+        }
+
         public override bool IsMine(List<string> lines, string fileName)
         {
             if (fileName != null && !(fileName.EndsWith(Extension, StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)))

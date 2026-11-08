@@ -7,7 +7,44 @@ This file records changes made by the Classic fork. Version numbers refer to thi
 Local development entries below are historical snapshots: the 4.0.25.x increments are included in stable 4.0.27. Their original validation notes describe what was tested at that stage, rather than the current feature inventory. For current coverage, see the README and [5.3 integration report](LOCAL_53_INTEGRATION.md).
 
 
-## Unreleased
+## 4.0.29 — Stable
+
+- Local 4.0.28.61: combined toolbar controls in one settings group and removed the duplicate hard-sub shortcut, preserving its previous effective visibility.
+
+- Local 4.0.28.60: fixed the quick auto-translate button so it opens the translation dialog instead of invoking the menu heading.
+
+- Local 4.0.28.59: restyled the quick function icons to match the classic toolbar and added individual visibility controls to the Toolbar settings page. Choices remain synchronized with the toolbar context menu and persist across sessions.
+
+- Local 4.0.28.58: added optional main-toolbar shortcuts for burned-in OCR, speech recognition, TTS, translation, speech-based timing, ASS Draw, hard-subtitle video and batch conversion. Buttons invoke the original menu commands, follow document/format availability, use localized tooltips and native overflow, and can be hidden individually through the toolbar right-click menu. Visibility is remembered; all original toolbar controls remain. An already visible Classic hard-subtitle button suppresses its duplicate shortcut.
+
+- Local 4.0.28.57: implemented the 33 concrete findings from the pinned v5.4.0 audit while retaining Classic Windows Forms. Updated and embedded nOCR glyph data; connected VobSub isolation and ordinary ASS image exports; completed the shared OCR viewer/zoom, 24 background styles, 18 progress bars, Draw interaction, attachment drops and paused-frame positioning.
+- Added second-subtitle offset/font handling, offset-aware paste, complete frame-move scopes, text-column-only spelling, remembered spell-check placement, error selection, image colour picking, dictionary uninstall and favourite-first Save as. Corrected Unicode word-list navigation and right-click removal.
+- Added music-line preservation across translation routes, exact language-variant retention, bounded reasoning-only retries, remote model refresh, browser-cookie selection for video URLs, the Ollama CLI alias, Whisper 1.9.5 help, DashScope multipart formatting and forced-aligner preflight/failure policy.
+- Corrected batch target FPS without retiming twice (including TS routes), guarded non-RTL text, added the native batch divider, made rapid relative seeks accumulate without blocking the UI, and connected exact raw AAC duration to mpv. Long editor labels wrap at large UI font sizes.
+- Adapted pinned new-control translations for 36 locales, preserving Classic XML/Russian/English labels. Fork-only explanations without an upstream translation retain English fallback; exact coverage and all validation boundaries are documented in the [completion record](docs/CLASSIC_54_COMPLETION.md). This is a local package, not a GitHub release.
+
+- Local 4.0.28.56: moved the in-place selected-row translation action into the existing Classic selected-lines translation submenu. Renamed it “Translate and replace in place…” and clarified the preservation/context behavior in its tooltip and dialog title. Removed the duplicate top-level context command; retained the original Classic translation action. Native checks cover nested placement, selection/apply/cancel/Undo, availability and Russian/English labels.
+
+- Local 4.0.28.55: added a direct “Translate selected rows together” command to the main subtitle-grid context menu. It opens the ordinary translation dialog with the selection retained and a selected-only primary action. Existing text outside the selection, cue metadata and file identity are preserved; applying supports Undo and cancelling leaves the document unchanged. Explicitly associated the source list with its translation context menu. Native offline UI checks cover normal editing, existing source/translation mode, cancellation and Undo without contacting a translation provider.
+
+- Made the normal SDK build independent of the installed Classic executable: updated the core C# language setting, generated UI/core assembly metadata before compilation, and enabled modern WinForms resource generation. Added a reproducible build script with version checks for UI, core and CLI; included resource runtime libraries, binding redirects and redistribution notices in both packaging paths. The installed local package remains unchanged by this build-only follow-up.
+
+The upstream v5.4.0 functional integration is packaged locally as Classic 4.0.28.54 and remains unpublished. See the [fixed-scope coverage and validation](docs/UPSTREAM_5_4_STATUS.md) and [consolidated Russian check guide](docs/CLASSIC_54_CHECK.ru.md). Classic retains Windows Forms; Avalonia themes and platform redesigns are outside this adaptation.
+
+- Ported the new SubRip reader/writer, TTML/iTunes span handling and SCC coding; preserved the old YouTube format alias and prevented namespace-less TTML from taking over YTT files.
+- Added YTT pens/positions/styles, subtitle-to-audio alignment and selected audio-track shifting. Negative track shifts preserve the timestamps of unselected streams.
+- Added text and image SMPTE MXF exports, D-Cinema PNG export, HDR BT.2020 PQ palettes for Blu-ray SUP, MP4 SEI captions, SCC/MCC caption offsets and persistent ITT export presets/header templates.
+- Added custom regex error rules, six caption effects, ASS-style-aware image rendering, video OCR time ranges and an option to keep existing lines. Embedded the pinned OCR replacement rules for 19 languages.
+- Updated the local engine/model catalog and added Opper translation and Voxtral TTS entries. Added translation-response shift guards and checksum-verified Classic installer downloads with cancellation and proxy support.
+- Added contextual translation of selected rows, find/replace in the translated column, Azure Bing region settings and draft AI context generation for advanced llama translation.
+- Added the new nOCR splitter/baselines and image-matcher text repairs; an OCR regex rule editor; seven selectable local llama OCR models with a separate profile and model-specific framing/prompts; optional video preview synchronized to the selected OCR cue.
+- Completed ASS Draw groups, text/masks, clip-art selection, in/out/loop animations and project round trips; fixed decimal-comma coordinates and animation style/alpha retention.
+- Added demand-based Blu-ray SUP palette allocation and overlapping composition, OCR ASSA alignment/line-break handling, bounded MP4 parsing and updated natural-text language detection.
+- Added batch-capable process plugins with context/settings/cancellation and function search, plus CLI burn-in/effects/automatic resolution and safe WebM output.
+- Added optional player controls and fading native full-screen controls, frame/push-neighbour shortcuts, same-time ASS waveform movement, gap-range highlighting, source Ctrl+Enter, dictionary exclusions/cache refresh, local microphone input and additional editor preferences.
+- Added long-job Windows power requests, nested taskbar progress scopes and an isolated local patch installer with hash verification, backup and rollback.
+- Final local validation: 1,165 regression cases, 50 nOCR compatibility cases and 59 native media checks passed; real OCR preview, Russian dialogs/full-screen behavior, CLI MP4/WebM/failure retention, Windows power/taskbar scopes, three package scenarios and updater helper success/failure were exercised. Paid APIs, all large-model inference, actual microphone capture, physical DVD hardware and production Inno Setup installation remain unverified.
+
 
 - Added optional plugin settings context (`ConfigureWithSubtitle`) and hard-subtitle export callbacks. Only an installed plugin creates the extra control or postprocesses a rendered file. Validation runs before encoding, and postprocessing keeps cancellation responsive.
 - Audition Markers 1.2 uses this route for actor-filtered Adobe XMP tracks inside MP4, without changing the subtitles burned into the image. The separate plugin remains optional; Audition-side marker display is not yet verified.

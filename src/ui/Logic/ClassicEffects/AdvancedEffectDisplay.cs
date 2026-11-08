@@ -15,12 +15,23 @@ public interface IAdvancedEffectDisplay
     List<SubtitleLineViewModel> ApplyEffect(string header, List<SubtitleLineViewModel> subtitles, int width, int height, WavePeakData wavePeaks);
 }
 
+public interface IAdvancedEffectHeaderUpdater
+{
+    string UpdateHeader(string header, List<SubtitleLineViewModel> subtitles);
+}
+
 public static class AdvancedEffectDisplayFactory
 {
     public static List<IAdvancedEffectDisplay> List()
     {
         return new List<IAdvancedEffectDisplay>
         {
+            new AdvancedEffectBlurInWords(),
+            new AdvancedEffectBoldCaptions(),
+            new AdvancedEffectHighlightBox(),
+            new AdvancedEffectRollingCaptions(),
+            new AdvancedEffectSingleWordPop(),
+            new AdvancedEffectSmoothFill(),
             new AdvancedEffectAudioTextPulse(),
             new AdvancedEffectBounceIn(),
             new AdvancedEffectCinematicTitle(),

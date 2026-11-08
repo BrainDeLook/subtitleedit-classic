@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Nikse.SubtitleEdit.Core.Common;
 
@@ -39,7 +39,7 @@ namespace Nikse.SubtitleEdit.Logic.AssistedEditing
             ["MoveFirstWordFromNextLineUpCurrentSubtitle"] = new[] { "Перенести первое слово второй строки вверх", "Move first word from second line up" },
         };
         public static bool Russian => Configuration.Settings.General.Language?.StartsWith("ru", StringComparison.OrdinalIgnoreCase) == true;
-        public static string L(string ru, string en) => Russian ? ru : en;
-        public static string Get(string key) => Texts.TryGetValue(key, out var text) ? text[Russian ? 0 : 1] : key;
+        public static string L(string ru, string en) => ClassicLocalization.Text(ru, en);
+        public static string Get(string key) => Texts.TryGetValue(key, out var text) ? L(text[0],text[1]) : key;
     }
 }

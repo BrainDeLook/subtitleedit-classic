@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <OCRFixReplaceList>
   <WholeWords>
     <Word from="abitual" to="habitual" />
@@ -9,7 +9,6 @@
     <Word from="actor" to="ator" />
     <Word from="actores" to="atores" />
     <Word from="actuacao" to="atuação" />
-    <Word from="atuacao" to="atuação" />
     <Word from="acucar" to="açúcar" />
     <Word from="açucar" to="açúcar" />
     <Word from="advinhar" to="adivinhar" />
@@ -24,16 +23,16 @@
     <Word from="analizar" to="analisar" />
     <Word from="andáste" to="andaste" />
     <Word from="anemona" to="anémona" />
-    <Word from="antartico" to="antártico" />
     <Word from="antárctico" to="antártico" />
+    <Word from="antartico" to="antártico" />
     <Word from="antepôr" to="antepor" />
     <Word from="apárte" to="aparte" />
     <Word from="apiadeiro" to="apeadeiro" />
     <Word from="apiar" to="apear" />
     <Word from="apreciacao" to="apreciação" />
     <Word from="arctico" to="ártico" />
-    <Word from="artico" to="ártico" />
     <Word from="arrazar" to="arrasar" />
+    <Word from="artico" to="ártico" />
     <Word from="artifice" to="artífice" />
     <Word from="artifícial" to="artificial" />
     <Word from="ascenção" to="ascensão" />
@@ -41,6 +40,7 @@
     <Word from="assúcar" to="açúcar" />
     <Word from="aste" to="haste" />
     <Word from="asterístico" to="asterisco" />
+    <Word from="atuacao" to="atuação" />
     <Word from="averção" to="aversão" />
     <Word from="avizar" to="avisar" />
     <Word from="avulsso" to="avulso" />
@@ -67,8 +67,8 @@
     <Word from="campião" to="campeão" />
     <Word from="cançacos" to="cansaços" />
     <Word from="caracter" to="caráter" />
-    <Word from="carater" to="caráter" />
     <Word from="caractéres" to="carateres" />
+    <Word from="carater" to="caráter" />
     <Word from="caratéres" to="carateres" />
     <Word from="catequeze" to="catequese" />
     <Word from="catequisador" to="catequizador" />
@@ -151,6 +151,7 @@
     <Word from="fàcilmenfe" to="facilmente" />
     <Word from="fàcilmente" to="facilmente" />
     <Word from="fariam-lhe" to="far-lhe-iam" />
+    <Word from="farmaceutico" to="farmacêutico" />
     <Word from="FARMÁClAS" to="FARMÁCIAS" />
     <Word from="farmecêutico" to="farmacêutico" />
     <Word from="fassa" to="faça" />
@@ -185,6 +186,7 @@
     <Word from="herméticamente" to="hermeticamente" />
     <Word from="hernia" to="hérnia" />
     <Word from="higiéne" to="higiene" />
+    <Word from="higienico" to="higiénico" />
     <Word from="hilariedade" to="hilaridade" />
     <Word from="hiperacídez" to="hiperacidez" />
     <Word from="hontem" to="ontem" />
@@ -200,8 +202,8 @@
     <Word from="incêsto" to="incesto" />
     <Word from="inclusivé" to="inclusive" />
     <Word from="incômodos" to="incómodos" />
-    <Word from="incontestávelmente" to="incontestavelmente" />
     <Word from="incontestàvelmente" to="incontestavelmente" />
+    <Word from="incontestávelmente" to="incontestavelmente" />
     <Word from="indespensáveis" to="indispensáveis" />
     <Word from="indespensável" to="indispensável" />
     <Word from="India" to="Índia" />
@@ -233,9 +235,10 @@
     <Word from="lampeão" to="lampião" />
     <Word from="largartixa" to="lagartixa" />
     <Word from="largarto" to="lagarto" />
-    <Word from="lêm" to="leem" />
     <Word from="lêem" to="leem" />
+    <Word from="lêm" to="leem" />
     <Word from="leucémia" to="leucemia" />
+    <Word from="licenca" to="licença" />
     <Word from="licensa" to="licença" />
     <Word from="linguísta" to="linguista" />
     <Word from="lisongear" to="lisonjear" />
@@ -260,12 +263,12 @@
     <Word from="misogenia" to="misoginia" />
     <Word from="misogeno" to="misógino" />
     <Word from="misógeno" to="misógino" />
-    <Word from="mº" to="º" />
     <Word from="môlho" to="molho" />
     <Word from="monumentânea" to="momentânea" />
     <Word from="mortandela" to="mortadela" />
     <Word from="morteIa" to="mortela" />
     <Word from="muinto" to="muito" />
+    <Word from="mº" to="º" />
     <Word from="nasaias" to="nasais" />
     <Word from="nêle" to="nele" />
     <Word from="nest" to="neste" />
@@ -275,25 +278,26 @@
     <Word from="nonagéssimo" to="nonagésimo" />
     <Word from="nornal" to="normal" />
     <Word from="notàvelmente" to="notavelmente" />
+    <Word from="obcessao" to="obsessão" />
     <Word from="obcessão" to="obsessão" />
     <Word from="obesidae" to="obesidade" />
-    <Word from="óbviamente" to="obviamente" />
     <Word from="òbviamente" to="obviamente" />
+    <Word from="óbviamente" to="obviamente" />
     <Word from="ofecina" to="oficina" />
     <Word from="oje" to="hoje" />
     <Word from="omem" to="homem" />
     <Word from="opcoes" to="opções" />
     <Word from="opóbrio" to="opróbrio" />
     <Word from="opróbio" to="opróbrio" />
+    <Word from="óptima" to="ótima" />
+    <Word from="óptimas" to="ótimas" />
+    <Word from="óptimo" to="ótimo" />
+    <Word from="óptimos" to="ótimos" />
     <Word from="orfão" to="órfão" />
     <Word from="organigrama" to="organograma" />
     <Word from="organisar" to="organizar" />
     <Word from="orgão" to="órgão" />
     <Word from="orta" to="horta" />
-    <Word from="óptima" to="ótima" />
-    <Word from="óptimas" to="ótimas" />
-    <Word from="óptimo" to="ótimo" />
-    <Word from="óptimos" to="ótimos" />
     <Word from="paralização" to="paralisação" />
     <Word from="paralizado" to="paralisado" />
     <Word from="paralizar" to="paralisar" />
@@ -303,6 +307,7 @@
     <Word from="pecalço" to="percalço" />
     <Word from="pêga" to="pega" />
     <Word from="periodo" to="período" />
+    <Word from="periodos" to="períodos" />
     <Word from="pertubar" to="perturbar" />
     <Word from="perú" to="peru" />
     <Word from="piqueno" to="pequeno" />
@@ -310,16 +315,23 @@
     <Word from="poblema" to="problema" />
     <Word from="pobrema" to="problema" />
     <Word from="poden" to="podem" />
-    <Word from="poder-mos" to="pudermos" />
+    <Word from="poder-mos" to="podermos" />
     <Word from="ponteagudo" to="pontiagudo" />
     <Word from="pontuacoes" to="pontuações" />
     <Word from="prazeiroso" to="prazeroso" />
     <Word from="precaridade" to="precariedade" />
     <Word from="precizar" to="precisar" />
     <Word from="preserverança" to="perseverança" />
+    <Word from="previlegiado" to="privilegiado" />
+    <Word from="previlegio" to="privilégio" />
     <Word from="previlégio" to="privilégio" />
     <Word from="primária-que" to="primária que" />
     <Word from="priúdo" to="período" />
+    <Word from="privelegiado" to="privilegiado" />
+    <Word from="privelegio" to="privilégio" />
+    <Word from="privelégio" to="privilégio" />
+    <Word from="priveligiado" to="privilegiado" />
+    <Word from="priveligio" to="privilégio" />
     <Word from="probalidade" to="probabilidade" />
     <Word from="progreso" to="progresso" />
     <Word from="proibído" to="proibido" />
@@ -339,8 +351,8 @@
     <Word from="quadriplicado" to="quadruplicado" />
     <Word from="quaisqueres" to="quaisquer" />
     <Word from="quer-a" to="quere-a" />
-    <Word from="quere-se" to="quer-se" />
     <Word from="quer-o" to="quere-o" />
+    <Word from="quere-se" to="quer-se" />
     <Word from="químco" to="químico" />
     <Word from="quises-te" to="quiseste" />
     <Word from="quizer" to="quiser" />
@@ -362,8 +374,8 @@
     <Word from="reinvidicação" to="reivindicação" />
     <Word from="reinvidicar" to="reivindicar" />
     <Word from="requer-a" to="requere-a" />
-    <Word from="requere-se" to="requer-se" />
     <Word from="requer-o" to="requere-o" />
+    <Word from="requere-se" to="requer-se" />
     <Word from="requesito" to="requisito" />
     <Word from="requisicoes" to="requisições" />
     <Word from="RESIDENCIA" to="RESIDÊNCIA" />
@@ -399,7 +411,6 @@
     <Word from="sinmtoma" to="sintoma" />
     <Word from="sintéticamente" to="sinteticamente" />
     <Word from="sintetisa" to="sintetiza" />
-    <Word from="SÓ" to="só" />
     <Word from="sôfra" to="sofra" />
     <Word from="sôfregamente" to="sofregamente" />
     <Word from="somáste" to="somaste" />
@@ -436,6 +447,7 @@
     <Word from="ventoínha" to="ventoinha" />
     <Word from="verosímel" to="verosímil" />
     <Word from="video" to="vídeo" />
+    <Word from="videos" to="vídeos" />
     <Word from="virus" to="vírus" />
     <Word from="visiense" to="viseense" />
     <Word from="voçe" to="você" />
@@ -454,7 +466,10 @@
     <Word from="zum-zum" to="zunzum" />
   </WholeWords>
   <PartialWordsAlways />
-  <PartialWords />
+  <PartialWords>
+    <WordPart from="i" to="l" />
+    <WordPart from="I" to="l" />
+  </PartialWords>
   <WholeLines />
   <PartialLinesAlways />
   <PartialLines>
@@ -505,7 +520,6 @@
     <RegEx find="\b(B|b)elem\b" replaceWith="$1elém" />
     <RegEx find="\b(s|S)u[íi]sso(s)?\b" replaceWith="$1uíço$2" />
     <RegEx find="\b(s|S)u[íi]ssa(s)?\b" replaceWith="$1uíça$2" />
-    <RegEx find="\b(p|P)rivelig[ie]\p{Ll}d" replaceWith="$1rivelegiad" />
     <RegEx find="\bpud(?:és|e-)se\b" replaceWith="pudesse" />
     <RegEx find="\biquilíbr(?:e|i)o\b" replaceWith="equilíbrio" />
     <RegEx find="\b(c|C)orregi\B" replaceWith="$1orrigid" />
@@ -514,5 +528,84 @@
     <RegEx find="(?&lt;=g|G)rat(?:uí|úi)to" replaceWith="ratuito" />
     <RegEx find="(?&lt;=d|D)esiquilíbr[ei]o" replaceWith="esequilíbrio" />
     <RegEx find="\b[k|K]il(ogramas?|ómetros?)" replaceWith="qui$1" />
+    <RegEx find="\bkil(ogramas?|ómetros?)" replaceWith="quil$1" />
+    <RegEx find="\bKil(ogramas?|ómetros?)" replaceWith="Quil$1" />
   </RegularExpressions>
+  <RegularExpressionsIfSpelledCorrectly>
+    <!-- Italic l misread as i (#13660): trailing i to l, double ii to ll.  -->
+    <!-- Correct i-words are in the dictionary and protected by the gate.   -->
+    <!-- Stem of 3+ letters (#14824): "toi"/"moi"/"roi" in a quoted French   -->
+    <!-- line are not in the dictionary but "tol"/"mol"/"rol" are.           -->
+    <RegEx find="\b([A-ZÀÁÂÃÇÉÊÍÓÔÕÚa-zàáâãçéêíóôõú][a-zàáâãçéêíóôõú]{3,})i\b" spellCheck="$1l" replaceWith="$1l" />
+    <RegEx find="\b([A-ZÀÁÂÃÇÉÊÍÓÔÕÚa-zàáâãçéêíóôõú][a-zàáâãçéêíóôõú]*)ii([a-zàáâãçéêíóôõú]*)\b" spellCheck="$1ll$2" replaceWith="$1ll$2" />
+
+    <!-- word-initial i to l (iove to love, iieber to lieber) -->
+    <RegEx find="\bi([a-zàáâãçéêíóôõú]{2,})\b" spellCheck="l$1" replaceWith="l$1" />
+
+    <!-- word-initial ii to ll (iiegar to llegar) -->
+    <RegEx find="\bii([a-zàáâãçéêíóôõú]+)\b" spellCheck="ll$1" replaceWith="ll$1" />
+
+    <!-- Lowercase l misread as uppercase I (#13660): replace every I in the word, -->
+    <!-- so words with more than one are repaired too (deIectabIe -> delectable,   -->
+    <!-- ExceIIencies -> Excellencies). Words of two letters (AI) are never        -->
+    <!-- touched, and real words (MacIntosh) are kept by the spell check gate.     -->
+    <RegEx find="\b([A-ZÀÁÂÃÇÉÊÍÓÔÕÚa-zàáâãçéêíóôõú](?=[a-zàáâãçéêíóôõúI]*I)[a-zàáâãçéêíóôõúI]{2,})\b" replaceAllFrom="I" replaceAllTo="l" spellCheck="$1" replaceWith="$1" />
+
+    <!-- ============================================================ -->
+    <!-- MAIÚSCULAS: l minúsculo lido em vez de I                     -->
+    <!-- ============================================================ -->
+
+    <!-- [GRlTOS] para [GRITOS] : l para I dentro de colchetes em maiúsculas -->
+    <RegEx find="\[([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ ]*)l([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ ]*)\]" spellCheck="[$1I$2]" replaceWith="[$1I$2]" />
+    <RegEx find="\[([A-ZÀÁÂÃÇÉÊÍÓÔÕÚl]+)\]" replaceAllFrom="l" replaceAllTo="I" spellCheck="$1" replaceWith="[$1]" />
+
+    <!-- SlM para SIM : l entre maiúsculas -->
+    <RegEx find="\b([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]+)l([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]+)\b" spellCheck="$1I$2" replaceWith="$1I$2" />
+    <RegEx find="\b([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]{2,})l\b" spellCheck="$1I" replaceWith="$1I" />
+    <RegEx find="\bl([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]+)\b" spellCheck="I$1" replaceWith="I$1" />
+
+    <!-- Iavar para lavar : I inicial lido em vez de l antes de minúsculas -->
+    <RegEx find="\bI([a-zàáâãçéêíóôõú]{2,})\b" spellCheck="l$1" replaceWith="l$1" />
+
+    <!-- ============================================================ -->
+    <!-- ACENTOS PERDIDOS NO FIM DA PALAVRA                           -->
+    <!-- A regra só atua se a palavra sem acento NÃO está no          -->
+    <!-- dicionário e a forma acentuada SIM (nao para não).           -->
+    <!-- Só minúsculas: nomes próprios não são tocados.               -->
+    <!-- ============================================================ -->
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)ao\b" spellCheck="$1ão" replaceWith="$1ão" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)aos\b" spellCheck="$1ãos" replaceWith="$1ãos" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)oes\b" spellCheck="$1ões" replaceWith="$1ões" />
+    <!-- -cao é tratado sem condições pela regra \Bcao\b em RegularExpressions -->
+    <RegEx find="\b([a-zàáâãçéêíóôõú]{2,})coes\b" spellCheck="$1ções" replaceWith="$1ções" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]{2,})es\b" spellCheck="$1ês" replaceWith="$1ês" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]{2,})e\b" spellCheck="$1é" replaceWith="$1é" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]{2,})e\b" spellCheck="$1ê" replaceWith="$1ê" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)a\b" spellCheck="$1á" replaceWith="$1á" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)o\b" spellCheck="$1ó" replaceWith="$1ó" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)o\b" spellCheck="$1ô" replaceWith="$1ô" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)avel\b" spellCheck="$1ável" replaceWith="$1ável" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)ivel\b" spellCheck="$1ível" replaceWith="$1ível" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)ario(s?)\b" spellCheck="$1ário$2" replaceWith="$1ário$2" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)encia(s?)\b" spellCheck="$1ência$2" replaceWith="$1ência$2" />
+    <RegEx find="\b([a-zàáâãçéêíóôõú]+)ancia(s?)\b" spellCheck="$1ância$2" replaceWith="$1ância$2" />
+
+    <!-- ============================================================ -->
+    <!-- ESPAÇO PERDIDO ENTRE PREPOSIÇÃO/ARTIGO E NOME PRÓPRIO        -->
+    <!-- deLisboa para de Lisboa : só se a palavra com maiúscula      -->
+    <!-- está no dicionário.                                          -->
+    <!-- ============================================================ -->
+    <RegEx find="\bde([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="de $1" />
+    <RegEx find="\bda([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="da $1" />
+    <RegEx find="\bdo([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="do $1" />
+    <RegEx find="\bem([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="em $1" />
+    <RegEx find="\bno([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="no $1" />
+    <RegEx find="\bna([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="na $1" />
+    <RegEx find="\bos([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="os $1" />
+    <RegEx find="\bas([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="as $1" />
+    <RegEx find="\bum([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="um $1" />
+    <RegEx find="\buma([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="uma $1" />
+    <RegEx find="\bpara([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="para $1" />
+    <RegEx find="\bcom([A-ZÀÁÂÃÇÉÊÍÓÔÕÚ][a-zàáâãçéêíóôõú]+)\b" spellCheck="$1" replaceWith="com $1" />
+  </RegularExpressionsIfSpelledCorrectly>
 </OCRFixReplaceList>

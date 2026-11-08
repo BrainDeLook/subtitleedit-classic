@@ -91,6 +91,10 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
         public bool Abort { get; set; }
         public OcrSpellCheck.Action LastAction { get; set; } = OcrSpellCheck.Action.Abort;
         public bool IsBinaryImageCompareOrNOcr { get; set; }
+        private OcrImageMatcherRepairs _imageMatcherRepairs;
+        private OcrImageMatcherRepairs ImageMatcherRepairs => _imageMatcherRepairs ?? (_imageMatcherRepairs = new OcrImageMatcherRepairs(word =>
+            _nameList.Contains(word) || _wordSkipList.Contains(word) || _wordSpellOkList.Contains(word) ||
+            (_spellCheckWordLists?.HasUserWord(word) == true) || (_hunspell != null && DoSpell(word))));
         public List<LogItem> AutoGuessesUsed { get; set; }
         public List<LogItem> UnknownWordsFound { get; set; }
         public bool IsDictionaryLoaded { get; private set; }
@@ -441,7 +445,9 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
         public string FixOcrErrors(string input, Subtitle subtitle, int index, string prevLine, string lastLastLine, bool logSuggestions, AutoGuessLevel autoGuess)
         {
-            var text = input;
+            var text = IsBinaryImageCompareOrNOcr
+                ? ImageMatcherRepairs.RepairLine(input, _threeLetterIsoLanguageName == "fra" || _threeLetterIsoLanguageName == "fre")
+                : input;
             while (text.Contains(Environment.NewLine + " ", StringComparison.Ordinal))
             {
                 text = text.Replace(Environment.NewLine + " ", Environment.NewLine);
@@ -581,6 +587,11 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
             text = FixCommonOcrLineErrors(sb.ToString(), subtitle, index, prevLine, lastLastLine);
             if (Configuration.Settings.Tools.OcrFixUseHardcodedRules)
             {
+                text = OcrImageMatcherRepairs.NormalizeApostrophes(text);
+                text = OcrImageMatcherRepairs.NormalizeSpacedEllipses(text);
+            }
+            if (Configuration.Settings.Tools.OcrFixUseHardcodedRules)
+            {
                 text = FixLowercaseIToUppercaseI(text, prevLine);
                 if (SpellCheckDictionaryName.StartsWith("en_", StringComparison.Ordinal) || _threeLetterIsoLanguageName == "eng")
                 {
@@ -635,6 +646,7 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
                     fixedWord = FixWordViaReplaceList(fixedWord);
                     fixedWord = _ocrFixReplaceList.FixCommonWordErrors(fixedWord);
+                    if (IsBinaryImageCompareOrNOcr) fixedWord = ImageMatcherRepairs.RepairWord(fixedWord);
 
                     // Try using word lists for uppercase i inside words, e.g. "NIkolaj" to "Nikolaj"
                     if (fixedWord.Contains('I'))
@@ -859,9 +871,9 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
         private string FixCommonOcrLineErrors(string input, Subtitle subtitle, int index, string lastLine, string lastLastLine)
         {
             var text = input;
-            text = _ocrFixReplaceList.FixOcrErrorViaLineReplaceList(text, subtitle, index);
+            text = _ocrFixReplaceList.FixOcrErrorViaLineReplaceList(text, subtitle, index, _hunspell == null ? null : this, _wordSkipList.ToList(), false);
             text = FixOcrErrorsViaHardcodedRules(text, lastLine, lastLastLine, _abbreviationList);
-            text = _ocrFixReplaceList.FixOcrErrorViaLineReplaceList(text, subtitle, index);
+            text = _ocrFixReplaceList.FixOcrErrorViaLineReplaceList(text, subtitle, index, _hunspell == null ? null : this, _wordSkipList.ToList(), false);
 
             if (Configuration.Settings.Tools.OcrFixUseHardcodedRules)
             {
@@ -1918,7 +1930,13 @@ namespace Nikse.SubtitleEdit.Logic.Ocr
 
         public bool DoSpell(string word)
         {
-            return _hunspell.Spell(word);
+            if(_hunspell.Spell(word))return true;
+            if((_threeLetterIsoLanguageName=="nld" || _threeLetterIsoLanguageName=="dut") && word.Length>=3 && "AEIOU".IndexOf(word[0])>=0 && word[1]>127 && char.IsLower(word[1]) && !ClassicRemovedDictionaryWords.Contains(_spellCheckDictionaryName,word))
+            {
+                var plain=word[1].ToString().Normalize(NormalizationForm.FormD)[0];
+                if(plain==char.ToLowerInvariant(word[0]))return _hunspell.Spell(word[1]+word.Substring(1).ToLowerInvariant());
+            }
+            return false;
         }
 
         public List<string> DoSuggest(string word)

@@ -15,7 +15,7 @@ namespace Nikse.SubtitleEdit.Core.Common.TextLengthCalculator
                 return 0;
             }
 
-            var s = HtmlUtil.RemoveHtmlTags(text, true);
+            var s = CalcFactory.RemoveTags(text);
 
             const char zeroWidthSpace = '\u200B';
             const char zeroWidthNoBreakSpace = '\uFEFF';

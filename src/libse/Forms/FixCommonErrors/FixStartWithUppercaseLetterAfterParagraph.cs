@@ -98,7 +98,7 @@ namespace Nikse.SubtitleEdit.Core.Forms.FixCommonErrors
                 if ((!text.StartsWith("www.", StringComparison.Ordinal) && !text.StartsWith("http:", StringComparison.Ordinal) && !text.StartsWith("https:", StringComparison.Ordinal)) &&
                     (char.IsLower(firstLetter) || Helper.IsTurkishLittleI(firstLetter, encoding, language)) &&
                     !char.IsDigit(firstLetter) &&
-                    isPrevEndOfLine)
+                    isPrevEndOfLine && !IsLowercaseBeforeUppercase(text,0))
                 {
                     bool isMatchInKnowAbbreviations = language == "en" &&
                         (prevText.EndsWith(" o.r.", StringComparison.Ordinal) ||
@@ -209,11 +209,11 @@ namespace Nikse.SubtitleEdit.Core.Forms.FixCommonErrors
                         !arr[0].StartsWith("--", StringComparison.Ordinal) && !arr[0].StartsWith("<i>--", StringComparison.Ordinal) &&
                         !arr[1].StartsWith("--", StringComparison.Ordinal) && !arr[1].StartsWith("<i>--", StringComparison.Ordinal))
                     {
-                        if (isPrevEndOfLine && arr[1].StartsWith("<i>- ", StringComparison.Ordinal) && arr[1].Length > 6)
+                        if (isPrevEndOfLine && arr[1].StartsWith("<i>- ", StringComparison.Ordinal) && arr[1].Length > 6 && !IsLowercaseBeforeUppercase(arr[1], 5))
                         {
                             p.Text = arr[0] + Environment.NewLine + "<i>- " + char.ToUpper(arr[1][5]) + arr[1].Remove(0, 6);
                         }
-                        else if (isPrevEndOfLine && arr[1].StartsWith("- ", StringComparison.Ordinal) && arr[1].Length > 3)
+                        else if (isPrevEndOfLine && arr[1].StartsWith("- ", StringComparison.Ordinal) && arr[1].Length > 3 && !IsLowercaseBeforeUppercase(arr[1], 2))
                         {
                             p.Text = arr[0] + Environment.NewLine + "- " + char.ToUpper(arr[1][2]) + arr[1].Remove(0, 3);
                         }
@@ -226,24 +226,26 @@ namespace Nikse.SubtitleEdit.Core.Forms.FixCommonErrors
                         }
 
                         bool isPrevLineEndOfLine = Helper.IsPreviousTextEndOfParagraph(prevText);
-                        if (isPrevLineEndOfLine && arr[0].StartsWith("<i>- ", StringComparison.Ordinal) && arr[0].Length > 6)
+                        if (isPrevLineEndOfLine && arr[0].StartsWith("<i>- ", StringComparison.Ordinal) && arr[0].Length > 6 && !IsLowercaseBeforeUppercase(arr[0], 5))
                         {
                             p.Text = "<i>- " + char.ToUpper(arr[0][5]) + arr[0].Remove(0, 6) + Environment.NewLine + arr[1];
                         }
-                        else if (isPrevLineEndOfLine && arr[0].StartsWith("- ", StringComparison.Ordinal) && arr[0].Length > 3)
+                        else if (isPrevLineEndOfLine && arr[0].StartsWith("- ", StringComparison.Ordinal) && arr[0].Length > 3 && !IsLowercaseBeforeUppercase(arr[0], 2))
                         {
                             p.Text = "- " + char.ToUpper(arr[0][2]) + arr[0].Remove(0, 3) + Environment.NewLine + arr[1];
                         }
                     }
                     else if (arr[0].Length > 1 && arr[1].Length > 2 &&
                             ".!?".Contains(arr[0].Substring(arr[0].Length - 1, 1)) &&
-                            arr[1].StartsWith("- ", StringComparison.Ordinal))
+                            arr[1].StartsWith("- ", StringComparison.Ordinal) &&
+                            !IsLowercaseBeforeUppercase(arr[1], 2))
                     {
                         p.Text = arr[0] + Environment.NewLine + "- " + char.ToUpper(arr[1][2]) + arr[1].Remove(0, 3);
                     }
                     else if (arr[0].Length > 1 && arr[1].Length > 2 &&
                                                ".!?".Contains(arr[0].Substring(arr[0].Length - 1, 1)) &&
-                                               arr[1].StartsWith("<i>- ", StringComparison.Ordinal))
+                                               arr[1].StartsWith("<i>- ", StringComparison.Ordinal) &&
+                                               !IsLowercaseBeforeUppercase(arr[1], 5))
                     {
                         p.Text = arr[0] + Environment.NewLine + "<i>- " + char.ToUpper(arr[1][5]) + arr[1].Remove(0, 6);
                     }
@@ -295,12 +297,12 @@ namespace Nikse.SubtitleEdit.Core.Forms.FixCommonErrors
                     string text = p.Text.Substring(indexOfNewLine + len);
                     var st = new StrippableText(text);
 
-                    if (st.StrippedText.Length > 0 && Helper.IsTurkishLittleI(st.StrippedText[0], encoding, language) && !st.Pre.EndsWith('[') && !st.Pre.Contains("..."))
+                    if (st.StrippedText.Length > 0 && !IsLowercaseBeforeUppercase(st.StrippedText,0) && Helper.IsTurkishLittleI(st.StrippedText[0], encoding, language) && !st.Pre.EndsWith('[') && !st.Pre.Contains("..."))
                     {
                         text = st.Pre + Helper.GetTurkishUppercaseLetter(st.StrippedText[0], encoding) + st.StrippedText.Substring(1) + st.Post;
                         p.Text = p.Text.Remove(indexOfNewLine + len).Insert(indexOfNewLine + len, text);
                     }
-                    else if (st.StrippedText.Length > 0 && st.StrippedText[0] != char.ToUpper(st.StrippedText[0]) && !st.Pre.EndsWith('[') && !st.Pre.Contains("..."))
+                    else if (st.StrippedText.Length > 0 && !IsLowercaseBeforeUppercase(st.StrippedText,0) && st.StrippedText[0] != char.ToUpper(st.StrippedText[0]) && !st.Pre.EndsWith('[') && !st.Pre.Contains("..."))
                     {
                         text = st.Pre + char.ToUpper(st.StrippedText[0]) + st.StrippedText.Substring(1) + st.Post;
                         p.Text = p.Text.Remove(indexOfNewLine + len).Insert(indexOfNewLine + len, text);
@@ -308,6 +310,23 @@ namespace Nikse.SubtitleEdit.Core.Forms.FixCommonErrors
                 }
             }
             return p.Text;
+        }
+
+        /// <summary>
+        /// A lowercase letter followed by an uppercase one is not a missed capital: it is a name
+        /// like iPhone/eBay, or an OCR misread such as "iFuera" for "¡Fuera" (#16379).
+        /// "i"/"l" (the usual misreads of "¡") are always kept, also before all caps ("iNO!");
+        /// other all-caps text with a misread first letter ("sTOP", "tHE") is still capitalized.
+        /// </summary>
+        private static bool IsLowercaseBeforeUppercase(string text, int index)
+        {
+            if (index < 0 || index + 1 >= text.Length || !char.IsLower(text[index]) || !char.IsUpper(text[index + 1]))
+            {
+                return false;
+            }
+
+            return text[index] == 'i' || text[index] == 'l' ||
+                   index + 2 >= text.Length || !char.IsUpper(text[index + 2]);
         }
 
         private static bool IsEnglishCandidateForLowercaseLtoUppercaseI(string language, string text)

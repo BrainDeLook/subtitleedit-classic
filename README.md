@@ -19,7 +19,7 @@ Subtitle Edit Classic is an independent Windows fork of the [Subtitle Edit 4.x l
 
 The project keeps Classic's editing workflow and brings newer tools into its existing windows. Menus group commands by task, and shared settings are available from relevant context menus. Existing Classic commands and shortcuts remain available.
 
-The current stable release is **4.0.28**. The fork has its own release numbering and update source. It adapts features from upstream 5.0–5.3; it is not the upstream 5.3 application or a guarantee of identical behavior in every workflow.
+The current stable release is **4.0.29**. The fork has its own release numbering and update source. It adapts features from upstream 5.0–5.4; it is not the upstream 5.4 application or a guarantee of identical behavior in every workflow.
 
 ## What changes compared with legacy 4.x?
 

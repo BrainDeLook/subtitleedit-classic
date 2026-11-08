@@ -12,6 +12,14 @@ namespace Nikse.SubtitleEdit.Core.ContainerFormats.Mp4.Boxes
         public string Name;
         public ulong Size;
 
+        internal static byte[] ReadPayload(System.IO.Stream stream,ulong length)
+        {
+            var available=stream.Length>stream.Position?(ulong)(stream.Length-stream.Position):0UL;
+            var buffer=new byte[Math.Min(length,available+8)];var offset=0;
+            while(offset<buffer.Length){var count=stream.Read(buffer,offset,buffer.Length-offset);if(count==0)break;offset+=count;}
+            return buffer;
+        }
+
         public static uint GetUInt(byte[] buffer, int index)
         {
             return (uint)((buffer[index] << 24) + (buffer[index + 1] << 16) + (buffer[index + 2] << 8) + buffer[index + 3]);

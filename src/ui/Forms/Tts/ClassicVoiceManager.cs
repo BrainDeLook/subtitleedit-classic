@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Logic;
+﻿using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.ClassicCast;
 using Nikse.SubtitleEdit.Logic.SpeechToText;
 using System;
@@ -21,7 +21,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
   private readonly System.Media.SoundPlayer _player=new System.Media.SoundPlayer();
   private CancellationTokenSource _operation;private bool _closeRequested;
   private static bool Ru=>(Nikse.SubtitleEdit.Core.Common.Configuration.Settings.General.Language ?? "").StartsWith("ru",StringComparison.OrdinalIgnoreCase);
-  private static string L(string ru,string en)=>Ru ? ru : en;
+  private static string L(string ru,string en)=>ClassicLocalization.Text(ru,en);
   public ClassicVoiceManager()
   {
    Text=L("Менеджер голосов","Voice manager");Size=new Size(820,640);MinimumSize=new Size(780,580);StartPosition=FormStartPosition.CenterParent;Padding=new Padding(10);

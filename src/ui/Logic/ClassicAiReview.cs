@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -35,12 +35,45 @@ namespace Nikse.SubtitleEdit.Logic
     {
         private readonly HttpClient _http;
         private readonly ClassicCompatibleAsrSettings _settings;
-        private bool _noTemperature, _noJson;
+        private bool _noTemperature, _noJson, _thinkingUnsupported;
+        public bool DisableThinking { get; private set; }
+        public bool ReplyFromReasoning { get; private set; }
         public ClassicAiClient(ClassicCompatibleAsrSettings settings, HttpMessageHandler handler = null)
         {
             _settings = settings; _http = new HttpClient(handler ?? new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
         }
-        public static string ChatUrl(string url) => url.TrimEnd('/').EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase) ? url.TrimEnd('/') : url.TrimEnd('/') + "/chat/completions";
+        public static string ChatUrl(string url)
+        {
+            var value = url.Trim().TrimEnd('/');
+            if (value.IndexOf("://", StringComparison.Ordinal) < 0) value = "http://" + value;
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || (uri.Scheme != "http" && uri.Scheme != "https") || uri.UserInfo.Length > 0 || uri.Query.Length > 0 || uri.Fragment.Length > 0)
+                throw new ArgumentException("Enter an HTTP(S) server URL without credentials, query or fragment.");
+            if (value.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase)) return value;
+            if (Regex.IsMatch(uri.AbsolutePath, @"/api/(generate|chat|tags)$", RegexOptions.IgnoreCase))
+                value = value.Substring(0, value.LastIndexOf("/api/", StringComparison.OrdinalIgnoreCase)) + "/v1";
+            else if (uri.AbsolutePath == "/" || uri.AbsolutePath.Length == 0) value += "/v1";
+            return value + "/chat/completions";
+        }
+        public async Task<List<string>> GetModelsAsync(CancellationToken cancel)
+        {
+            var chat = ChatUrl(_settings.Url);
+            var url = chat.Substring(0, chat.Length - "/chat/completions".Length) + "/models";
+            using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel))
+            using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+            {
+                timeout.CancelAfter(TimeSpan.FromSeconds(Math.Min(60, _settings.TimeoutSeconds)));
+                if (!string.IsNullOrEmpty(_settings.ApiKey)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
+                using (var response = await _http.SendAsync(request, timeout.Token).ConfigureAwait(false))
+                {
+                    if (!response.IsSuccessStatusCode) throw new HttpRequestException("Model list returned HTTP " + (int)response.StatusCode + ".");
+                    var data = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false))["data"] as JArray;
+                    if (data == null) throw new InvalidDataException("Server returned no model list.");
+                    var models = data.OfType<JObject>().Select(model => (string)model["id"]).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToList();
+                    if (models.Count == 0) throw new InvalidDataException("Server returned an empty model list.");
+                    return models;
+                }
+            }
+        }
         public async Task<string> ChatAsync(JArray messages, bool json, CancellationToken cancel, double temperature = 0, LlamaCppModel definition = null, JObject responseFormat = null)
         {
             using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel))
@@ -49,7 +82,9 @@ namespace Nikse.SubtitleEdit.Logic
                 try {
                     for (var attempt = 0; attempt < 5; attempt++)
                     {
+                        ReplyFromReasoning = false;
                         var payload = new JObject { ["model"] = _settings.Model, ["messages"] = messages };
+                        if (DisableThinking && !_thinkingUnsupported) payload["chat_template_kwargs"] = new JObject { ["enable_thinking"] = false };
                         payload["max_tokens"] = 2048;
                         if (!_noTemperature) payload["temperature"] = temperature;
                         if (definition?.TopP >= 0) payload["top_p"] = definition.TopP;
@@ -64,11 +99,22 @@ namespace Nikse.SubtitleEdit.Logic
                                 var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                                 if (response.IsSuccessStatusCode)
                                 {
-                                    var content = JObject.Parse(body)["choices"]?.First?["message"]?["content"];
+                                    var message = JObject.Parse(body)["choices"]?.First?["message"];
+                                    var content = message?["content"];
                                     var text = content is JArray parts ? string.Concat(parts.Select(p => (string)p["text"])) : (string)content;
+                                    var reasoning = (string)message?["reasoning_content"];
+                                    if (string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(reasoning))
+                                    {
+                                        DisableThinking = true;
+                                        ReplyFromReasoning = true;
+                                        text = reasoning;
+                                    }
                                     if (string.IsNullOrWhiteSpace(text)) throw new InvalidDataException("AI returned no text.");
                                     return text;
                                 }
+                                if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500 && DisableThinking && !_thinkingUnsupported &&
+                                    (body.IndexOf("chat_template_kwargs", StringComparison.OrdinalIgnoreCase) >= 0 || body.IndexOf("enable_thinking", StringComparison.OrdinalIgnoreCase) >= 0))
+                                { _thinkingUnsupported = true; continue; }
                                 if ((int)response.StatusCode == 400 && !_noTemperature && body.IndexOf("temperature", StringComparison.OrdinalIgnoreCase) >= 0) { _noTemperature = true; continue; }
                                 if ((int)response.StatusCode == 400 && json && !_noJson && (body.IndexOf("response_format", StringComparison.OrdinalIgnoreCase) >= 0 || body.IndexOf("json_schema",StringComparison.OrdinalIgnoreCase)>=0)) { if(responseFormat!=null)responseFormat=null;else _noJson = true; continue; }
                                 if (((int)response.StatusCode == 429 || (int)response.StatusCode >= 500) && attempt < 2)

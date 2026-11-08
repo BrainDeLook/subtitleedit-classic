@@ -28,6 +28,9 @@ public sealed class NOcrTrainerSettings
     public string MergedLetterCombinations { get; set; } = string.Empty;
 
     public NOcrLineAlgorithm LineSegmentAlgorithm { get; set; } = NOcrLineAlgorithm.Random;
+
+    /// <summary>Seed for the random line generation; null (the default) gives different lines on every run.</summary>
+    public int? RandomSeed { get; set; }
 }
 
 public sealed class NOcrTrainerProgress
@@ -56,6 +59,10 @@ public sealed class NOcrTrainer
     private const int MinLineHeight = 25;
     private const float OutlineWidth = 2.0f;
 
+    // Glyphs up to about 12x12 (dots, commas, quotes, dashes): see KeepLinesThatFitLargerSizes.
+    private const int SmallGlyphArea = 150;
+    private static readonly float[] SmallGlyphCheckScales = { 1.5f, 2f };
+
     /// <summary>
     /// Trains <paramref name="db"/> in place. Call from a background thread; use
     /// <paramref name="abortRequested"/> to cancel between characters.
@@ -65,6 +72,7 @@ public sealed class NOcrTrainer
     {
         var learned = 0;
         var skipped = 0;
+        var random = settings.RandomSeed is int seed ? new Random(seed) : new Random();
 
         var singleCharacters = new List<string>();
         foreach (var ch in settings.CharactersToTrain)
@@ -100,7 +108,7 @@ public sealed class NOcrTrainer
                 var isMerged = text.Length > 1;
                 foreach (var (bold, italic) in GetStyles(settings))
                 {
-                    if (TrainCharacter(settings, db, text, fontName, bold, italic, isMerged, lookalikes[(bold, italic)]))
+                    if (TrainCharacter(settings, db, text, fontName, bold, italic, isMerged, lookalikes[(bold, italic)], random))
                     {
                         learned++;
                     }
@@ -166,7 +174,7 @@ public sealed class NOcrTrainer
         return result;
     }
 
-    private static bool TrainCharacter(NOcrTrainerSettings settings, NOcrDb db, string text, string fontName, bool bold, bool italic, bool isMerged, Dictionary<string, NikseBitmap> lookalikes)
+    private static bool TrainCharacter(NOcrTrainerSettings settings, NOcrDb db, string text, string fontName, bool bold, bool italic, bool isMerged, Dictionary<string, NikseBitmap> lookalikes, Random random)
     {
         // "H" establishes the line's cap height so the target glyph gets a realistic top
         // margin; the wide gap makes the splitter separate it from the target.
@@ -207,7 +215,7 @@ public sealed class NOcrTrainer
                 Italic = italic,
             };
             var segments = settings.NumberOfLineSegments + (isMerged ? 20 : 0);
-            NOcrChar.GenerateLineSegments(segments, false, nOcrChar, item.NikseBitmap, settings.LineSegmentAlgorithm);
+            NOcrChar.GenerateLineSegments(segments, false, nOcrChar, item.NikseBitmap, settings.LineSegmentAlgorithm, random);
             foreach (var (otherText, otherBitmap) in lookalikes.Select(x=>(x.Key,x.Value)))
             {
                 // Case pairs (o/O, s/S, ...) share the shape; size and position tell them apart.
@@ -242,12 +250,60 @@ public sealed class NOcrTrainer
             nOcrChar.Text = text;
             nOcrChar.Italic = italic;
             var segments = settings.NumberOfLineSegments + (list.Count == 5 ? 10 : 5);
-            NOcrChar.GenerateLineSegments(segments, false, nOcrChar, group.PreviewBitmap, settings.LineSegmentAlgorithm);
+            NOcrChar.GenerateLineSegments(segments, false, nOcrChar, group.PreviewBitmap, settings.LineSegmentAlgorithm, random);
             db.Add(nOcrChar);
             return true;
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The random generator only checks a line's neighbour pixels on glyphs wider/taller than 10
+    /// pixels, so on a dot or comma most lines run along the anti-aliased rim. They fit at the
+    /// trained size but miss the rim of the same glyph at another size: a "." trained at 50 px
+    /// read as "*" at 100 px for about two thirds of the trainings. Keep only the lines that also
+    /// fit the glyph rendered bigger (when enough of them do).
+    /// </summary>
+    private static void KeepLinesThatFitLargerSizes(NOcrChar nOcrChar, string text, string fontName, float fontSize, bool bold, bool italic)
+    {
+        var foreground = new List<NOcrPoint>(nOcrChar.LinesForeground);
+        var background = new List<NOcrPoint>(nOcrChar.LinesBackground);
+        foreach (var scale in SmallGlyphCheckScales)
+        {
+            var bigger = RenderTarget(text, fontName, fontSize * scale, bold, italic);
+            if (bigger == null)
+            {
+                return;
+            }
+
+            foreground.RemoveAll(line => !NOcrChar.IsMatchPointForeGround(line, false, bigger, nOcrChar));
+            background.RemoveAll(line => !NOcrChar.IsMatchPointBackGround(line, false, bigger, nOcrChar));
+        }
+
+        // Too few survivors would leave an entry that matches any blob; keep the originals then.
+        if (foreground.Count + background.Count >= Math.Max(4, (nOcrChar.LinesForeground.Count + nOcrChar.LinesBackground.Count) / 4))
+        {
+            nOcrChar.LinesForeground.RemoveAll(line => !foreground.Contains(line));
+            nOcrChar.LinesBackground.RemoveAll(line => !background.Contains(line));
+        }
+    }
+
+    /// <summary>The target glyph of a "H   " + <paramref name="text"/> rendering (any number of spaces between), when it comes out as one piece.</summary>
+    private static NikseBitmap? RenderTarget(string text, string fontName, float fontSize, bool bold, bool italic)
+    {
+        using var bitmap = RenderCharacterImage("H   " + text, fontName, fontSize, bold, italic);
+        if (bitmap == null)
+        {
+            return null;
+        }
+
+        var nikseBitmap = new NikseBitmap(bitmap);
+        nikseBitmap.MakeTwoColor(TwoColorThreshold);
+        nikseBitmap.CropTop(0, Color.Transparent);
+        var list = NikseBitmapImageSplitter.SplitBitmapToLettersNew(nikseBitmap, PixelsAreSpace, false, false, MinLineHeight, false);
+        var glyphs = list.Where(p => p.NikseBitmap != null).ToList();
+        return glyphs.Count == 2 ? glyphs[1].NikseBitmap : null;
     }
 
     /// <summary>

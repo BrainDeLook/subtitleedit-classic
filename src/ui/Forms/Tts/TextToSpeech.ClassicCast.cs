@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.ClassicCast;
 using Nikse.SubtitleEdit.Logic.SpeechToText;
@@ -18,7 +18,7 @@ namespace Nikse.SubtitleEdit.Forms.Tts
   private CancellationTokenSource _castCancellation;
   private string _castRegenerationVoice;
   private readonly HashSet<string> _castSpeakerNames=new HashSet<string>(StringComparer.Ordinal);
-  private static string CL(string ru,string en)=>QwenRussian ? ru : en;
+  private static string CL(string ru,string en)=>ClassicLocalization.Text(ru,en);
   private void InitializeClassicCast()
   {
    _videoOriginalFile=_castSettings.OriginalSubtitleFile ?? "";

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
@@ -33,6 +34,17 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             InitializeComponent();
             VobSubEditCharacters.MakeToolStripLetters(contextMenuStripTextbox, InsertLanguageCharacter);
             UiUtil.FixFonts(this);
+            pictureBoxInspectItem.Cursor = Cursors.Hand;
+            pictureBoxInspectItem.DoubleClick += (sender, e) =>
+            {
+                if (_imageSources == null || listBoxInspectItems.SelectedIndex < 0) return;
+                var indices = Enumerable.Range(0, _imageSources.Count).Where(i => _imageSources[i] != null).ToArray();
+                var selected = Array.IndexOf(indices, listBoxInspectItems.SelectedIndex);
+                if (selected < 0) return;
+                using (var viewer = new ExportPngXmlPreview(i => new Bitmap(_imageSources[indices[i]]), selected, indices.Length,
+                    i => listBoxInspectItems.SelectedIndex = indices[i])) viewer.ShowDialog(this);
+            };
+
 
             LanguageStructure.VobSubEditCharacters langCharEdit = LanguageSettings.Current.VobSubEditCharacters;
             LanguageStructure.VobSubOcrCharacterInspect langCharInspect = LanguageSettings.Current.VobSubOcrCharacterInspect;

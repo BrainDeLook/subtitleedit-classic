@@ -1,4 +1,5 @@
-﻿/*
+﻿using System;
+/*
  * Copyright 2009 Volker Oth (0xdeadbeef)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,44 +50,60 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
         /// <returns>Integer array with red, green, and blue (in this order)</returns>
         public static int[] YCbCr2Rgb(int y, int cb, int cr, bool useBt601)
         {
-            var rgb = new int[3];
-            double r, g, b;
+            YCbCr2Rgb(y, cb, cr, useBt601, out var ir, out var ig, out var ib);
+            return new[] { ir, ig, ib };
+        }
 
+        /// <summary>
+        /// Same conversion as <see cref="YCbCr2Rgb(int, int, int, bool)"/> without the int[3]
+        /// allocation - callers that decode a whole palette (up to 256 entries) call this once
+        /// per entry, so the array was pure per-call garbage.
+        /// </summary>
+        public static void YCbCr2Rgb(int y, int cb, int cr, bool useBt601, out int r8, out int g8, out int b8)
+        {
+            // Studio range → center/offset removal
             y -= 16;
             cb -= 128;
             cr -= 128;
 
-            var y1 = y * 1.164383562;
+            // Y scaling factor (219/255 ≈ 1.164383562)
+            double y1 = y * 1.164383562;
+
+            double r, g, b;
+
             if (useBt601)
             {
-                /* BT.601 for YCbCr 16..235 -> RGB 0..255 (PC) */
-                r = y1 + cr * 1.596026317;
-                g = y1 - cr * 0.8129674985 - cb * 0.3917615979;
-                b = y1 + cb * 2.017232218;
+                // BT.601 inverse
+                r = y1 + 1.596026317 * cr;
+                g = y1 - 0.8129674985 * cr - 0.3917615979 * cb;
+                b = y1 + 2.017232218 * cb;
             }
             else
             {
-                /* BT.709 for YCbCr 16..235 -> RGB 0..255 (PC) */
-                r = y1 + cr * 1.792741071;
-                g = y1 - cr * 0.5329093286 - cb * 0.2132486143;
-                b = y1 + cb * 2.112401786;
-            }
-            rgb[0] = (int)(r + 0.5);
-            rgb[1] = (int)(g + 0.5);
-            rgb[2] = (int)(b + 0.5);
-            for (int i = 0; i < 3; i++)
-            {
-                if (rgb[i] < 0)
-                {
-                    rgb[i] = 0;
-                }
-                else if (rgb[i] > 255)
-                {
-                    rgb[i] = 255;
-                }
+                // BT.709 inverse
+                r = y1 + 1.792741071 * cr;
+                g = y1 - 0.5329093286 * cr - 0.2132486143 * cb;
+                b = y1 + 2.112401786 * cb;
             }
 
-            return rgb;
+            // Round & clamp
+
+            // Add small bias for values very close to 255 to compensate for YCbCr rounding losses
+            if (r > 254.0) r += 0.35;
+            if (g > 254.0) g += 0.35;
+            if (b > 254.0) b += 0.35;
+
+            int ir = (int)Math.Round(r, MidpointRounding.AwayFromZero);
+            int ig = (int)Math.Round(g, MidpointRounding.AwayFromZero);
+            int ib = (int)Math.Round(b, MidpointRounding.AwayFromZero);
+
+            if (ir < 0) ir = 0; else if (ir > 255) ir = 255;
+            if (ig < 0) ig = 0; else if (ig > 255) ig = 255;
+            if (ib < 0) ib = 0; else if (ib > 255) ib = 255;
+
+            r8 = ir;
+            g8 = ig;
+            b8 = ib;
         }
 
         /**
@@ -104,52 +121,39 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
             if (useBt601)
             {
                 /* BT.601 for RGB 0..255 (PC) -> YCbCr 16..235 */
-                y = r * 0.299 * 219 / 255 + g * 0.587 * 219 / 255 + b * 0.114 * 219 / 255;
-                cb = -r * 0.168736 * 224 / 255 - g * 0.331264 * 224 / 255 + b * 0.5 * 224 / 255;
-                cr = r * 0.5 * 224 / 255 - g * 0.418688 * 224 / 255 - b * 0.081312 * 224 / 255;
+                y = 16 + (0.299 * r + 0.587 * g + 0.114 * b) * 219.0 / 255.0;
+                cb = 128 + (-0.168736 * r - 0.331264 * g + 0.500000 * b) * 224.0 / 255.0;
+                cr = 128 + (0.500000 * r - 0.418688 * g - 0.081312 * b) * 224.0 / 255.0;
+
+                return new[]
+                {
+                    (int)Math.Round(y, MidpointRounding.AwayFromZero),
+                    (int)Math.Round(cb, MidpointRounding.AwayFromZero),
+                    (int)Math.Round(cr, MidpointRounding.AwayFromZero)
+                };
             }
             else
             {
-                /* BT.709 for RGB 0..255 (PC) -> YCbCr 16..235 */
-                y = r * 0.2126 * 219 / 255 + g * 0.7152 * 219 / 255 + b * 0.0722 * 219 / 255;
-                cb = -r * 0.2126 / 1.8556 * 224 / 255 - g * 0.7152 / 1.8556 * 224 / 255 + b * 0.5 * 224 / 255;
-                cr = r * 0.5 * 224 / 255 - g * 0.7152 / 1.5748 * 224 / 255 - b * 0.0722 / 1.5748 * 224 / 255;
-            }
-            yCbCr[0] = 16 + (int)(y + 0.5);
-            yCbCr[1] = 128 + (int)(cb + 0.5);
-            yCbCr[2] = 128 + (int)(cr + 0.5);
-            for (int i = 0; i < 3; i++)
-            {
-                if (yCbCr[i] < 16)
+                y = 16 + (0.2126 * r + 0.7152 * g + 0.0722 * b) * 219.0 / 255.0;
+                cb = 128 + (-0.1146 * r - 0.3854 * g + 0.5000 * b) * 224.0 / 255.0;
+                cr = 128 + (0.5000 * r - 0.4542 * g - 0.0458 * b) * 224.0 / 255.0;
+
+                return new[]
                 {
-                    yCbCr[i] = 16;
-                }
-                else
-                {
-                    if (i == 0)
-                    {
-                        if (yCbCr[i] > 235)
-                        {
-                            yCbCr[i] = 235;
-                        }
-                    }
-                    else
-                    {
-                        if (yCbCr[i] > 240)
-                        {
-                            yCbCr[i] = 240;
-                        }
-                    }
-                }
+                    (int)Math.Round(y, MidpointRounding.AwayFromZero),
+                    (int)Math.Round(cb, MidpointRounding.AwayFromZero),
+                    (int)Math.Round(cr, MidpointRounding.AwayFromZero)
+                };
             }
-            return yCbCr;
         }
 
-        /**
-         * Ctor - initializes palette with transparent black (RGBA: 0x00000000)
-         * @param palSize Number of palette entries
-         * @param use601  Use BT.601 instead of BT.709
-         */
+        /// <summary>
+        /// The palette of a UHD Blu-ray HDR subtitle stream: BT.2020 with the ST 2084 (PQ)
+        /// transfer, still 8 bit. PGS has no field for the colour space, so these values are all
+        /// that tells a player how to read the stream. Follows the display light mapping of
+        /// BT.2408: the SDR colour as a BT.1886 display shows it, scaled so white is
+        /// <paramref name="whiteNits"/>.
+        /// </summary>
         public BluRaySupPalette(int palSize, bool use601)
         {
             _size = palSize;
@@ -164,12 +168,50 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
 
             // set at least all alpha values to invisible
             var yCbCr = Rgb2YCbCr(0, 0, 0, _useBt601);
-            for (int i = 0; i < palSize; i++)
+            for (var i = 0; i < palSize; i++)
             {
                 _y[i] = (byte)yCbCr[0];
                 _cb[i] = (byte)yCbCr[1];
                 _cr[i] = (byte)yCbCr[2];
             }
+        }
+
+        private static int[] Rgb2YCbCrHdr(int r, int g, int b, int whiteNits)
+        {
+            var linearR = Math.Pow(r / 255.0, 2.4);
+            var linearG = Math.Pow(g / 255.0, 2.4);
+            var linearB = Math.Pow(b / 255.0, 2.4);
+
+            // BT.709 primaries -> BT.2020 primaries, then PQ
+            var pqR = PqEncode((0.6274 * linearR + 0.3293 * linearG + 0.0433 * linearB) * whiteNits);
+            var pqG = PqEncode((0.0691 * linearR + 0.9195 * linearG + 0.0114 * linearB) * whiteNits);
+            var pqB = PqEncode((0.0164 * linearR + 0.0880 * linearG + 0.8956 * linearB) * whiteNits);
+
+            var y = 0.2627 * pqR + 0.6780 * pqG + 0.0593 * pqB;
+            var cb = (pqB - y) / 1.8814;
+            var cr = (pqR - y) / 1.4746;
+
+            return new[]
+            {
+                (int)Math.Round(16 + y * 219.0, MidpointRounding.AwayFromZero),
+                (int)Math.Round(128 + cb * 224.0, MidpointRounding.AwayFromZero),
+                (int)Math.Round(128 + cr * 224.0, MidpointRounding.AwayFromZero)
+            };
+        }
+
+        /// <summary>
+        /// ST 2084 inverse EOTF: absolute luminance to a signal of 0..1.
+        /// </summary>
+        private static double PqEncode(double nits)
+        {
+            const double m1 = 2610.0 / 16384.0;
+            const double m2 = 2523.0 / 32.0;
+            const double c1 = 3424.0 / 4096.0;
+            const double c2 = 2413.0 / 128.0;
+            const double c3 = 2392.0 / 128.0;
+
+            var yPowM1 = Math.Pow(nits / 10000.0, m1);
+            return Math.Pow((c1 + c2 * yPowM1) / (1.0 + c3 * yPowM1), m2);
         }
 
         /**
@@ -267,6 +309,15 @@ namespace Nikse.SubtitleEdit.Core.BluRaySup
             return ((_a[index] & 0xff) << 24) | ((_r[index] & 0xff) << 16) | ((_g[index] & 0xff) << 8) | (_b[index] & 0xff);
         }
 
+        internal void SetHdrColor(int index, System.Drawing.Color color, int whiteNits)
+        {
+            SetColor(index, color);
+            var yCbCr = Rgb2YCbCrHdr(color.R, color.G, color.B, whiteNits);
+            _y[index] = (byte)yCbCr[0]; _cb[index] = (byte)yCbCr[1]; _cr[index] = (byte)yCbCr[2];
+        }
+
+        internal void SetColor(int index, SkiaSharp.SKColor color) => SetColor(index, System.Drawing.Color.FromArgb(color.Alpha,color.Red,color.Green,color.Blue));
+        internal void SetHdrColor(int index, SkiaSharp.SKColor color, int whiteNits) => SetHdrColor(index, System.Drawing.Color.FromArgb(color.Alpha,color.Red,color.Green,color.Blue),whiteNits);
         internal void SetColor(int index, System.Drawing.Color color)
         {
             SetRgb(index, color.R, color.G, color.B);

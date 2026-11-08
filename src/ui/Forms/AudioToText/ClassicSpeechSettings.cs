@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.SpeechToText;
 using System;
@@ -10,7 +10,7 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
 {
     public sealed class ClassicSpeechSettings : Form
     {
-        internal static string L(string ru, string en) => Configuration.Settings.General.Language.StartsWith("ru", StringComparison.OrdinalIgnoreCase) ? ru : en;
+        internal static string L(string ru, string en) => ClassicLocalization.Text(ru, en);
         public ClassicSpeechSettings(SpeechEngine engine, ClassicSpeechOptions options)
         {
             Text = L("Параметры распознавания речи", "Speech-to-text settings");
@@ -47,10 +47,20 @@ namespace Nikse.SubtitleEdit.Forms.AudioToText
             var arguments = new TextBox { Left = 15, Top = 305, Width = 660, Height = 110, Multiline = true, ScrollBars = ScrollBars.Vertical,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 Text = options.ExtraArguments.TryGetValue(engine.Name, out var extra) ? extra : "" };
+            TextBox customModel=null;
+            if(engine.Family=="qwen")
+            {
+                customModel=new TextBox{Left=230,Top=87,Width=300,ReadOnly=true,Text=options.CustomQwenModel};
+                var pick=new Button{Left=536,Top=85,Width=52,Text="GGUF…"};var clear=new Button{Left=592,Top=85,Width=48,Text="×"};
+                pick.Click+=(sender,args)=>{using(var file=new OpenFileDialog{Filter="Qwen3 ASR GGUF|*.gguf"})if(file.ShowDialog(this)==DialogResult.OK){try{var reason=Qwen3AsrCppModelValidator.GetIncompatibilityReason(file.FileName);if(reason!=null)throw new System.IO.InvalidDataException(reason);customModel.Text=file.FileName;}catch(System.IO.IOException error){MessageBox.Show(this,error.Message,Text);}}};
+                clear.Click+=(sender,args)=>customModel.Text="";
+                Controls.AddRange(new Control[]{new Label{Text=L("Свой GGUF (без копии)","Custom GGUF (no copy)"),Left=15,Top=91,AutoSize=true},customModel,pick,clear});
+            }
             var ok = new Button { Text = "OK", Width = 110, Left = 440, Top = 450, Anchor = AnchorStyles.Bottom | AnchorStyles.Right };
             var cancel = new Button { Text = L("Отмена", "Cancel"), Width = 110, Left = 565, Top = 450, Anchor = AnchorStyles.Bottom | AnchorStyles.Right, DialogResult = DialogResult.Cancel };
             ok.Click += (s, e) =>
             {
+                if(customModel!=null)options.CustomQwenModel=customModel.Text;
                 options.Variant = (string)variant.SelectedItem;
                 options.Aligner = aligner.SelectedItem is SpeechModel selected ? selected.Name : "";
                 options.UseVad = vad.Checked; options.RetryWithoutVad = retry.Checked;

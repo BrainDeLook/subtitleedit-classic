@@ -39,8 +39,9 @@ namespace Nikse.SubtitleEdit.Forms
         private const int FunctionBookmarked = 17;
         private const int FunctionBookmarkContains = 18;
         private const int FunctionBlankLines = 19;
-        private const int FunctionStyle = 20;
-        private const int FunctionActor = 21;
+        private const int FunctionHasErrors = 20;
+        private const int FunctionStyle = 21;
+        private const int FunctionActor = 22;
 
         private const string ContainsString = "Contains";
         private const string StartsWith = "Starts with";
@@ -62,6 +63,7 @@ namespace Nikse.SubtitleEdit.Forms
         private const string Bookmarked = "Bookmarked";
         private const string BookmarkContains = "Bookmark contains";
         private const string BlankLines = "Blank lines";
+        private const string HasErrors = "Has errors";
         private const string Style = "Style";
         private const string Actor = "Actor";
 
@@ -118,6 +120,7 @@ namespace Nikse.SubtitleEdit.Forms
             comboBoxRule.Items.Add(LanguageSettings.Current.ModifySelection.Bookmarked);
             comboBoxRule.Items.Add(LanguageSettings.Current.ModifySelection.BookmarkContains);
             comboBoxRule.Items.Add(LanguageSettings.Current.ModifySelection.BlankLines);
+            comboBoxRule.Items.Add(ClassicErrorReport.L("С ошибками", "Has errors"));
             if (_format.HasStyleSupport)
             {
                 comboBoxRule.Items.Add(LanguageSettings.Current.General.Style);
@@ -184,6 +187,9 @@ namespace Nikse.SubtitleEdit.Forms
                     break;
                 case BookmarkContains:
                     comboBoxRule.SelectedIndex = FunctionBookmarkContains;
+                    break;
+                case HasErrors:
+                    comboBoxRule.SelectedIndex = FunctionHasErrors;
                     break;
                 case BlankLines:
                     comboBoxRule.SelectedIndex = FunctionBlankLines;
@@ -287,6 +293,9 @@ namespace Nikse.SubtitleEdit.Forms
                 case FunctionBlankLines:
                     Configuration.Settings.Tools.ModifySelectionRule = BlankLines;
                     break;
+                case FunctionHasErrors:
+                    Configuration.Settings.Tools.ModifySelectionRule = HasErrors;
+                    break;
                 case FunctionStyle:
                     Configuration.Settings.Tools.ModifySelectionRule = Style;
                     break;
@@ -326,6 +335,7 @@ namespace Nikse.SubtitleEdit.Forms
 
             Regex regEx = null;
             var listViewItems = new List<ListViewItem>();
+            var errorLines = comboBoxRule.SelectedIndex == FunctionHasErrors ? new HashSet<int>(ClassicErrorReport.Analyze(_subtitle, _format).Select(error => error.Number - 1)) : null;
             listViewFixes.BeginUpdate();
             listViewFixes.Items.Clear();
             var text = textBoxText.Text;
@@ -517,6 +527,10 @@ namespace Nikse.SubtitleEdit.Forms
                             }
                         }
                     }
+                    else if (comboBoxRule.SelectedIndex == FunctionHasErrors)
+                    {
+                        if (errorLines.Contains(i)) listViewItems.Add(MakeListViewItem(p, i));
+                    }
                     else if (comboBoxRule.SelectedIndex == FunctionBlankLines) // Select blank lines
                     {
                         if (string.IsNullOrWhiteSpace(HtmlUtil.RemoveHtmlTags(p.Text, true)))
@@ -611,7 +625,8 @@ namespace Nikse.SubtitleEdit.Forms
                      comboBoxRule.SelectedIndex == FunctionExactlyTwoLines ||
                      comboBoxRule.SelectedIndex == FunctionMoreThanTwoLines ||
                      comboBoxRule.SelectedIndex == FunctionBookmarked ||
-                     comboBoxRule.SelectedIndex == FunctionBlankLines)
+                     comboBoxRule.SelectedIndex == FunctionBlankLines ||
+                     comboBoxRule.SelectedIndex == FunctionHasErrors)
             {
                 checkBoxCaseSensitive.Enabled = false;
                 textBoxText.ContextMenuStrip = null;

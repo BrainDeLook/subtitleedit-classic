@@ -15,15 +15,39 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <FileVersion>4.0.28.0</FileVersion>
-    <AssemblyVersion>4.0.28.0</AssemblyVersion>
+    <FileVersion>4.0.29.0</FileVersion>
+    <AssemblyVersion>4.0.29.0</AssemblyVersion>
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="..\..\Ocr\Latin.nocr" LogicalName="ClassicNOcrBase.Latin.nocr" />
+    <EmbeddedResource Include="..\..\Ocr\Cyrillic.nocr" LogicalName="ClassicNOcrBase.Cyrillic.nocr" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\dan_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.dan.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\deu_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.deu.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\eng_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.eng.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\fin_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.fin.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\fra_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.fra.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\hrv_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.hrv.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\hun_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.hun.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\ita_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.ita.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\mkd_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.mkd.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\nld_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.nld.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\nob_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.nob.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\nor_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.nor.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\pol_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.pol.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\por_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.por.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\ron_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.ron.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\rus_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.rus.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\spa_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.spa.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\srp_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.srp.xml" />
+    <EmbeddedResource Include="Logic\VideoOcr\Rules\swe_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.swe.xml" />
+
     <Content Include="..\..\licenses\classic-rendering\*.txt" Link="licenses\classic-rendering\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Logic\Classic54Localization.zip" LogicalName="Classic54Localization.zip" />
     <EmbeddedResource Include="Logic\ClassicOpenRouterTtsModels.json" LogicalName="ClassicOpenRouterTtsModels.json" />
     <EmbeddedResource Include="Logic\ClassicEspeakLicense.txt" LogicalName="ClassicEspeakLicense.txt" />
     <EmbeddedResource Include="Logic\ClassicFinalTtsVoices.json" LogicalName="ClassicFinalTtsVoices.json" />
@@ -31,10 +55,6 @@
     <EmbeddedResource Include="Logic\SpeechToText\speech-extras.json" LogicalName="ClassicSpeechExtras.json" />
     <Reference Include="System.Security" />
     <Reference Include="System.Numerics" />
-    <EmbeddedResource Include="Logic\VideoOcr\Rules\eng_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.eng.xml" />
-    <EmbeddedResource Include="Logic\VideoOcr\Rules\rus_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.rus.xml" />
-    <EmbeddedResource Include="Logic\VideoOcr\Rules\ron_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.ron.xml" />
-    <EmbeddedResource Include="Logic\VideoOcr\Rules\hrv_OCRFixReplaceList.xml" LogicalName="ClassicVideoOcrRules.hrv.xml" />
     <Reference Include="Interop.QuartzTypeLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>DLLs\Interop.QuartzTypeLib.dll</HintPath>
@@ -297,13 +317,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\libse\LibSE.csproj" />
-    <!-- Build-order dependency only: ensures UpdateAssemblyInfo.exe exists before the
-         InvokeBuildHelpers pre-build target runs. Not linked into the executable. -->
-    <ProjectReference Include="..\UpdateAssemblyInfo\UpdateAssemblyInfo.csproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>false</Private>
-      <UndefineProperties>TargetFramework;RuntimeIdentifier;Platform;PlatformTarget</UndefineProperties>
-    </ProjectReference>
+
   </ItemGroup>
   <ItemGroup>
     <HunspellAssemblies Include="Hunspellx64.dll">
@@ -315,6 +329,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Net.Http" />
+    <PackageReference Include="System.Resources.Extensions" />
     <PackageReference Include="Microsoft.Win32.Registry" />
     <PackageReference Include="NAudio.Core" />
     <PackageReference Include="NAudio.WinMM" />
@@ -342,8 +357,5 @@
     <None Remove="Languages\hy-AM.xml" />
     <EmbeddedResource Include="Logic\SpeechToText\speech-models.json" LogicalName="ClassicSpeechModels.json" />
   </ItemGroup>
-  <Target Name="InvokeBuildHelpers" BeforeTargets="BeforeCompile;CoreCompile">
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="%22$(SolutionDir)build_helpers.bat%22 rev %22$(ConfigurationName)%22" />
-    <Exec Condition="'$(OS)' == 'Unix'" Command="bash $(ProjectDir)../../build_helpers.sh rev $(ConfigurationName)" />
-  </Target>
+
 </Project>

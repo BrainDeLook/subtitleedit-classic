@@ -25,7 +25,7 @@ namespace Nikse.SubtitleEdit.ClassicConsole
 {
     public static class Program
     {
-        public static readonly string[] Options = { "json", "help-json", "help", "output-folder", "output-filename", "output-filename-append", "overwrite", "encoding", "fps", "translate", "translate-from", "translate-to", "translate-prompt", "api-url", "api-key", "model", "ocr-engine", "ocr-language", "ocr-variant", "ocr-mode", "ocr-prompt", "ocr-db", "nocr-optimize", "resolution", "full-frame", "override-position", "settings", "legacy" };
+        public static readonly string[] Options = { "json", "help-json", "help", "output-folder", "output-filename", "output-filename-append", "overwrite", "encoding", "fps", "translate", "translate-from", "translate-to", "translate-prompt", "api-url", "ollama-url", "api-key", "model", "ocr-engine", "ocr-language", "ocr-variant", "ocr-mode", "ocr-prompt", "ocr-db", "ocr-auto-detect-assa-alignment", "no-vobsub-isolate-colors", "nocr-optimize", "resolution", "full-frame", "override-position", "settings", "merge-continuation-lines", "burn-in-video", "burn-in-ffmpeg-args", "burn-in-effects", "assa-style-file", "legacy" };
         [STAThread] public static int Main(string[] args)
         {
             Console.OutputEncoding = new UTF8Encoding(false);
@@ -49,11 +49,17 @@ namespace Nikse.SubtitleEdit.ClassicConsole
                 flags[key] = colon < 0 ? "true" : arg.Substring(colon + 1);
             }
             string Get(string key, string fallback = null) => flags.TryGetValue(key, out var value) ? value : fallback;
+            if (flags.TryGetValue("ollama-url", out var ollamaUrl))
+            {
+                if (flags.ContainsKey("api-url")) throw new ArgumentException("Use either --ollama-url or --api-url.");
+                flags["api-url"] = ClassicAiClient.ChatUrl(ollamaUrl);
+            }
             bool Has(string key) => flags.ContainsKey(key) && !Get(key).Equals("false", StringComparison.OrdinalIgnoreCase);
+            Nikse.SubtitleEdit.Core.Common.TextLengthCalculator.CalcFactory.SetIgnoreTagsPattern(ClassicEditorPreferences.Load().IgnoreCustomTagsPattern);
             ClassicFormatRegistry.Register();
             if (args.Length == 0 || Has("help") || Has("help-json"))
             {
-                if (Has("help-json")) Console.WriteLine(JsonConvert.SerializeObject(new { tool = "seconv-classic", options = Options, formats = SubtitleFormat.AllSubtitleFormats.Select(f => f.Name).Concat(new[] { "imsc-image", "dvd-sup", "bdn-image", "bdn-8bit" }) }));
+                if (Has("help-json")) Console.WriteLine(JsonConvert.SerializeObject(new { tool = "seconv-classic", options = Options, formats = SubtitleFormat.AllSubtitleFormats.Select(f => f.Name).Concat(new[] { "imsc-image", "dvd-sup", "bdn-image", "bdn-8bit", "dcinema-mxf-image", "dcinema-png" }) }));
                 else Console.WriteLine("seconv <file-or-pattern> <format> [--output-folder:path] [--json]\nOptions use --name:value. --translate:compatible --translate-to:ru,en --translate-prompt:text; --ocr-engine:tesseract|nocr|compatible|crispembed|mistral|lens|paddle|ollama|llama|lmstudio; --nocr-optimize:db; --help-json");
                 return 0;
             }
@@ -75,6 +81,7 @@ namespace Nikse.SubtitleEdit.ClassicConsole
             var inputs = input.IndexOfAny(new[] { '*', '?' }) < 0 ? new[] { Path.GetFullPath(input) } : Directory.GetFiles(Path.GetDirectoryName(Path.GetFullPath(input)), Path.GetFileName(input));
             if (inputs.Length == 0) throw new FileNotFoundException("No input files matched.");
             if (Has("output-filename") && inputs.Length != 1) throw new ArgumentException("--output-filename requires one input.");
+            var burnEffects=ClassicBurnInRunner.ParseEffects(Get("burn-in-effects"));
             var results = new List<object>(); int failures = 0;
             foreach (var file in inputs)
             {
@@ -82,6 +89,12 @@ namespace Nikse.SubtitleEdit.ClassicConsole
                 try
                 {
                     var subtitle = await Read(file, flags, token);
+                    if (Has("merge-continuation-lines"))
+                    {
+                        var settings = ClassicTextToolSettings.Load(); var lang = LanguageAutoDetect.AutoDetectGoogleLanguage(subtitle);
+                        var selected = new HashSet<int>(ClassicTextTools.DetectMerges(subtitle, lang, settings.MaxGap, settings.MaxCharacters).Select(c => c.Index));
+                        subtitle = ClassicTextTools.Merge(subtitle, selected, lang);
+                    }
                     var languages = Get("translate-to", "").Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
                     if (!Has("translate")) languages = new[] { "" };
                     if (languages.Length > 1 && Has("output-filename")) throw new ArgumentException("Use --output-folder for multiple translation targets; each target needs its own filename.");
@@ -92,12 +105,46 @@ namespace Nikse.SubtitleEdit.ClassicConsole
                         var working = new Subtitle(subtitle, false);
                         if (Has("translate")) await Translate(working, Get("translate"), Get("translate-from", "en"), language, flags, token);
                         var format = SubtitleFormat.AllSubtitleFormats.Concat(ClassicFormatRegistry.Other()).FirstOrDefault(f => string.Equals(f.Name.Replace(" ", ""), targetName.Replace(" ", ""), StringComparison.OrdinalIgnoreCase) || string.Equals(f.Extension.TrimStart('.'), targetName, StringComparison.OrdinalIgnoreCase));
-                        int image = Array.IndexOf(new[] { "imsc-image", "bdn-image", "bdn-8bit", "dvd-sup" }, targetName.ToLowerInvariant());
+                        int image = Array.IndexOf(new[] { "imsc-image", "bdn-image", "bdn-8bit", "dvd-sup", "dcinema-mxf-image", "dcinema-png" }, targetName.ToLowerInvariant());
                         if (format == null && image < 0) throw new ArgumentException("Unknown output format: " + targetName);
                         var stem = Path.GetFileNameWithoutExtension(file) + Get("output-filename-append", "") + (string.IsNullOrEmpty(language) ? "" : "." + language);
                         if (stem.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || language.Contains("/") || language.Contains("\\")) throw new ArgumentException("Invalid output name/language.");
                         var folder = Path.GetFullPath(Get("output-folder", Path.GetDirectoryName(file))); Directory.CreateDirectory(folder);
                         var output = Path.GetFullPath(Get("output-filename", Path.Combine(folder, stem + (image >= 0 ? "_images" : format.Extension))));
+                        if(Has("burn-in-video") || burnEffects.Count>0)
+                        {
+                            if(!(format is AdvancedSubStationAlpha))throw new ArgumentException("Burn-in video/effects require the ass output format.");
+                            if(Has("burn-in-video"))
+                            {
+                                var video=Get("burn-in-video");if(!File.Exists(video))throw new FileNotFoundException("Burn-in video not found.",video);
+                                ClassicBurnInRunner.EnsureOutputWritable(output,video,Has("overwrite"));
+                                if(ClassicBurnInRunner.FindFfmpeg()==null)throw new FileNotFoundException("FFmpeg is required for burn-in.");
+                            }
+                        }
+                        if(format is AdvancedSubStationAlpha)
+                        {
+                            if(Has("assa-style-file"))working.Header=File.ReadAllText(Get("assa-style-file"));
+                            if(Has("burn-in-video") && !Has("resolution"))
+                            {
+                                Configuration.Settings.General.FFmpegLocation=ClassicBurnInRunner.FindFfmpeg();
+                                var info=await ClassicMediaJobs.Probe(Get("burn-in-video"),token);
+                                if(info.Width<=0 || info.Height<=0)throw new InvalidDataException("Could not determine the burn-in video size; pass --resolution:WxH.");
+                                flags["resolution"]=info.Width+"x"+info.Height;
+                            }
+                            if(Has("resolution"))
+                            {
+                                var dimensions=Get("resolution").Split('x');
+                                if(dimensions.Length!=2 || !int.TryParse(dimensions[0],out var w) || !int.TryParse(dimensions[1],out var h) || w<=0 || h<=0)throw new ArgumentException("Invalid resolution; use WxH.");
+                                if(string.IsNullOrEmpty(working.Header))
+                                {
+                                    var generated=new AdvancedSubStationAlpha().ToText(new Subtitle(),"Subtitle Edit");
+                                    working.Header=generated.Substring(0,generated.IndexOf("[Events]",StringComparison.Ordinal)+"[Events]".Length);
+                                }
+                                working.Header=AdvancedSubStationAlpha.AddTagToHeader("PlayResX","PlayResX: "+w,"[Script Info]",working.Header);
+                                working.Header=AdvancedSubStationAlpha.AddTagToHeader("PlayResY","PlayResY: "+h,"[Script Info]",working.Header);
+                            }
+                            ClassicBurnInRunner.ApplyEffects(working,burnEffects);
+                        }
                         ClassicMediaJobs.CheckOutput(file, output);
                         if (!Has("overwrite") && (File.Exists(output) || Directory.Exists(output))) throw new IOException("Output exists: " + output);
                         if (image >= 0)
@@ -116,6 +163,7 @@ namespace Nikse.SubtitleEdit.ClassicConsole
                             try { File.WriteAllText(stage, format.ToText(working, Path.GetFileNameWithoutExtension(output)), Has("encoding") ? Encoding.GetEncoding(Get("encoding")) : new UTF8Encoding(false)); token.ThrowIfCancellationRequested(); ClassicMediaJobs.Commit(stage, output); }
                             finally { if (File.Exists(stage)) File.Delete(stage); }
                         }
+                        if(Has("burn-in-video"))await ClassicBurnInRunner.RunAsync(output,Get("burn-in-video"),Get("burn-in-ffmpeg-args"),Has("overwrite"),token);
                         results.Add(new { input = file, output, cues = working.Paragraphs.Count, language, success = true });
                         if (!Has("json")) Console.WriteLine(output);
                     }
@@ -131,7 +179,7 @@ namespace Nikse.SubtitleEdit.ClassicConsole
             if (!overwrite) throw new IOException("Output folder exists.");
             if (Path.GetFullPath(input).StartsWith(output.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) throw new IOException("An image export cannot replace a folder containing its input.");
             // Replace only a recognizable previous image export, never an arbitrary directory.
-            if (!File.Exists(Path.Combine(output, "subtitles.ttml")) && !File.Exists(Path.Combine(output, "subtitles.sup")) && !File.Exists(Path.Combine(output, "index.xml"))) throw new IOException("The output folder is not a recognized image export. Choose a new folder.");
+            if (!File.Exists(Path.Combine(output, "subtitles.ttml")) && !File.Exists(Path.Combine(output, "subtitles.sup")) && !File.Exists(Path.Combine(output, "index.xml")) && !File.Exists(Path.Combine(output, "subtitles.mxf"))) throw new IOException("The output folder is not a recognized image export. Choose a new folder.");
             var stage = output + ".seconv-" + Guid.NewGuid().ToString("N"); var backup = output + ".backup-" + Guid.NewGuid().ToString("N");
             try
             {
@@ -146,7 +194,7 @@ namespace Nikse.SubtitleEdit.ClassicConsole
         {
             string Get(string k, string fallback = null) => flags.TryGetValue(k, out var v) ? v : fallback;
             if (engine.Equals("deepl", StringComparison.OrdinalIgnoreCase))
-            { using (var deepl = new DeepLTranslate()) { deepl.Initialize(); foreach (var p in subtitle.Paragraphs) { token.ThrowIfCancellationRequested(); p.Text = await deepl.Translate(p.Text, source, target, token); if (string.IsNullOrWhiteSpace(p.Text)) throw new InvalidDataException("DeepL returned an empty cue."); } } return; }
+            { using (var deepl = new DeepLTranslate()) { deepl.Initialize(); foreach (var p in subtitle.Paragraphs) { token.ThrowIfCancellationRequested(); if(Nikse.SubtitleEdit.Core.Translate.TranslationMusic.IsKeptUntranslated(p.Text))continue; p.Text = await deepl.Translate(p.Text, source, target, token); if (string.IsNullOrWhiteSpace(p.Text)) throw new InvalidDataException("DeepL returned an empty cue."); } } return; }
             if (engine.Equals("ollama", StringComparison.OrdinalIgnoreCase)) engine = "ollama-advanced";
             if (engine.Equals("lmstudio", StringComparison.OrdinalIgnoreCase)) engine = "lmstudio-advanced";
             if (!ClassicNewTranslator.Ids.Contains(engine)) throw new ArgumentException("Unsupported translation engine: " + engine);
@@ -173,9 +221,23 @@ namespace Nikse.SubtitleEdit.ClassicConsole
             var ext = Path.GetExtension(file).ToLowerInvariant();
             if (!new[] { ".sup", ".sub", ".png", ".jpg", ".bmp" }.Contains(ext) || ext == ".sub" && !File.Exists(Path.ChangeExtension(file, ".idx"))) return Subtitle.Parse(file) ?? throw new InvalidDataException("Unknown subtitle format.");
             var result = new Subtitle(); string engine = Get("ocr-engine", "tesseract"), language = Get("ocr-language", "eng");
+            var isolateVobSubColors = ext == ".sub" && !string.Equals(Get("no-vobsub-isolate-colors", "false"), "true", StringComparison.OrdinalIgnoreCase);
             var images = new List<IBinaryParagraphWithPosition>();
             if (ext == ".sup") images.AddRange(BluRaySupParser.ParseBluRaySup(file, new StringBuilder()).Cast<IBinaryParagraphWithPosition>());
             else if (ext == ".sub") { var parser = new VobSubParser(true); parser.OpenSubIdx(file, Path.ChangeExtension(file, ".idx")); foreach (var pack in parser.MergeVobSubPacks()) { pack.Palette = parser.IdxPalette; images.Add(pack); } }
+            void AddRecognized(string text,int index)
+            {
+                var source=images.Count>0?images[index]:null;
+                if(flags.ContainsKey("ocr-auto-detect-assa-alignment") && !Get("ocr-auto-detect-assa-alignment").Equals("false",StringComparison.OrdinalIgnoreCase) && source is IBinaryParagraphWithPosition positioned)
+                {
+                    using(var bitmap=source.GetBitmap())using(var memory=new MemoryStream())
+                    {
+                        bitmap.Save(memory,System.Drawing.Imaging.ImageFormat.Png);using(var image=SkiaSharp.SKBitmap.Decode(memory.ToArray()))
+                        {var point=positioned.GetPosition();var size=positioned.GetScreenSize();text=OcrAssaAlignment.Detect(image,point.Left,point.Top,size.Width,size.Height,text,true).Text;}
+                    }
+                }
+                foreach(var group in OcrAssaAlignment.SplitTextByAlignmentGroups(text))result.Paragraphs.Add(new Paragraph(group,source?.StartTimeCode.TotalMilliseconds??0,source?.EndTimeCode.TotalMilliseconds??2000));
+            }
             if (engine == "paddle")
             {
                 string variant = Get("ocr-variant", "cpu");
@@ -187,11 +249,13 @@ namespace Nikse.SubtitleEdit.ClassicConsole
                     for (int i = 0; i < Math.Max(1, images.Count); i++)
                     {
                         var imageFile = Path.Combine(job, "source" + i + ".png");
-                        using (var bitmap = images.Count > 0 ? images[i].GetBitmap() : new Bitmap(file)) bitmap.Save(imageFile, System.Drawing.Imaging.ImageFormat.Png);
+                        using (var bitmap = images.Count > 0 ? images[i].GetBitmap() : new Bitmap(file))
+                        using (var prepared = isolateVobSubColors ? ClassicVobSubOcrPreparation.Prepare(bitmap, false) : null)
+                            (prepared ?? bitmap).Save(imageFile, System.Drawing.Imaging.ImageFormat.Png);
                         groups.Add(new VideoOcrFrameGroup { RepresentativeFileName = imageFile });
                     }
                     await ClassicPaddleOcr.RecognizeAsync(groups, job, language, Get("ocr-mode", "server"), variant, 0, token, null);
-                    for (int i = 0; i < groups.Count; i++) result.Paragraphs.Add(new Paragraph(groups[i].Text, images.Count > 0 ? images[i].StartTimeCode.TotalMilliseconds : 0, images.Count > 0 ? images[i].EndTimeCode.TotalMilliseconds : 2000));
+                    for(int i=0;i<groups.Count;i++)AddRecognized(groups[i].Text,i);
                     result.Renumber(); return result;
                 }
                 finally { Directory.Delete(job, true); }
@@ -215,7 +279,12 @@ namespace Nikse.SubtitleEdit.ClassicConsole
                 var settings = ClassicBitmapSettings.Load(engine); if (flags.ContainsKey("api-url")) settings.Api.Url = Get("api-url"); if (flags.ContainsKey("api-key")) settings.Api.ApiKey = Get("api-key");
                 using (var ocr = new ClassicBitmapOcr(engine, settings)) return await ocr.Ocr(bitmap, Get("model", settings.Api.Model), language, token, Get("ocr-prompt"));
             }
-            if (images.Count > 0) foreach (var image in images) { using (var bitmap = image.GetBitmap()) result.Paragraphs.Add(new Paragraph(await Ocr(bitmap), image.StartTimeCode.TotalMilliseconds, image.EndTimeCode.TotalMilliseconds)); }
+            if (images.Count > 0) for (var i = 0; i < images.Count; i++)
+            {
+                using (var bitmap = images[i].GetBitmap())
+                using (var prepared = isolateVobSubColors ? ClassicVobSubOcrPreparation.Prepare(bitmap, engine == "nocr") : null)
+                    AddRecognized(await Ocr(prepared ?? bitmap), i);
+            }
             else if (ext != ".sup" && ext != ".sub") using (var bitmap = new Bitmap(file)) result.Paragraphs.Add(new Paragraph(await Ocr(bitmap), 0, 2000));
             if (result.Paragraphs.Count == 0) throw new InvalidDataException("No subtitle images were read."); result.Renumber(); return result;
         }

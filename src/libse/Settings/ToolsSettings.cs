@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.AutoTranslate;
+﻿using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Collections.Generic;
@@ -41,12 +41,14 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public string MicrosoftBingApiId { get; set; }
         public string MicrosoftTranslatorApiKey { get; set; }
         public string MicrosoftTranslatorTokenEndpoint { get; set; }
+        public string MicrosoftTranslatorRegion { get; set; } = "";
         public string MicrosoftTranslatorCategory { get; set; }
         public string GoogleApiV2Key { get; set; }
         public bool GoogleTranslateNoKeyWarningShow { get; set; }
         public int GoogleApiV1ChunkSize { get; set; }
         public string GoogleTranslateLastSourceLanguage { get; set; }
         public string GoogleTranslateLastTargetLanguage { get; set; }
+        public bool AutoTranslateKeepMusicLines { get; set; }
         public string AutoTranslateLastName { get; set; }
         public string AutoTranslateLastUrl { get; set; }
         public string AutoTranslateNllbApiUrl { get; set; }

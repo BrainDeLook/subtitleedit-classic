@@ -5,6 +5,11 @@ using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.VideoPlayers;
 using System;
 using System.Diagnostics;
+using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
+using Nikse.SubtitleEdit.Logic.ClassicDraw;
+using Nikse.SubtitleEdit.Logic.AssistedEditing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -20,15 +25,19 @@ namespace Nikse.SubtitleEdit.Forms.Assa
         private readonly Subtitle _subtitle;
         private readonly Subtitle _subtitleWithNewHeader;
         private readonly int[] _selectedIndices;
-        private LibMpvDynamic _mpv;
-        private string _mpvTextFileName;
+        private Bitmap _pausedFrame;
+        private SetPositionPreview _preview;
+        private CancellationTokenSource _previewCancellation;
+        private int _previewRequest;
+        private readonly CheckBox _selectionBox = new CheckBox { AutoSize = true, Checked = true };
+        private readonly ComboBox _alignment = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 160 };
+        private bool _alignmentChanged;
         private bool _closing;
-        private bool _videoLoaded;
         private int _x = -1;
         private int _y = -1;
         private int _tempX;
         private int _tempY;
-        private bool _updatePos = true;
+        private bool _updatePos;
         private readonly string _videoFileName;
         private readonly VideoInfo _videoInfo;
         private bool _positionChanged;
@@ -42,12 +51,13 @@ namespace Nikse.SubtitleEdit.Forms.Assa
         private int _yScaled = -1;
         private readonly double _currentPositionSeconds;
 
-        public SetPosition(Subtitle subtitle, int[] selectedIndices, string videoFileName, VideoInfo videoInfo, double currentPositionSeconds)
+        public SetPosition(Subtitle subtitle, int[] selectedIndices, string videoFileName, VideoInfo videoInfo, double currentPositionSeconds, Bitmap pausedFrame = null)
         {
             UiUtil.PreInitialize(this);
             InitializeComponent();
             UiUtil.FixFonts(this);
 
+            _pausedFrame = pausedFrame;
             _subtitle = subtitle;
             _videoFileName = videoFileName;
             _videoInfo = videoInfo;
@@ -90,9 +100,30 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 _videoInfo = UiUtil.GetVideoInfo(_videoFileName);
             }
 
+            if (_videoInfo.Width <= 0 || _videoInfo.Height <= 0) { _videoInfo.Width = 1280; _videoInfo.Height = 720; }
             labelVideoResolution.Text = string.Format(LanguageSettings.Current.AssaSetPosition.VideoResolutionX, $"{_videoInfo.Width}x{_videoInfo.Height}");
 
-            SetPosition_ResizeEnd(null, null);
+            MinimumSize = new Size(760, 520);
+            pictureBoxPreview.SizeMode = PictureBoxSizeMode.Zoom;
+            var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 30, WrapContents = false };
+            _selectionBox.Text = ClassicAssistedText.L("Рамка выделения", "Selection box");
+            _selectionBox.CheckedChanged += (sender, e) => pictureBoxPreview.Invalidate();
+            var alignmentNames = new[] { "↙ 1", "↓ 2", "↘ 3", "← 4", "• 5", "→ 6", "↖ 7", "↑ 8", "↗ 9" };
+            _alignment.Items.AddRange(alignmentNames);
+            _alignment.SelectedIndex = 1;
+            _alignment.SelectedIndexChanged += (sender, e) => { if (_loading) return; _alignmentChanged = _positionChanged = true; ShowStyleAlignment(); VideoLoaded(null, null); };
+            toolbar.Controls.Add(_selectionBox);
+            toolbar.Controls.Add(new Label { Text = ClassicAssistedText.L("Привязка:", "Anchor:"), AutoSize = true, Padding = new Padding(10, 5, 0, 0) });
+            toolbar.Controls.Add(_alignment);
+            groupBoxPreview.Controls.Add(toolbar);
+            toolbar.BringToFront();
+            pictureBoxPreview.Paint += PaintSelection;
+            pictureBoxPreview.MouseMove += (sender, e) => { if (UpdateMouseCoordinates(e.Location) && (e.Button & MouseButtons.Left) != 0) { SetMousePosition(); VideoLoaded(null, null); } };
+            pictureBoxPreview.MouseDown += (sender, e) => { if (e.Button == MouseButtons.Left && UpdateMouseCoordinates(e.Location)) { SetMousePosition(); pictureBoxPreview.Capture = true; VideoLoaded(null, null); } };
+            pictureBoxPreview.MouseUp += (sender, e) => pictureBoxPreview.Capture = false;
+            labelInfo.Text = ClassicAssistedText.L("Щёлкните или перетащите текст. Стрелки: 1 px, Shift+стрелки: 10 px. F2: эффекты.", "Click or drag to place. Arrows: 1 px, Shift+arrows: 10 px. F2: effects.");
+            Load += (sender, e) => ClassicWindowPlacement.Restore(this, "AssaSetPosition");
+            FormClosed += (sender, e) => ClassicWindowPlacement.Save(this, "AssaSetPosition");
 
             if (Configuration.Settings.Tools.AssaSetPositionTarget == "Clipboard")
             {
@@ -144,12 +175,13 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 VideoLoaded(null, null);
             }
 
-            if (e.Modifiers == Keys.Alt || e.Modifiers == Keys.Control && !_updatePos)
+            if (e.Modifiers == Keys.None || e.Modifiers == Keys.Shift || e.Modifiers == Keys.Alt || e.Modifiers == Keys.Control)
             {
-                var v = e.Modifiers == Keys.Alt ? 1 : 10;
+                var v = e.Modifiers == Keys.Shift || e.Modifiers == Keys.Control ? 10 : 1;
 
                 if (_playResScaleOn)
                 {
+                    _tempXScaled = _xScaled; _tempYScaled = _yScaled;
                     if (e.KeyCode == Keys.Up && _tempXScaled != -1 && _tempYScaled != -1)
                     {
                         _tempYScaled -= v;
@@ -200,6 +232,11 @@ namespace Nikse.SubtitleEdit.Forms.Assa
         private void AcceptKeyAndShowInfo(KeyEventArgs e)
         {
             e.SuppressKeyPress = true;
+            _positionChanged = true;
+            _updatePos = false;
+            if (_playResScaleOn) { _x = AssaResampler.Resample(_originalPlayResX, _videoInfo.Width, _tempXScaled); _y = AssaResampler.Resample(_originalPlayResY, _videoInfo.Height, _tempYScaled); }
+            else { _tempXScaled = _x; _tempYScaled = _y; }
+            _xScaled = _tempXScaled; _yScaled = _tempYScaled;
             VideoLoaded(null, null);
             if (_playResScaleOn)
             {
@@ -230,6 +267,7 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 styleToApply = $"{{\\pos({_xScaled},{_yScaled})}}";
             }
 
+            if (_alignmentChanged) styleToApply = "{\\an" + (_alignment.SelectedIndex + 1) + "}" + styleToApply;
             var advancedVisible = panelAdvanced.Visible;
             if (advancedVisible)
             {
@@ -256,13 +294,14 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 var p = UpdatedSubtitle.Paragraphs[i];
 
                 RemoveOldPosTags(p);
+                if (_alignmentChanged) { p.Text = Regex.Replace(p.Text, @"\\an[1-9]", string.Empty); }
 
                 if (advancedVisible)
                 {
                     RemoveAdvancedTags(p);
                 }
 
-                if (p.Text.StartsWith("{\\", StringComparison.Ordinal) && styleToApply.EndsWith('}'))
+                if (p.Text.StartsWith("{\\", StringComparison.Ordinal) && styleToApply.EndsWith("}", StringComparison.Ordinal))
                 {
                     p.Text = styleToApply.TrimEnd('}') + p.Text.Remove(0, 1);
                 }
@@ -289,121 +328,72 @@ namespace Nikse.SubtitleEdit.Forms.Assa
             DialogResult = DialogResult.Cancel;
         }
 
-        private void GeneratePreviewViaMpv()
+        private async void VideoLoaded(object sender, EventArgs e)
         {
-            var fileName = _videoFileName;
-            if (!File.Exists(fileName))
+            if (_preview == null || _closing) return;
+            _previewCancellation?.Cancel();
+            var cancel = new CancellationTokenSource();
+            _previewCancellation = cancel;
+            var request = ++_previewRequest;
+            try
             {
-                var isFfmpegAvailable = !Configuration.IsRunningOnWindows || !string.IsNullOrEmpty(Configuration.Settings.General.FFmpegLocation) && File.Exists(Configuration.Settings.General.FFmpegLocation);
-                if (!isFfmpegAvailable)
-                {
-                    return;
-                }
-
-                using (var p = GetFFmpegProcess(fileName))
-                {
-                    p.Start();
-                    p.WaitForExit();
-                }
+                await Task.Delay(75, cancel.Token);
+                var subtitle = new Subtitle(_subtitleWithNewHeader, false);
+                subtitle.Paragraphs.Clear();
+                var p = _selectedIndices.Length > 0 ? new Paragraph(_subtitleWithNewHeader.Paragraphs[_selectedIndices[0]]) : new Paragraph(Configuration.Settings.General.PreviewAssaText, 0, 2000);
+                RemoveOldPosTags(p);
+                p.Text = Regex.Replace(p.Text, @"\\fad(?:e)?\([^)]*\)", string.Empty);
+                var tags = _playResScaleOn ? $"{{\\pos({_xScaled},{_yScaled})}}" : $"{{\\pos({_x},{_y})}}";
+                if (_alignmentChanged) { p.Text = Regex.Replace(p.Text, @"\\an[1-9]", string.Empty); tags += "{\\an" + (_alignment.SelectedIndex + 1) + "}"; }
+                if (panelAdvanced.Visible) { RemoveAdvancedTags(p); tags = AddAdvancedTags(tags); }
+                p.Text = tags + p.Text;
+                p.StartTime.TotalMilliseconds = 0;
+                p.EndTime.TotalMilliseconds = 2000;
+                subtitle.Paragraphs.Add(p);
+                var image = await _preview.Render(subtitle, cancel.Token);
+                if (_closing || request != _previewRequest) { image.Dispose(); return; }
+                var old = pictureBoxPreview.Image;
+                pictureBoxPreview.Image = image;
+                old?.Dispose();
+                pictureBoxPreview.Invalidate();
             }
-
-            if (!LibMpvDynamic.IsInstalled)
+            catch (OperationCanceledException) { }
+            catch (Exception ex) when (ex is IOException || ex is InvalidOperationException || ex is System.ComponentModel.Win32Exception || ex is System.Runtime.InteropServices.ExternalException || ex is UnauthorizedAccessException)
             {
-                if (MessageBox.Show("Download and use \"mpv\" as video player?", "Subtitle Edit", MessageBoxButtons.YesNoCancel) == DialogResult.Yes)
-                {
-                    using (var form = new SettingsMpv())
-                    {
-                        if (form.ShowDialog(this) != DialogResult.OK)
-                        {
-                            return;
-                        }
-
-                        Configuration.Settings.General.VideoPlayer = "MPV";
-                    }
-                }
+                if (!_closing && request == _previewRequest) { labelInfo.Text = ex.Message; SeLogger.Error(ex, "ASS set position preview"); }
             }
+            finally { if (ReferenceEquals(_previewCancellation, cancel)) _previewCancellation = null; cancel.Dispose(); }
+        }
 
-            if (!LibMpvDynamic.IsInstalled)
-            {
-                return;
-            }
+        private RectangleF VideoRectangle()
+        {
+            var scale = Math.Min(pictureBoxPreview.ClientSize.Width / (float)_videoInfo.Width, pictureBoxPreview.ClientSize.Height / (float)_videoInfo.Height);
+            var width = _videoInfo.Width * scale;
+            var height = _videoInfo.Height * scale;
+            return new RectangleF((pictureBoxPreview.Width - width) / 2, (pictureBoxPreview.Height - height) / 2, width, height);
+        }
 
-            if (_mpv == null)
+        private void PaintSelection(object sender, PaintEventArgs e)
+        {
+            if (!_selectionBox.Checked || _x < 0 || _y < 0) return;
+            var rect = VideoRectangle();
+            var scale = rect.Width / _videoInfo.Width;
+            var x = rect.X + _x * scale;
+            var y = rect.Y + _y * scale;
+            using (var pen = new Pen(Color.DeepSkyBlue, 1) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
             {
-                _mpv = new LibMpvDynamic();
-                _mpv.Initialize(pictureBoxPreview, fileName, VideoLoaded, null);
-            }
-            else
-            {
-                VideoLoaded(null, null);
+                e.Graphics.DrawRectangle(pen, x - 12, y - 12, 24, 24);
+                e.Graphics.DrawLine(pen, x - 20, y, x + 20, y);
+                e.Graphics.DrawLine(pen, x, y - 20, x, y + 20);
             }
         }
 
-        public static Process GetFFmpegProcess(string outputFileName)
+        private void SetMousePosition()
         {
-            var ffmpegLocation = Configuration.Settings.General.FFmpegLocation;
-            if (!Configuration.IsRunningOnWindows && (string.IsNullOrEmpty(ffmpegLocation) || !File.Exists(ffmpegLocation)))
-            {
-                ffmpegLocation = "ffmpeg";
-            }
-
-            return new Process
-            {
-                StartInfo =
-                {
-                    FileName = ffmpegLocation,
-                    Arguments = $"-t 1 -f lavfi -i color=c=blue:s=720x480 -c:v libx264 -tune stillimage -pix_fmt yuv420p \"{outputFileName}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                }
-            };
-        }
-
-        private void VideoLoaded(object sender, EventArgs e)
-        {
-            var format = new AdvancedSubStationAlpha();
-            var subtitle = new Subtitle();
-            var indices = GetIndices();
-            var styleToApply = _playResScaleOn ? $"{{\\pos({_tempXScaled},{_tempYScaled})}}" : $"{{\\pos({_x},{_y})}}";
-
-            var p = indices.Length > 0 ?
-                new Paragraph(_subtitleWithNewHeader.Paragraphs[indices[0]]) :
-                new Paragraph(Configuration.Settings.General.PreviewAssaText, 0, 1000);
-
-            RemoveOldPosTags(p);
-
-            // remove fade tags 
-            p.Text = Regex.Replace(p.Text, @"{\\fad\([\d\.,]*\)}", string.Empty);
-            p.Text = Regex.Replace(p.Text, @"\\fad\([\d\.,]*\)", string.Empty);
-            p.Text = Regex.Replace(p.Text, @"{\\fade\([\d\.,]*\)}", string.Empty);
-            p.Text = Regex.Replace(p.Text, @"\\fade\([\d\.,]*\)", string.Empty);
-
-            if (panelAdvanced.Visible)
-            {
-                RemoveAdvancedTags(p);
-                styleToApply = AddAdvancedTags(styleToApply);
-            }
-
-            p.Text = styleToApply + p.Text;
-            subtitle.Paragraphs.Add(p);
-
-            subtitle.Header = _subtitleWithNewHeader.Header ?? AdvancedSubStationAlpha.DefaultHeader;
-            var text = subtitle.ToText(format);
-            _mpvTextFileName = FileUtil.GetTempFileName(format.Extension);
-            File.WriteAllText(_mpvTextFileName, text);
-            _mpv.LoadSubtitle(_mpvTextFileName);
-
-            if (!_videoLoaded)
-            {
-                Application.DoEvents();
-                _mpv.Pause();
-
-               _mpv.CurrentPosition = _currentPositionSeconds;
-
-                Application.DoEvents();
-                _videoLoaded = true;
-                timer1.Start();
-            }
+            _x = _tempX; _y = _tempY;
+            _xScaled = _tempXScaled; _yScaled = _tempYScaled;
+            _positionChanged = true; _updatePos = false;
+            labelCurrentTextPosition.Text = string.Format(LanguageSettings.Current.AssaSetPosition.CurrentTextPositionX, _playResScaleOn ? $"{_x},{_y}  ({_tempXScaled},{_tempYScaled})" : $"{_x},{_y}");
         }
 
         private string AddAdvancedTags(string styleToApply)
@@ -465,12 +455,25 @@ namespace Nikse.SubtitleEdit.Forms.Assa
         {
             _closing = true;
             Configuration.Settings.Tools.AssaSetPositionTarget = radioButtonClipboard.Checked ? "Clipboard" : "SelectedLines";
-            _mpv?.Dispose();
+            ReleasePreview();
+        }
+
+        private void ReleasePreview()
+        {
+            _closing = true;
+            timer1.Stop();
+            _previewCancellation?.Cancel();
+            _preview?.Dispose();
+            _preview = null;
+            _pausedFrame?.Dispose();
+            _pausedFrame = null;
+            pictureBoxPreview.Image?.Dispose();
+            pictureBoxPreview.Image = null;
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (_mpv == null || _closing)
+            if (_closing)
             {
                 return;
             }
@@ -489,20 +492,15 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private void CheckImageMouseMove()
         {
-            var pos = pictureBoxPreview.PointToClient(Cursor.Position);
-            var x = pos.X;
-            var y = pos.Y;
+            UpdateMouseCoordinates(pictureBoxPreview.PointToClient(Cursor.Position));
+        }
 
-            if (x < -100 || y < -100 || x > pictureBoxPreview.Width + 100 || y > pictureBoxPreview.Height + 100)
-            {
-                return;
-            }
-
-            var xAspectRatio = (double)_videoInfo.Width / pictureBoxPreview.Width;
-            _tempX = (int)Math.Round(x * xAspectRatio);
-
-            var yAspectRatio = (double)_videoInfo.Height / pictureBoxPreview.Height;
-            _tempY = (int)Math.Round(y * yAspectRatio);
+        private bool UpdateMouseCoordinates(Point pos)
+        {
+            var rect = VideoRectangle();
+            if (!rect.Contains(pos)) return false;
+            _tempX = (int)Math.Round((pos.X - rect.Left) * _videoInfo.Width / rect.Width);
+            _tempY = (int)Math.Round((pos.Y - rect.Top) * _videoInfo.Height / rect.Height);
 
             if (_playResScaleOn)
             {
@@ -514,10 +512,12 @@ namespace Nikse.SubtitleEdit.Forms.Assa
             {
                 labelCurrentPosition.Text = string.Format(LanguageSettings.Current.AssaSetPosition.CurrentMousePositionX, $"{_tempX},{_tempY}");
             }
+            return true;
         }
 
         private void SetPosition_Shown(object sender, EventArgs e)
         {
+            _playResScaleOn = _originalPlayResX != _videoInfo.Width || _originalPlayResY != _videoInfo.Height;
             ShowStyleAlignment();
             ShowCurrentPosition();
 
@@ -542,8 +542,20 @@ namespace Nikse.SubtitleEdit.Forms.Assa
             }
 
             _playResScaleOn = _originalPlayResX != _videoInfo.Width || _originalPlayResY != _videoInfo.Height;
-            GeneratePreviewViaMpv();
+            if (_x == -1 || _y == -1)
+            {
+                var p = _subtitleWithNewHeader.GetParagraphOrDefault(_selectedIndices.FirstOrDefault());
+                var style = AdvancedSubStationAlpha.GetSsaStyle(p?.Extra ?? "Default", _subtitleWithNewHeader.Header);
+                var anchor = _alignment.SelectedIndex;
+                _x = anchor % 3 == 0 ? style.MarginLeft : anchor % 3 == 2 ? _videoInfo.Width - style.MarginRight : _videoInfo.Width / 2;
+                _y = anchor < 3 ? _videoInfo.Height - style.MarginVertical : anchor < 6 ? _videoInfo.Height / 2 : style.MarginVertical;
+                _tempXScaled = _xScaled = AssaResampler.Resample(_videoInfo.Width, _originalPlayResX, _x);
+                _tempYScaled = _yScaled = AssaResampler.Resample(_videoInfo.Height, _originalPlayResY, _y);
+            }
+            _preview = new SetPositionPreview(_subtitleWithNewHeader, _videoFileName, _currentPositionSeconds, _videoInfo.Width, _videoInfo.Height, _pausedFrame);
+            _pausedFrame = null;
             _loading = false;
+            VideoLoaded(null, null);
 
             if (_playResScaleOn)
             {
@@ -566,10 +578,10 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 var arr = match.Value.Split('(', ')', ',');
                 if (arr.Length > 2)
                 {
-                    if (int.TryParse(arr[1], out var x) && int.TryParse(arr[2], out var y))
+                    if (double.TryParse(arr[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var px) && double.TryParse(arr[2], NumberStyles.Float, CultureInfo.InvariantCulture, out var py))
                     {
-                        _x = x;
-                        _y = y;
+                        _x = (int)Math.Round(px);
+                        _y = (int)Math.Round(py);
                         _tempXScaled = _x;
                         _tempYScaled = _y;
                         _xScaled = _x;
@@ -703,33 +715,18 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
             var p = _subtitleWithNewHeader.Paragraphs[indices[0]];
             var style = AdvancedSubStationAlpha.GetSsaStyle(p.Extra, _subtitleWithNewHeader.Header);
-            labelStyleAlignment.Text = string.Format(LanguageSettings.Current.AssaSetPosition.StyleAlignmentX, "{\\an" + style.Alignment + "} (" + p.Extra + ")");
-        }
-
-        private void pictureBoxPreview_Click(object sender, EventArgs e)
-        {
-            _x = _tempX;
-            _y = _tempY;
-            if (_playResScaleOn)
+            if (_loading)
             {
-                labelCurrentTextPosition.Text = string.Format(LanguageSettings.Current.AssaSetPosition.CurrentTextPositionX, $"{_x},{_y}  ({_tempXScaled},{_tempYScaled})");
+                var match = Regex.Match(p.Text, @"\\an([1-9])");
+                var digit = match.Success ? match.Groups[1].Value : style.Alignment;
+                if (int.TryParse(digit, out var anchor) && anchor >= 1 && anchor <= 9) _alignment.SelectedIndex = anchor - 1;
             }
-            else
-            {
-                labelCurrentTextPosition.Text = string.Format(LanguageSettings.Current.AssaSetPosition.CurrentTextPositionX, $"{_x},{_y}");
-            }
-
-            _updatePos = !_updatePos;
-            VideoLoaded(null, null);
-            _positionChanged = true;
+            labelStyleAlignment.Text = string.Format(LanguageSettings.Current.AssaSetPosition.StyleAlignmentX, "{\\an" + (_alignment.SelectedIndex + 1) + "} (" + p.Extra + ")");
         }
 
-        private void SetPosition_ResizeEnd(object sender, EventArgs e)
-        {
-            var aspectRatio = (double)_videoInfo.Width / _videoInfo.Height;
-            var newWidth = pictureBoxPreview.Height * aspectRatio;
-            Width += (int)(newWidth - pictureBoxPreview.Width);
-        }
+        private void pictureBoxPreview_Click(object sender, EventArgs e) { }
+
+        private void SetPosition_ResizeEnd(object sender, EventArgs e) => pictureBoxPreview.Invalidate();
 
         private void numericUpDownRotateX_ValueChanged(object sender, EventArgs e)
         {

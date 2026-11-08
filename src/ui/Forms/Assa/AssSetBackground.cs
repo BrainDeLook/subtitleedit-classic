@@ -4,6 +4,7 @@ using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Forms.Options;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.VideoPlayers;
+using Nikse.SubtitleEdit.Logic.ClassicDraw;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -79,14 +80,8 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
             _selectedIndices = selectedIndices;
             comboBoxBoxStyle.Items.Clear();
-            comboBoxBoxStyle.Items.Add(LanguageSettings.Current.AssaProgressBarGenerator.SquareCorners);
-            comboBoxBoxStyle.Items.Add(LanguageSettings.Current.AssaProgressBarGenerator.RoundedCorners);
-            comboBoxBoxStyle.Items.Add(LanguageSettings.Current.AssaSetBackgroundBox.Circle);
-            comboBoxBoxStyle.Items.Add(LanguageSettings.Current.AssaSetBackgroundBox.Spikes);
-            comboBoxBoxStyle.Items.Add(LanguageSettings.Current.AssaSetBackgroundBox.Bubbles);
-
-            buttonOK.Text = LanguageSettings.Current.General.Ok;
-            buttonCancel.Text = LanguageSettings.Current.General.Cancel;
+            comboBoxBoxStyle.Items.AddRange(BackgroundBoxStyles.Names);
+            comboBoxBoxStyle.DropDownWidth = 260;
 
             if (Configuration.Settings.Tools.AssaBgBoxStyle == "bubbles")
             {
@@ -213,6 +208,8 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 _videoInfo = UiUtil.GetVideoInfo(_videoFileName);
             }
 
+            var savedBoxStyle = Array.IndexOf(BackgroundBoxStyles.Keys, Configuration.Settings.Tools.AssaBgBoxStyle);
+            if (savedBoxStyle >= 0) comboBoxBoxStyle.SelectedIndex = savedBoxStyle;
             comboBoxBoxStyle_SelectedIndexChanged(null, null);
             SetPosition_ResizeEnd(null, null);
             buttonAssaDraw.Visible = File.Exists(Path.Combine(Configuration.PluginsDirectory, "AssaDraw.dll"));
@@ -705,6 +702,8 @@ namespace Nikse.SubtitleEdit.Forms.Assa
                 Configuration.Settings.Tools.AssaBgBoxStyle = "square";
             }
 
+            Configuration.Settings.Tools.AssaBgBoxStyle = BackgroundBoxStyles.Keys[Math.Max(0, comboBoxBoxStyle.SelectedIndex)];
+
             Configuration.Settings.Tools.AssaBgBoxStyleCircleAdjustY = (int)numericUpDownCircleY.Value;
             Configuration.Settings.Tools.AssaBgBoxStyleRadius = (int)numericUpDownRadius.Value;
             Configuration.Settings.Tools.AssaBgBoxStyleSpikesStep = (int)numericUpDownSpikesStep.Value;
@@ -1046,6 +1045,9 @@ namespace Nikse.SubtitleEdit.Forms.Assa
 
         private string GenerateBackgroundBox(PositionAndSize posAndSize)
         {
+            if (comboBoxBoxStyle.SelectedIndex >= 5)
+                return BackgroundBoxStyles.GenerateBackgroundBox(comboBoxBoxStyle.SelectedIndex, (int)numericUpDownRadius.Value, posAndSize.Left, posAndSize.Right, posAndSize.Top, posAndSize.Bottom);
+
             var x = posAndSize.Left;
             var y = posAndSize.Top;
             var bottom = posAndSize.Bottom;

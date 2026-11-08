@@ -38,6 +38,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
         public override double PlayRate { get => _rate; set { if (value < .5 || value > 2 || double.IsNaN(value)) throw new ArgumentOutOfRangeException(nameof(value)); _position = CurrentPosition; _rate = value; Restart(); } }
         public override bool IsPaused => !_playing;
         public override bool IsPlaying => _playing;
+        public override Bitmap CaptureFrame() => _picture?.Image == null ? null : new Bitmap(_picture.Image);
         public override event EventHandler OnVideoLoaded;
         public override event EventHandler OnVideoEnded;
         private static string N(double v) => v.ToString("0.########", CultureInfo.InvariantCulture);

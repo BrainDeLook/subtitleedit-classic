@@ -246,7 +246,10 @@
     <Word from="ÿétrangle" to="s'étrangle" />
   </WholeWords>
   <PartialWordsAlways />
-  <PartialWords />
+  <PartialWords>
+    <WordPart from="i" to="l" />
+    <WordPart from="I" to="l" />
+  </PartialWords>
   <WholeLines>
     <Line from="&quot;D'ac:c:ord.&quot;" to="&quot;D'accord.&quot;" />
     <Line from="“i QUÎ gagne, qui perd," to="ni qui gagne, qui perd," />
@@ -268,4 +271,119 @@
   <BeginLines />
   <EndLines />
   <RegularExpressions />
+  <RegularExpressionsIfSpelledCorrectly>
+
+    <!-- ============================================================ -->
+    <!-- I / l CONFUSION FIXES (visual OCR errors, language-agnostic) -->
+    <!-- ============================================================ -->
+
+    <!-- [GEARS GRlNDlNG] → [GEARS GRINDING] : l→I inside all-caps brackets -->
+    <RegEx find="\[([A-Z ]*)l([A-Z ]*)\]" spellCheck="[$1I$2]" replaceWith="[$1I$2]" />
+
+    <!-- [ABC] bracket with l mixed in caps -->
+    <RegEx find="\[([A-Zl]+)\]" replaceAllFrom="l" replaceAllTo="I" spellCheck="$1" replaceWith="[$1]" />
+
+    <!-- SlNG → SING : l inside all-caps word (two variants) -->
+    <RegEx find="\b([A-Z]+)l([A-Z]+)\b" spellCheck="$1I$2" replaceWith="$1I$2" />
+
+    <!-- SING l → SING I : trailing l in all-caps word -->
+    <RegEx find="\b([A-Z]+)l\b" spellCheck="$1I" replaceWith="$1I" />
+
+    <!-- l SING → I SING : leading l before all-caps word -->
+    <RegEx find="\bl([A-Z]+)\b" spellCheck="I$1" replaceWith="I$1" />
+
+    <!-- chaIIenge → challenge : II→ll mid lowercase word -->
+    <RegEx find="\b([a-zæøåöäéèàùâêîôûëïœç]+)II([a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1ll$2" replaceWith="$1ll$2" />
+
+    <!-- traiIer → trailer : I→l mid lowercase word -->
+    <RegEx find="\b([a-zæøåöäéèàùâêîôûëïœç]+)I([a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1l$2" replaceWith="$1l$2" />
+
+    <!-- DavidI → Davidl : trailing I→l in capitalised word -->
+    <RegEx find="\b([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)I\b" spellCheck="$1l" replaceWith="$1l" />
+
+    <!-- BatailIe → Bataille : I→l mid capitalised word -->
+    <RegEx find="\b([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)I([a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1l$2" replaceWith="$1l$2" />
+
+    <!-- Iaisse → laisse : leading I→l before 3+ lowercase chars (avoids "Is", "Il" pronoun) -->
+    <RegEx find="\bI([a-zæøåöäéèàùâêîôûëïœç]{3,})\b" spellCheck="l$1" replaceWith="l$1" />
+
+    <!-- laisse → laisse already correct; lhomme → l'homme caught elsewhere -->
+    <!-- leading l → I before 2+ lowercase chars (e.g. lire OCR'd as Iire caught above; -->
+    <!-- this catches remaining: les, les, etc. — only fires if spellcheck passes as I+word) -->
+    <RegEx find="\bl([a-zæøåöäéèàùâêîôûëïœç]{2,})\b" spellCheck="I$1" replaceWith="I$1" />
+
+
+    <!-- ============================================================ -->
+    <!-- FRENCH ELISION / APOSTROPHE FIXES                           -->
+    <!-- ============================================================ -->
+
+
+
+
+
+    <!-- ============================================================ -->
+    <!-- MISSING SPACE AFTER COMMON FRENCH PREPOSITIONS / ARTICLES   -->
+    <!-- (OCR sometimes merges a short word with the next capital)    -->
+    <!-- ============================================================ -->
+
+    <!-- deParis → de Paris -->
+    <RegEx find="\bde([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="de $1" />
+
+    <!-- duMonde → du Monde -->
+    <RegEx find="\bdu([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="du $1" />
+
+    <!-- enFrance → en France -->
+    <RegEx find="\ben([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="en $1" />
+
+    <!-- auRoi → au Roi -->
+    <RegEx find="\bau([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="au $1" />
+
+    <!-- leRoi → le Roi -->
+    <RegEx find="\ble([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="le $1" />
+
+    <!-- laReine → la Reine -->
+    <RegEx find="\bla([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="la $1" />
+
+    <!-- lesHommes → les Hommes -->
+    <RegEx find="\bles([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="les $1" />
+
+    <!-- unHomme → un Homme -->
+    <RegEx find="\bun([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="un $1" />
+
+    <!-- uneReine → une Reine -->
+    <RegEx find="\bune([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="une $1" />
+
+    <!-- surLa → sur La / surLe → sur Le -->
+    <RegEx find="\bsur([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="sur $1" />
+
+    <!-- parLe → par Le -->
+    <RegEx find="\bpar([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="par $1" />
+
+    <!-- ofDavid → of David (English proper nouns in French text) -->
+    <RegEx find="\bof([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="of $1" />
+
+    <!-- inLondon → in London -->
+    <RegEx find="\bin([A-Z][a-zæøåöäéèàùâêîôûëïœç]+)\b" spellCheck="$1" replaceWith="in $1" />
+
+  </RegularExpressionsIfSpelledCorrectly>
+  <RegularExpressionsIfSpelledCorrectly>
+    <!-- Italic l misread as i (#13660): trailing i to l, double ii to ll.  -->
+    <!-- Correct i-words are in the dictionary and protected by the gate.   -->
+    <!-- Stem of 3+ letters (#14824): "toi"/"moi"/"roi" in a quoted French   -->
+    <!-- line are not in the dictionary but "tol"/"mol"/"rol" are.           -->
+    <RegEx find="\b([A-ZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸa-zàâæçéèêëîïôœùûüÿ][a-zàâæçéèêëîïôœùûüÿ]{3,})i\b" spellCheck="$1l" replaceWith="$1l" />
+    <RegEx find="\b([A-ZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸa-zàâæçéèêëîïôœùûüÿ][a-zàâæçéèêëîïôœùûüÿ]*)ii([a-zàâæçéèêëîïôœùûüÿ]*)\b" spellCheck="$1ll$2" replaceWith="$1ll$2" />
+
+    <!-- word-initial i to l (iove to love, iieber to lieber) -->
+    <RegEx find="\bi([a-zàâæçéèêëîïôœùûüÿ]{2,})\b" spellCheck="l$1" replaceWith="l$1" />
+
+    <!-- word-initial ii to ll (iiegar to llegar) -->
+    <RegEx find="\bii([a-zàâæçéèêëîïôœùûüÿ]+)\b" spellCheck="ll$1" replaceWith="ll$1" />
+
+    <!-- Lowercase l misread as uppercase I (#13660): replace every I in the word, -->
+    <!-- so words with more than one are repaired too (deIectabIe -> delectable,   -->
+    <!-- ExceIIencies -> Excellencies). Words of two letters (AI) are never        -->
+    <!-- touched, and real words (MacIntosh) are kept by the spell check gate.     -->
+    <RegEx find="\b([A-ZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸa-zàâæçéèêëîïôœùûüÿ](?=[a-zàâæçéèêëîïôœùûüÿI]*I)[a-zàâæçéèêëîïôœùûüÿI]{2,})\b" replaceAllFrom="I" replaceAllTo="l" spellCheck="$1" replaceWith="$1" />
+  </RegularExpressionsIfSpelledCorrectly>
 </OCRFixReplaceList>

@@ -10,6 +10,8 @@ namespace Nikse.SubtitleEdit.Forms.Translate
     public sealed partial class AutoTranslateSettings : Form
     {
         private readonly Type _engineType;
+        private readonly TextBox _microsoftRegion = new TextBox();
+        private readonly CheckBox _keepMusic = new CheckBox();
 
         public AutoTranslateSettings(Type engineType, string engineName)
         {
@@ -18,6 +20,11 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             UiUtil.FixFonts(this);
 
             _engineType = engineType;
+            var oldHeight=ClientSize.Height;ClientSize=new System.Drawing.Size(ClientSize.Width,oldHeight+30);
+            nikseTextBoxPrompt.Height-=30;
+            _keepMusic.Text=Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Не переводить реплики с музыкальными символами", "Keep music/lyric lines untranslated");
+            _keepMusic.Name="classicKeepMusicLines";_keepMusic.AutoSize=true;_keepMusic.Left=12;_keepMusic.Top=buttonOk.Top-27;_keepMusic.Anchor=AnchorStyles.Left|AnchorStyles.Bottom;
+            _keepMusic.Checked=Configuration.Settings.Tools.AutoTranslateKeepMusicLines;Controls.Add(_keepMusic);_keepMusic.BringToFront();
 
             Text = LanguageSettings.Current.General.Advanced;
             labelDelay.Text = LanguageSettings.Current.GoogleTranslate.Delay;
@@ -139,6 +146,15 @@ namespace Nikse.SubtitleEdit.Forms.Translate
                     nikseTextBoxPrompt.Text = new ToolsSettings().GeminiPrompt;
                 }
             }
+            else if (_engineType == typeof(MicrosoftTranslator))
+            {
+                labelPrompt.Text = Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Регион Azure Translator", "Azure Translator region");
+                nikseTextBoxPrompt.Visible = false;
+                _microsoftRegion.Text = Configuration.Settings.Tools.MicrosoftTranslatorRegion;
+                _microsoftRegion.SetBounds(nikseTextBoxPrompt.Left, nikseTextBoxPrompt.Top, 350, 25); Controls.Add(_microsoftRegion);
+                Controls.Add(new Label { Text = Nikse.SubtitleEdit.Logic.AssistedEditing.ClassicAssistedText.L("Например westus2. Пустое поле или global используют общий endpoint.", "For example westus2. Empty or global uses the configured global endpoint."), AutoSize = true, MaximumSize = new System.Drawing.Size(730, 0), Left = nikseTextBoxPrompt.Left, Top = nikseTextBoxPrompt.Top + 35 });
+                MinimumSize = new System.Drawing.Size(MinimumSize.Width, MinimumSize.Height - 130); Height -= 130;
+            }
             else
             {
                 labelPrompt.Visible = false;
@@ -161,6 +177,14 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         private void buttonOk_Click(object sender, EventArgs e)
         {
+            Configuration.Settings.Tools.AutoTranslateKeepMusicLines = _keepMusic.Checked;
+            if (_engineType == typeof(MicrosoftTranslator))
+            {
+                try { MicrosoftTranslator.GetTokenEndpoint(Configuration.Settings.Tools.MicrosoftTranslatorTokenEndpoint, _microsoftRegion.Text); }
+                catch (ArgumentException ex) { MessageBox.Show(this, ex.Message, Text); return; }
+                Configuration.Settings.Tools.MicrosoftTranslatorRegion = _microsoftRegion.Text.Trim();
+            }
+
             if (nikseTextBoxPrompt.Text.Replace("{0}", string.Empty).Replace("{1}", string.Empty).Contains('{'))
             {
                 MessageBox.Show("Character not allowed in prompt: '{' (besides '{0}' and '{1}')");

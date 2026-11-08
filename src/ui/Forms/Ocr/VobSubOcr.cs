@@ -799,7 +799,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 text = text.Replace(Environment.NewLine + " ", Environment.NewLine);
 
                 // max allow 2 lines
-                if (checkBoxAutoBreakLines.Checked && Utilities.GetNumberOfLines(text) > 2)
+                if (checkBoxAutoBreakLines.Checked && Utilities.GetNumberOfLines(text) > 2 && !ClassicOcrHasSeparatedBlocks(i))
                 {
                     text = text.Replace(" " + Environment.NewLine, Environment.NewLine);
                     text = text.Replace(Environment.NewLine + " ", Environment.NewLine);
@@ -1150,7 +1150,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 text = text.Replace(Environment.NewLine + " ", Environment.NewLine);
 
                 // max allow 2 lines
-                if (checkBoxAutoBreakLines.Checked && Utilities.GetNumberOfLines(text) > 2)
+                if (checkBoxAutoBreakLines.Checked && Utilities.GetNumberOfLines(text) > 2 && !ClassicOcrHasSeparatedBlocks(i))
                 {
                     text = text.Replace(" " + Environment.NewLine, Environment.NewLine);
                     text = text.Replace(Environment.NewLine + " ", Environment.NewLine);
@@ -2076,6 +2076,17 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             if (returnBmp == null)
             {
                 return null;
+            }
+
+            if (_vobSubMergedPackList != null && _classicIsolateVobSubColors && !checkBoxCustomFourColors.Checked && !_fromMenuItem)
+            {
+                var mask = _ocrMethodIndex == _ocrMethodNocr || _ocrMethodIndex == _ocrMethodBinaryImageCompare;
+                var isolated = ClassicVobSubOcrPreparation.Prepare(returnBmp, mask || _ocrMethodIndex == _ocrMethodTesseract5 || _ocrMethodIndex == _ocrMethodTesseract302);
+                returnBmp.Dispose();
+                returnBmp = isolated;
+                // The isolated result already is the complete mask expected by these
+                // recognizers. Re-thresholding would select the white background instead.
+                if (mask) return returnBmp;
             }
 
             if (_ocrMethodIndex == _ocrMethodTesseract5 && !_fromMenuItem)
@@ -4555,7 +4566,17 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             return new ImageSplitterItem(minimumX, minimumY, nbmp);
         }
 
-        public Subtitle SubtitleFromOcr => _subtitle;
+        public Subtitle SubtitleFromOcr
+        {
+            get
+            {
+                if(!_classicCaptureAssaPosition)return _subtitle;
+                var result=new Subtitle(_subtitle,false);result.Paragraphs.Clear();
+                foreach(var cue in _subtitle.Paragraphs)
+                    foreach(var text in OcrAssaAlignment.SplitTextByAlignmentGroups(cue.Text))result.Paragraphs.Add(new Paragraph(cue,true){Text=text});
+                result.Renumber();return result;
+            }
+        }
 
         private void FormVobSubOcr_Shown(object sender, EventArgs e)
         {
@@ -5132,7 +5153,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
                 text = text.Replace(Environment.NewLine + " ", Environment.NewLine);
 
                 // max allow 2 lines
-                if (_autoBreakLines && Utilities.GetNumberOfLines(text) > 2)
+                if (_autoBreakLines && Utilities.GetNumberOfLines(text) > 2 && !ClassicOcrHasSeparatedBlocks(index))
                 {
                     text = text.Replace(" " + Environment.NewLine, Environment.NewLine);
                     text = text.Replace(Environment.NewLine + " ", Environment.NewLine);
@@ -5293,7 +5314,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             text = text.Trim();
 
             // max allow 2 lines
-            if (_autoBreakLines && Utilities.GetNumberOfLines(text) > 2)
+            if (_autoBreakLines && Utilities.GetNumberOfLines(text) > 2 && !ClassicOcrHasSeparatedBlocks(i))
             {
                 text = text.RemoveRecursiveLineBreaks();
                 if (Utilities.GetNumberOfLines(text) > 2)
@@ -5543,6 +5564,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 
         private string SetTopAlign(int i, string text)
         {
+            if(_classicCaptureAssaPosition)return ClassicOcrAlignment(i,text);
             if (_captureTopAlign && _captureTopAlignHeight > 0)
             {
                 GetSubtitleTopAndHeight(i, out _, out var top, out _, out var height);
@@ -6966,7 +6988,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             }
 
             // max allow 2 lines
-            if (checkBoxAutoBreakLines.Checked && Utilities.GetNumberOfLines(processedText) > 2)
+            if (checkBoxAutoBreakLines.Checked && Utilities.GetNumberOfLines(processedText) > 2 && !ClassicOcrHasSeparatedBlocks(input.Index))
             {
                 processedText = processedText.Replace(" " + Environment.NewLine, Environment.NewLine);
                 processedText = processedText.Replace(Environment.NewLine + " ", Environment.NewLine);
@@ -7227,6 +7249,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             }
 
             numericUpDownStartNumber.Value = _selectedIndex + 1;
+            if (_classicVideoPreview != null && !_classicVideoPreview.IsDisposed) _classicVideoPreview.SelectCue(_subtitle.Paragraphs[_selectedIndex]);
         }
 
         private void TextBoxCurrentTextTextChanged(object sender, EventArgs e)
@@ -7879,7 +7902,7 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
 
                 }
 
-                nikseComboBoxOllamaModel.Text = ClassicBitmapProvider==null?Configuration.Settings.VobSubOcr.OllamaModel:ClassicBitmapSettings.Load(ClassicBitmapProvider).Api.Model;
+                nikseComboBoxOllamaModel.Text = ClassicBitmapProvider==null?Configuration.Settings.VobSubOcr.OllamaModel:ClassicBitmapSettings.Load(ClassicBitmapProvider).SelectedModel;
 
                 ShowOcrMethodGroupBox(groupBoxOllama);
                 Configuration.Settings.VobSubOcr.LastOcrMethod = ClassicBitmapProvider==null?"Ollama":"Classic:"+ClassicBitmapProvider;
@@ -10131,64 +10154,9 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
         private void previewToolStripMenuItem_Click(object sender, EventArgs e)
         {
             GetSubtitleScreenSize(_selectedIndex, out var width, out var height);
-            if (width == 0 || height == 0)
-            {
-                return;
-            }
-
-            bool goNext;
-            bool goPrevious;
-            Cursor = Cursors.WaitCursor;
-            try
-            {
-                GetSubtitleTopAndHeight(_selectedIndex, out var left, out var top, out _, out _);
-                using (var bmp = new Bitmap(width, height))
-                {
-                    using (var g = Graphics.FromImage(bmp))
-                    {
-                        var p = _subtitle.Paragraphs[subtitleListView1.SelectedItems[0].Index];
-                        FillPreviewBackground(bmp, g, p);
-                        _fromMenuItem = true;
-                        var subBitmap = GetSubtitleBitmap(_selectedIndex, false);
-                        _fromMenuItem = false;
-
-                        if (_vobSubMergedPackList != null)
-                        {
-                            var nbmp = new NikseBitmap(subBitmap);
-                            var topCropped = nbmp.CropTopTransparent(0);
-                            top -= topCropped;
-                        }
-
-                        g.DrawImageUnscaled(subBitmap, new Point(left, top));
-                    }
-
-                    using (var form = new ExportPngXmlPreview(bmp))
-                    {
-
-                        Cursor = Cursors.Default;
-                        form.AllowNext = _selectedIndex < _subtitle.Paragraphs.Count - 1;
-                        form.AllowPrevious = _selectedIndex > 0;
-                        form.ShowDialog(this);
-                        goNext = form.NextPressed;
-                        goPrevious = form.PreviousPressed;
-                    }
-                }
-            }
-            finally
-            {
-                Cursor = Cursors.Default;
-            }
-
-            if (goNext)
-            {
-                subtitleListView1.SelectIndexAndEnsureVisible(_selectedIndex + 1);
-                previewToolStripMenuItem_Click(null, null);
-            }
-            else if (goPrevious)
-            {
-                subtitleListView1.SelectIndexAndEnsureVisible(_selectedIndex - 1);
-                previewToolStripMenuItem_Click(null, null);
-            }
+            if (width == 0 || height == 0 || _selectedIndex < 0) return;
+            using (var viewer = new ExportPngXmlPreview(CreateClassicPreviewFrame, _selectedIndex, _subtitle.Paragraphs.Count,
+                index => subtitleListView1.SelectIndexAndEnsureVisible(index))) viewer.ShowDialog(this);
         }
 
         private void FillPreviewBackground(Bitmap bmp, Graphics g, Paragraph p)

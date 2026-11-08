@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using System;
@@ -20,6 +20,15 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
         public int Percent { get; set; } = -1;
     }
 
+    public sealed class SpeechEngineProcessException : InvalidOperationException
+    {
+        public int ExitCode { get; }
+        public string Diagnostics { get; }
+        public SpeechEngineProcessException(string executable, int exitCode, string diagnostics)
+            : base(Path.GetFileName(executable) + " exited with code " + exitCode + Environment.NewLine + diagnostics)
+        { ExitCode = exitCode; Diagnostics = diagnostics; }
+    }
+
     public static class ClassicSpeechRunner
     {
         private static readonly Regex Percent = new Regex(@"(?:progress\s*=\s*|^\s*)(\d+(?:\.\d+)?)\s*%", RegexOptions.Compiled);
@@ -39,6 +48,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
 
         public static async Task RunProcessAsync(ProcessStartInfo start, CancellationToken cancel, IProgress<SpeechProgress> progress, string standardInput = null)
         {
+            using var preventSleep = Nikse.SubtitleEdit.Logic.ClassicPowerRequest.Acquire("Processing subtitles and media");
             start.UseShellExecute = false;
             start.CreateNoWindow = true;
             start.WindowStyle = ProcessWindowStyle.Hidden;
@@ -68,7 +78,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
                     await Task.Run(() => process.WaitForExit()).ConfigureAwait(false);
                     await Task.WhenAll(stdout, stderr).ConfigureAwait(false);
                     cancel.ThrowIfCancellationRequested();
-                    if (process.ExitCode != 0) throw new InvalidOperationException(Path.GetFileName(start.FileName) + " exited with code " + process.ExitCode + Environment.NewLine + errors);
+                    if (process.ExitCode != 0) throw new SpeechEngineProcessException(start.FileName, process.ExitCode, errors.ToString());
                 }
             }
         }
@@ -109,7 +119,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             string inputWave, string outputPrefix, string alignerPath, bool useVad)
         {
             var args = new List<string>();
-            var modelPath = ClassicSpeechCatalog.ModelPath(engine, model);
+            var modelPath = engine.Family=="qwen" && !string.IsNullOrEmpty(options.CustomQwenModel) ? options.CustomQwenModel : ClassicSpeechCatalog.ModelPath(engine, model);
             if (engine.Family == "crisp")
             {
                 args.AddRange(new[] { "--backend", engine.Backend, engine.Backend == "index-echo" ? "--target-lang" : "-l", options.Language, "-m", modelPath,
@@ -175,7 +185,7 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             if (engine.Family == "whisperx" && options.Language == "ru" && options.WhisperXAlignWords && !options.TranslateToEnglish)
                 await ClassicSpeechDownload.EnsureWhisperXRussianAlignerAsync(cancel, progress).ConfigureAwait(false);
             var output = Path.Combine(jobFolder, "transcript");
-            var useVad = engine.Family == "crisp" && (options.UseVad || ClassicSpeechExtras.NeedsVad(engine));
+            var useVad = ClassicSpeechExtras.UseVad(engine, options);
             for (var attempt = 0; attempt < 2; attempt++)
             {
                 cancel.ThrowIfCancellationRequested();
@@ -241,9 +251,10 @@ namespace Nikse.SubtitleEdit.Logic.SpeechToText
             var result = new Subtitle();
             var phrase = new StringBuilder();
             double start = 0, end = 0;
-            foreach (var word in words)
+            foreach (var token in words)
             {
-                var value = ((string)word["word"] ?? "").Trim();
+                if(!(token is JObject word))throw new InvalidDataException("Invalid timed word in Qwen3 JSON.");
+                var value = ((string)word["word"] ?? "").Replace("<asr_text>", "").Trim();
                 var from = (double?)word["start"] ?? double.NaN;
                 var to = (double?)word["end"] ?? double.NaN;
                 if (!Finite(from) || !Finite(to) || from < 0 || to < from) throw new InvalidDataException("Invalid word timestamp in Qwen3 JSON.");

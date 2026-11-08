@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -40,9 +40,24 @@ namespace Nikse.SubtitleEdit.Forms
             if(file==null)_classicExternalStamp=null;
             else if(_classicExternalStamp==null || !_classicExternalStamp.SameFile(file))_classicExternalStamp=ClassicSubtitleFileStamp.Read(file);
         }
+        private bool ConfirmClassicExternalOverwrite(bool unattended)
+        {
+            var file = ClassicWatchedSubtitleFile();
+            if (file == null || _classicExternalStamp == null || !_classicExternalStamp.SameFile(file)) return true;
+            var current = ClassicSubtitleFileStamp.Read(file);
+            if (_classicExternalStamp.SameContent(current)) return true;
+            // A failed reload must not acknowledge the new disk revision for saving.
+            if (unattended) return false;
+            return MessageBox.Show(this,
+                ClassicAssistedText.L("Файл на диске изменён другой программой или недоступен. Перезаписать его текущими субтитрами?\n\n", "The file on disk changed outside Subtitle Edit or is unavailable. Overwrite it with the current subtitles?\n\n") + file,
+                Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+        }
+
         private async Task<bool> CheckClassicExternalChange(Func<string,bool> confirm)
         {
             if(_checkingClassicExternalChange || _loading || _openSaveCounter!=0 || _networkSession!=null || IsDisposed || Disposing || !Enabled || OwnedForms.Any(f=>f.Visible && f.Modal))return false;
+            var mode=ClassicEditorPreferences.Load().ExternalChanges;
+            if(mode==ClassicExternalChangeMode.Never)return false;
             var file=ClassicWatchedSubtitleFile();var previous=_classicExternalStamp;
             if(file==null || previous==null || !previous.SameFile(file))return false;
             var current=ClassicSubtitleFileStamp.Read(file);
@@ -51,7 +66,7 @@ namespace Nikse.SubtitleEdit.Forms
             try
             {
                 var document=_subtitle;var snapshot=ClassicExternalContent(document);var source=textBoxSource.Text;var sourceChanged=_sourceViewChange;var currentFormat=_currentSubtitleFormat;
-                if(sourceChanged || _changeSubtitleHash!=GetFastSubtitleHash())
+                if(sourceChanged || _changeSubtitleHash!=GetFastSubtitleHash() || mode==ClassicExternalChangeMode.AlwaysAsk)
                 {
                     var question=ClassicAssistedText.L("Файл изменён другой программой:\n","The file was changed outside Subtitle Edit:\n")+file+"\n\n"+ClassicAssistedText.L("Перечитать его и заменить несохранённые изменения?","Reload it and discard your unsaved changes?");
                     var accept=confirm!=null?confirm(question):MessageBox.Show(this,question,Title,MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)==DialogResult.Yes;

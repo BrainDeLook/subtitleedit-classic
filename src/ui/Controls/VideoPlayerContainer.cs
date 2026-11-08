@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.ContainerFormats.Matroska;
 using Nikse.SubtitleEdit.Core.Settings;
@@ -498,8 +498,11 @@ namespace Nikse.SubtitleEdit.Controls
 
         public Paragraph LastParagraph { get; set; }
 
+        public bool PreviewSubtitlesVisible {get;set;}=true;
         public void SetSubtitleText(string text, Paragraph p, Subtitle subtitle, SubtitleFormat format)
         {
+            if(VideoPlayer is LibMpvDynamic previewMpv)previewMpv.SetSubtitleVisibility(PreviewSubtitlesVisible);
+            if(!PreviewSubtitlesVisible){LastParagraph=p;SubtitleText="";return;}
             var mpv = VideoPlayer as LibMpvDynamic;
             LastParagraph = p;
             if (mpv != null && Configuration.Settings.General.MpvHandlesPreviewText && VideoHeight > 0 && VideoWidth > 0)
@@ -593,6 +596,8 @@ namespace Nikse.SubtitleEdit.Controls
             {
                 var hideLayers=ReferenceEquals(subtitle,_hiddenLayerDocument) && (uiFormat is AdvancedSubStationAlpha || uiFormat is SubStationAlpha);
                 subtitle = new Subtitle(subtitle, false);
+                if (uiFormat is YouTubeTimedText) { subtitle = YttToAssa.Convert(subtitle, VideoWidth, VideoHeight); uiFormat = new AdvancedSubStationAlpha(); }
+
                 if(hideLayers)subtitle.Paragraphs.RemoveAll(p=>_hiddenAssLayers.Contains(p.Layer));
                 if (SmpteMode)
                 {
@@ -757,13 +762,14 @@ namespace Nikse.SubtitleEdit.Controls
             get => _subtitleText;
             set
             {
-                _subtitleText = value;
-                SetRtbHtml.SetText(TextBox, value);
+                _subtitleText = PreviewSubtitlesVisible?value:"";
+                SetRtbHtml.SetText(TextBox, _subtitleText);
             }
         }
 
         private void PanelPlayerMouseDown(object sender, MouseEventArgs e)
         {
+            if(e.Button!=MouseButtons.Left)return;
             if (VideoPlayer == null)
             {
                 OnEmptyPlayerClicked?.Invoke(sender, e);
@@ -785,8 +791,13 @@ namespace Nikse.SubtitleEdit.Controls
             return PanelPlayer;
         }
 
+        private ClassicFullscreenControls _classicFullscreenControls;
+        public event EventHandler ClassicFullscreenChanged;
+        public bool ClassicFullscreenActive=>_classicFullscreenControls!=null;
         public void HideControls(bool hideCursor)
         {
+            if(_classicFullscreenControls!=null){if(hideCursor)HideCursor();return;}
+
             if (_panelControls.Visible)
             {
                 _panelSubtitle.Height += ControlsHeight;
@@ -808,6 +819,8 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowControls()
         {
+            if(_classicFullscreenControls!=null){_classicFullscreenControls.Reveal();ShowCursor();return;}
+
             if (!_panelControls.Visible)
             {
                 _panelControls.Visible = true;
@@ -1471,6 +1484,10 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowFullScreenControls()
         {
+            _classicFullscreenControls?.Dispose();
+            _classicFullscreenControls=new ClassicFullscreenControls(this,()=>OnButtonClicked?.Invoke(_pictureBoxFullscreen,new MouseEventArgs(MouseButtons.Left,1,0,0,0)));
+            _panelControls.Visible=false;
+
             _pictureBoxFullscreen.Image = _bitmapNoFullscreen;
             _pictureBoxFullscreenDown.Image = _bitmapNoFullscreenDown;
             _pictureBoxFullscreenOver.Image = _bitmapNoFullscreenOver;
@@ -1478,6 +1495,8 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void ShowNonFullScreenControls()
         {
+            _classicFullscreenControls?.Dispose();_classicFullscreenControls=null;_panelControls.Visible=true;ShowCursor();ClassicFullscreenChanged?.Invoke(this,EventArgs.Empty);
+
             _pictureBoxFullscreen.Image = _bitmapFullscreen;
             _pictureBoxFullscreenDown.Image = _bitmapFullscreenDown;
             _pictureBoxFullscreenOver.Image = _bitmapFullscreenOver;
@@ -2009,8 +2028,11 @@ namespace Nikse.SubtitleEdit.Controls
 
         #region VideoPlayer functions
 
+        public event EventHandler PositionOrPlaybackChanged;
+
         public void Play()
         {
+            PositionOrPlaybackChanged?.Invoke(this, EventArgs.Empty);
             if (VideoPlayer != null)
             {
                 VideoPlayer.Play();
@@ -2024,6 +2046,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void Stop()
         {
+            PositionOrPlaybackChanged?.Invoke(this, EventArgs.Empty);
             if (VideoPlayer != null)
             {
                 VideoPlayer.Pause();
@@ -2038,6 +2061,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         public void Pause()
         {
+            PositionOrPlaybackChanged?.Invoke(this, EventArgs.Empty);
             if (VideoPlayer != null)
             {
                 VideoPlayer.Pause();
@@ -2128,6 +2152,7 @@ namespace Nikse.SubtitleEdit.Controls
             }
             set
             {
+                PositionOrPlaybackChanged?.Invoke(this, EventArgs.Empty);
                 if (VideoPlayer != null)
                 {
                     var v = value;
@@ -2202,6 +2227,7 @@ namespace Nikse.SubtitleEdit.Controls
 
         protected override void Dispose(bool disposing)
         {
+            if(disposing){_classicFullscreenControls?.Dispose();_classicFullscreenControls=null;}
             DeleteTempMpvFileName();
             base.Dispose(disposing);
             _retryCount = 3;

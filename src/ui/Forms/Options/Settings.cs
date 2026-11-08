@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Controls;
+﻿using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.AutoTranslate;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Enums;
@@ -24,6 +24,7 @@ namespace Nikse.SubtitleEdit.Forms.Options
     public sealed partial class Settings : PositionAndSizeForm
     {
         private Main _main;
+        private readonly List<CheckBox> _classicQuickToolbarChecks = new List<CheckBox>();
         private const int GeneralSection = 0;
         private const int SubtitleFormatsSection = 1;
         private const int ShortcutsSection = 2;
@@ -150,6 +151,34 @@ namespace Nikse.SubtitleEdit.Forms.Options
 
             Init();
             InitializeClassicFfmpegOption();
+            // Keep all toolbar controls together, using the same icon/label/checkbox layout.
+            groupBox2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            panelToolBar.AutoScroll = true;
+            var quickIndex = 0;
+            var russian = Configuration.Settings.General.Language.StartsWith("ru", StringComparison.OrdinalIgnoreCase);
+            var quickLabels = russian
+                ? new[] { "OCR вшитых", "Аудио в текст", "Текст в речь", "Автоперевод", "Тайминги по речи", "ASS Draw", "Пакетный режим" }
+                : new[] { "Burned-in OCR", "Audio to text", "Text to speech", "Auto-translate", "Speech timing", "ASS Draw", "Batch convert" };
+            foreach (var entry in _main.ClassicQuickToolbarSettings)
+            {
+                var left = 10 + (quickIndex % 4) * 200;
+                var top = 350 + (quickIndex / 4) * 95;
+                var label = new Label { AutoSize = true, Location = new Point(left, top), Text = quickLabels[quickIndex] };
+                var image = new PictureBox { Location = new Point(left + 12, top + 18), Size = new Size(32, 32), SizeMode = PictureBoxSizeMode.Zoom, Image = (Image)entry.Button.Image.Clone() };
+                image.Disposed += (sender, args) => image.Image.Dispose();
+                var check = new CheckBox { AutoSize = true, Location = new Point(left + 12, top + 57), Text = LanguageSettings.Current.General.Visible, Checked = entry.Visible, Name = entry.Button.Name + "Settings" };
+                groupBoxShowToolBarButtons.Controls.Add(label);
+                groupBoxShowToolBarButtons.Controls.Add(image);
+                groupBoxShowToolBarButtons.Controls.Add(check);
+                _classicQuickToolbarChecks.Add(check);
+                quickIndex++;
+            }
+            foreach (var preview in new[] { pictureBoxAssStyleManager, pictureBoxAssProperties, pictureBoxAssAttachments,
+                pictureBoxAssaDraw, pictureBoxToggleWaveform, pictureBoxToggleVideo, pictureBoxIttProperties,
+                pictureBoxWebVttStyle, pictureBoxWebVttProperties, pictureBoxEbuProperties })
+                preview.Top = 550;
+            groupBoxShowToolBarButtons.Height = 590;
+            groupBox2.Top = groupBoxShowToolBarButtons.Bottom + 2;
             _loading = false;
 
             _oldSettings = Core.Settings.Settings.CustomSerialize(Configuration.Settings);
@@ -2519,7 +2548,8 @@ namespace Nikse.SubtitleEdit.Forms.Options
                 }
             }
 
-            if (_oldSettings == Core.Settings.Settings.CustomSerialize(Configuration.Settings))
+            var quickToolbarChanged = _main.SaveClassicQuickToolbarSettings(_classicQuickToolbarChecks.Select(check => check.Checked).ToArray());
+            if (!quickToolbarChanged && _oldSettings == Core.Settings.Settings.CustomSerialize(Configuration.Settings))
             {
                 DialogResult = DialogResult.Cancel;
                 return;

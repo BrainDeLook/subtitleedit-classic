@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -10,14 +10,17 @@ namespace Nikse.SubtitleEdit.Forms
 {
     public sealed class ClassicLlamaForm : ClassicServiceSettingsForm
     {
-        public ClassicLlamaForm() : base(ClassicSpeechSettings.L("Локальная AI-модель — llama.cpp", "Local AI model — llama.cpp"))
+        public ClassicLlamaForm() : this(false) { }
+        public ClassicLlamaForm(bool ocrOnly) : base(ClassicSpeechSettings.L("Локальная AI-модель — llama.cpp", "Local AI model — llama.cpp"))
         {
             ClientSize=new Size(780,590);MinimumSize=new Size(700,530);
-            var s=ClassicLlamaSettings.Load();
+            var s=ocrOnly ? ClassicLlamaSettings.LoadOcr() : ClassicLlamaSettings.Load();
+            if (ocrOnly) Text = ClassicSpeechSettings.L("OCR — локальная модель llama.cpp", "OCR — local llama.cpp model");
+            Action save = () => { if (ocrOnly) s.SaveOcr(); else s.Save(); };
             var variants=new ComboBox{Name="llamaVariant",Dock=DockStyle.Fill,DropDownStyle=ComboBoxStyle.DropDownList};variants.Items.AddRange(new object[]{"cpu","vulkan","cuda","cuda13"});variants.SelectedItem=s.Variant;
             AddControl(ClassicSpeechSettings.L("Вычисления", "Compute"),variants);
             var models=new ComboBox{Name="llamaModel",Dock=DockStyle.Fill,DropDownStyle=ComboBoxStyle.DropDownList,DropDownWidth=650};
-            foreach(var model in ClassicLlamaCatalog.ReviewModels.Concat(ClassicLlamaCatalog.TranslateModels).GroupBy(m=>m.FileName).Select(g=>g.First()))models.Items.Add(model);
+            foreach(var model in (ocrOnly ? ClassicLlamaCatalog.OcrModels : ClassicLlamaCatalog.ReviewModels.Concat(ClassicLlamaCatalog.TranslateModels)).GroupBy(m=>m.FileName).Select(g=>g.First()))models.Items.Add(model);
             AddControl(ClassicSpeechSettings.L("Модель", "Model"),models);
             Add("file",ClassicSpeechSettings.L("Файл модели", "Model file"),s.Model);Fields["file"].ReadOnly=true;
             models.SelectedIndexChanged+=(o,e)=>{if(models.SelectedItem is LlamaCppModel model)Fields["file"].Text=model.FileName;};
@@ -27,9 +30,9 @@ namespace Nikse.SubtitleEdit.Forms
             Add("layers",ClassicSpeechSettings.L("Слоёв на GPU", "GPU layers"),s.GpuLayers.ToString());
             Add("status",ClassicSpeechSettings.L("Установка", "Installation"),ClassicLlamaServer.Installed(s)?ClassicSpeechSettings.L("Установлено", "Installed"):ClassicSpeechSettings.L("Скачай движок и модель. Размер модели указан в списке. Сервер запускается только на 127.0.0.1.","Download engine and model. Model size is shown in the list. The server binds only to 127.0.0.1."),multiline:true);Fields["status"].ReadOnly=true;
             Action read=()=>{s.Variant=(string)variants.SelectedItem;s.Model=Fields["file"].Text;s.Folder=Fields["folder"].Text.Trim();s.Context=int.Parse(Fields["context"].Text);s.GpuLayers=int.Parse(Fields["layers"].Text);s.Validate();};
-            SaveWith(()=>{read();s.Save();});
+            SaveWith(()=>{read();save();});
             DownloadWith(async(cancel,progress)=>{read();await ClassicLlamaServer.EnsureInstalled(s,cancel,progress);Fields["status"].Text=ClassicSpeechSettings.L("Установлено. Сохрани настройки.","Installed. Save settings.");});
-            DownloadWith(async(cancel,progress)=>{read();await ClassicLlamaServer.Start(s,cancel,progress);s.Save();Fields["status"].Text=ClassicSpeechSettings.L("Сервер запущен.","Server started.");},ClassicSpeechSettings.L("Запустить", "Start"));
+            DownloadWith(async(cancel,progress)=>{read();await ClassicLlamaServer.Start(s,cancel,progress);save();Fields["status"].Text=ClassicSpeechSettings.L("Сервер запущен.","Server started.");},ClassicSpeechSettings.L("Запустить", "Start"));
             // A second row prevents action buttons from clipping at the minimum width.
             _footer.Height=82;_footer.WrapContents=true;
             var stop=new Button{Name="llamaStop",Text=ClassicSpeechSettings.L("Остановить", "Stop"),AutoSize=true};_footer.Controls.Add(stop);stop.Click+=(o,e)=>{ClassicLlamaServer.Stop();Fields["status"].Text=ClassicSpeechSettings.L("Остановлено", "Stopped");};

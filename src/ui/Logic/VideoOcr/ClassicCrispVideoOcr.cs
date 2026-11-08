@@ -21,16 +21,16 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
     public static class ClassicCrispVideoOcr
     {
         public static string ModelFolder => Path.Combine(ClassicPaddleOcr.Root,"CrispEmbed","models");
-        public static string PinnedVersion(string variant)=>variant=="cpu" ? "0.17.12" : "0.17.11";
+        public static string PinnedVersion(string variant)=>variant=="cpu" ? "0.17.14" : "0.17.14";
         public static string EngineFolder(string variant) => Path.Combine(ClassicPaddleOcr.Root,"CrispEmbed",PinnedVersion(variant),variant);
         public static string Executable(string variant,string name) => Directory.Exists(EngineFolder(variant))
             ? Directory.GetFiles(EngineFolder(variant),name+".exe",SearchOption.AllDirectories).FirstOrDefault() ?? Path.Combine(EngineFolder(variant),name+".exe")
             : Path.Combine(EngineFolder(variant),name+".exe");
         private static readonly Dictionary<string,string> Hashes=new Dictionary<string,string>
         {
-            ["cpu"]="49a1e4a89bf6f7d2df100794914f15aeb9a2b69513c3dbfb93364208994cc717",
-            ["vulkan"]="0579cc3d04e4493a6791887de518b29241ea50a0d8401b0dd82fb81e24a95d68",
-            ["cuda"]="56d83fd25253de920d5d7f8f949366eddcb202ff6b57d4158f5e886fc39f9b31"
+            ["cpu"]="1fab4a2ee5cd140f5b526b75ccaddf4c98fd0e69aa6a64bcd2b8a340890abfe8",
+            ["vulkan"]="ff20fc3d9775a66c13932068c5aca1c18c1a13fc7af4be27e40eb935f9d17227",
+            ["cuda"]="5871d45f9fd5a05f4f16b0c8556f111eea28b89162d32059a78bec1102667c93"
         };
         public static CrispEmbedModel SelectedModel(ClassicVideoOcrOptions options)
         {

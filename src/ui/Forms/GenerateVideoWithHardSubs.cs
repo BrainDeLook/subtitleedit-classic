@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.VideoPlayers;
@@ -703,6 +703,7 @@ namespace Nikse.SubtitleEdit.Forms
 
         private bool ConvertVideo(bool oldFontSizeEnabled, string videoFileName, Subtitle subtitle)
         {
+            using var preventSleep = Nikse.SubtitleEdit.Logic.ClassicPowerRequest.Acquire("Processing subtitles and media");
             if (!BatchMode) _classicImageSubtitle = _classicOptions.ImageSubtitleFileName;
             PrepareClassicInput(videoFileName);
             if (!ValidateClassicOutput(VideoFileName)) return false;

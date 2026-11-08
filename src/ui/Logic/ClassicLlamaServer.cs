@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -24,7 +24,15 @@ namespace Nikse.SubtitleEdit.Logic
         public int Context { get; set; } = 8192;
         public int GpuLayers { get; set; } = 99;
         public static string FileName => Path.Combine(Configuration.DataDirectory, "ClassicAI", "llama.json");
-        public static ClassicLlamaSettings Load() { try { return JsonConvert.DeserializeObject<ClassicLlamaSettings>(File.ReadAllText(FileName)) ?? new ClassicLlamaSettings(); } catch (IOException) { } catch (JsonException) { } return new ClassicLlamaSettings(); }
+        public static string OcrFileName => Path.Combine(Configuration.DataDirectory, "ClassicAI", "llama-ocr.json");
+        public static ClassicLlamaSettings Load() => LoadFile(FileName, new ClassicLlamaSettings());
+        public static ClassicLlamaSettings LoadOcr() => LoadFile(OcrFileName, new ClassicLlamaSettings { Model = "GLM-OCR-Q8_0.gguf" });
+        private static ClassicLlamaSettings LoadFile(string path, ClassicLlamaSettings fallback)
+        {
+            try { return JsonConvert.DeserializeObject<ClassicLlamaSettings>(File.ReadAllText(path)) ?? fallback; }
+            catch (IOException) { return fallback; }
+            catch (JsonException) { return fallback; }
+        }
         public void Validate()
         {
             if (!new[] { "cpu", "vulkan", "cuda", "cuda13" }.Contains(Variant)) throw new ArgumentException("Select cpu, vulkan, cuda or cuda13.");
@@ -32,11 +40,25 @@ namespace Nikse.SubtitleEdit.Logic
             if (string.IsNullOrWhiteSpace(Model) || Path.GetFileName(Model) != Model) throw new ArgumentException("Select a model file name.");
             if (Folder.Length > 0 && !Path.IsPathRooted(Folder)) throw new ArgumentException("Use an absolute model folder path.");
         }
-        public void Save() { Validate(); Directory.CreateDirectory(Path.GetDirectoryName(FileName)); var temp=FileName+"."+Guid.NewGuid().ToString("N")+".tmp"; try { File.WriteAllText(temp,JsonConvert.SerializeObject(this,Formatting.Indented));if(File.Exists(FileName))File.Replace(temp,FileName,null);else File.Move(temp,FileName); } finally { if(File.Exists(temp))File.Delete(temp); } }
+        public void Save() => SaveFile(FileName);
+        public void SaveOcr() => SaveFile(OcrFileName);
+        private void SaveFile(string path)
+        {
+            Validate();
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temp, JsonConvert.SerializeObject(this, Formatting.Indented));
+                if (File.Exists(path)) File.Replace(temp, path, null); else File.Move(temp, path);
+            }
+            finally { if (File.Exists(temp)) File.Delete(temp); }
+        }
+
     }
     public static class ClassicLlamaServer
     {
-        public const string Release = "b11553";
+        public const string Release = "b12110";
         private static readonly SemaphoreSlim Gate = new SemaphoreSlim(1, 1);
         private static Process _server;
         private static string _identity, _url;
@@ -48,7 +70,13 @@ namespace Nikse.SubtitleEdit.Logic
         public static string Executable(ClassicLlamaSettings s) => Path.Combine(Runtime(s),"llama-server.exe");
         public static bool IsRunning => _server != null && !_server.HasExited;
         public static LlamaCppModel Definition(string file) => ClassicLlamaCatalog.TranslateModels.Concat(ClassicLlamaCatalog.ReviewModels).Concat(ClassicLlamaCatalog.OcrModels).FirstOrDefault(m=>m.FileName==file);
-        public static bool Installed(ClassicLlamaSettings s) => File.Exists(Executable(s)) && File.Exists(Path.Combine(Runtime(s),"verified.txt")) && File.Exists(Path.Combine(Models(s),s.Model));
+        public static bool Installed(ClassicLlamaSettings s)
+        {
+            var projector = Definition(s.Model)?.MmprojFileName;
+            return File.Exists(Executable(s)) && File.Exists(Path.Combine(Runtime(s), "verified.txt")) &&
+                   File.Exists(Path.Combine(Models(s), s.Model)) &&
+                   (projector == null || File.Exists(Path.Combine(Models(s), projector)));
+        }
         public static async Task EnsureInstalled(ClassicLlamaSettings s,CancellationToken cancel,IProgress<SpeechProgress> progress)
         {
             s.Validate(); await Gate.WaitAsync(cancel).ConfigureAwait(false);
@@ -57,7 +85,7 @@ namespace Nikse.SubtitleEdit.Logic
                 if (!File.Exists(Executable(s)) || !File.Exists(Path.Combine(Runtime(s),"verified.txt")))
                 {
                     var suffix=s.Variant=="cuda13"?"cuda-13.4":s.Variant=="cuda"?"cuda-12.4":s.Variant;
-                    var hash=s.Variant=="cpu"?"5b1d1648f176d981a22e45e069eb52732437f824ea6a6159ca78e4a4bf792b07":s.Variant=="vulkan"?"fd9b554903bf55d696f60c86e259027608cb67ebd2f632c3684cdcda044d7380":s.Variant=="cuda13"?"3f1e149ec3cbcfe75a542f4063f50b29d689ed0abcaea0f3a00021eec5a8b7db":"2696e34b159ffe5640452d4e37bb6c063307b3c611e0e549aa55b63f2a157d42";
+                    var hash=s.Variant=="cpu"?"98901e327c252875accaf2d1bf364e10e868843b0b63468baad1aa945cdc5da2":s.Variant=="vulkan"?"9732a5e48887ca54d0bfe4af4324dc85fd56cd8cda19b52df3542fa6ebe6874f":s.Variant=="cuda13"?"dc910a969190b5d42e189afd73117f6bbdd8dd8ed6586342c5e0b82cab62c673":"1ce755bc3a061889234048f88e33328e17971eaad73c4666cfeb26026b317fee";
                     await InstallArchive("llama-"+Release+"-bin-win-"+suffix+"-x64.zip",hash,s,cancel,progress).ConfigureAwait(false);
                     if(s.Variant=="cuda" || s.Variant=="cuda13") await InstallArchive("cudart-llama-bin-win-"+suffix+"-x64.zip",s.Variant=="cuda13"?"738f8c251ac22b70c3ae6f83a10cf222725df0395246a2cf58f32bdb85fbe668":"8c79a9b226de4b3cacfd1f83d24f962d0773be79f1e7b75c6af4ded7e32ae1d6",s,cancel,progress).ConfigureAwait(false);
                     File.WriteAllText(Path.Combine(Runtime(s),"verified.txt"),Release);

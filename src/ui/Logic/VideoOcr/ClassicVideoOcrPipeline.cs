@@ -13,6 +13,9 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
 {
     public sealed class ClassicVideoOcrOptions
     {
+        public string TimeRanges { get; set; } = "";
+        public bool KeepExistingLines { get; set; }
+
         // Defaults copied from stable v5.2.0 SeVideoOcr.
         public string Language { get; set; }="en";
         public string Engine { get; set; }="Paddle OCR";
@@ -63,6 +66,26 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
         public static async Task<Subtitle> ScanAsync(string video,VideoInfo info,ClassicVideoOcrOptions options,CancellationToken cancel,
             IProgress<SpeechProgress> progress=null,Action<int,VideoOcrFrameGroup> observation=null,Func<int,VideoOcrFrameGroup,string> fixText=null)
         {
+            var ranges = VideoOcrTimeRanges.Parse(options.TimeRanges, info.TotalSeconds, out var invalid);
+            if (ranges == null) throw new ArgumentException("Invalid OCR time range: " + invalid);
+            var output = new Subtitle();
+            foreach (var range in ranges)
+            {
+                cancel.ThrowIfCancellationRequested();
+                var result = await ScanRangeAsync(video, info, options, range.StartSeconds, range.EndSeconds, cancel, progress,
+                    range.StartSeconds == 0 ? observation : null, fixText).ConfigureAwait(false);
+                foreach (var cue in result.Paragraphs)
+                {
+                    cue.StartTime.TotalMilliseconds += range.StartSeconds * 1000;
+                    cue.EndTime.TotalMilliseconds += range.StartSeconds * 1000;
+                    output.Paragraphs.Add(cue);
+                }
+            }
+            output.Renumber(); return output;
+        }
+        private static async Task<Subtitle> ScanRangeAsync(string video, VideoInfo info, ClassicVideoOcrOptions options, double rangeStart, double rangeEnd, CancellationToken cancel,
+            IProgress<SpeechProgress> progress, Action<int,VideoOcrFrameGroup> observation, Func<int,VideoOcrFrameGroup,string> fixText)
+        {
             if(info.Width<=0 || info.Height<=0 || info.TotalSeconds<=0) throw new ArgumentException("No valid video information");
             if(options.FramesPerSecond<1 || options.FramesPerSecond>25) throw new ArgumentOutOfRangeException("FramesPerSecond");
             await EnsureInstalledAsync(options,cancel,progress).ConfigureAwait(false);
@@ -72,7 +95,7 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
             {
                 progress?.Report(new SpeechProgress{Message="Extracting video frames"});
                 var filter=options.CropFilter(info);
-                var args="-nostdin -y -i "+VideoOcrProcess.Quote(video)+" -an -vf "+VideoOcrProcess.Quote("fps="+options.FramesPerSecond+","+filter)+
+                var args="-nostdin -y -ss "+rangeStart.ToString("0.######",CultureInfo.InvariantCulture)+" -i "+VideoOcrProcess.Quote(video)+" -t "+(rangeEnd-rangeStart).ToString("0.######",CultureInfo.InvariantCulture)+" -an -vf "+VideoOcrProcess.Quote("fps="+options.FramesPerSecond+","+filter)+
                     " -q:v 2 -start_number 0 -progress pipe:1 "+VideoOcrProcess.Quote(Path.Combine(frames,"img%06d.jpg"));
                 await VideoOcrProcess.RunFfmpegAsync(args,job,cancel,line=>
                 {
@@ -94,14 +117,14 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
                 progress?.Report(new SpeechProgress{Message="Refining subtitle timings"});
                 await VideoOcrTimingRefiner.RefineAsync(lines,new VideoOcrTimingRefiner.Context
                 {
-                    VideoFileName=video,FramesFolder=frames,CoarseFps=options.FramesPerSecond,BrightnessMinimum=options.BrightnessMinimum,
+                    VideoFileName=video,FramesFolder=frames,SourceOffsetMs=rangeStart*1000,CoarseFps=options.FramesPerSecond,BrightnessMinimum=options.BrightnessMinimum,
                     ImageSimilarityPercent=options.ImageSimilarityPercent,CropAndScaleFilter=filter
                 },(n,total)=>progress?.Report(new SpeechProgress{Message="Refining subtitle timings",Percent=n*100/total}),cancel).ConfigureAwait(false);
                 var result=new Subtitle();
                 var tag=options.AddAssaPositionTag ? VideoOcrLineBuilder.GetAssaAlignmentTag((options.CropXPercent+options.CropWidthPercent/2)/100,(options.CropYPercent+options.CropHeightPercent/2)/100) : "";
                 foreach(var line in lines)
                 {
-                    var end=Math.Min(info.TotalMilliseconds,line.EndMs);
+                    var end=Math.Min((rangeEnd-rangeStart)*1000,line.EndMs);
                     if(end>line.StartMs) result.Paragraphs.Add(new Paragraph(tag+line.Text,line.StartMs,end));
                 }
                 result.Renumber(); return result;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -8,6 +8,8 @@ using System.Windows.Forms;
 using Nikse.SubtitleEdit.Forms.AudioToText;
 using Nikse.SubtitleEdit.Logic;
 using Nikse.SubtitleEdit.Logic.SpeechToText;
+using Nikse.SubtitleEdit.Core.Common;
+using Newtonsoft.Json.Linq;
 
 namespace Nikse.SubtitleEdit.Forms
 {
@@ -61,9 +63,14 @@ namespace Nikse.SubtitleEdit.Forms
     }
     public sealed class ClassicTranslationForm : ClassicServiceSettingsForm
     {
-        public ClassicTranslationForm(string id) : base("Translation: " + id)
+        private CancellationTokenSource _modelRefresh;
+        private bool _modelRefreshClose;
+        public ClassicTranslationForm(string id) : this(id, null) { }
+        public ClassicTranslationForm(string id, Subtitle subtitle) : base("Translation: " + id)
         {
+            FormClosing+=(sender,e)=>{if(_modelRefresh!=null){_modelRefreshClose=true;_modelRefresh.Cancel();e.Cancel=true;}};
             var settings = ClassicTranslationSettings.Load(id);
+            var keepMusic=AddCheck(ClassicSpeechSettings.L("Не переводить реплики с музыкальными символами", "Keep music/lyric lines untranslated"), Configuration.Settings.Tools.AutoTranslateKeepMusicLines);
             CheckBox local=null;
             if(id=="llama" || id=="llama-advanced")
             {
@@ -72,6 +79,35 @@ namespace Nikse.SubtitleEdit.Forms
             }
             if (id != "madlad") { Add("url", "URL", settings.Api.Url); Add("key", id == "lara" ? "Lara secret" : "API key", settings.Api.ApiKey, true); }
             if (id != "lara") Add("model", "Model", settings.Api.Model);
+            if (id.EndsWith("-advanced", StringComparison.Ordinal))
+            {
+                var choices = new ComboBox { Name="classicRemoteModels", Dock=DockStyle.Fill, DropDownStyle=ComboBoxStyle.DropDownList };
+                var refresh = new Button { Name="classicRefreshRemoteModels", Text=ClassicSpeechSettings.L("Обновить список моделей", "Refresh model list"), AutoSize=false, Dock=DockStyle.Fill, Height=42 };
+                var row=_table.RowCount++;_table.RowStyles.Add(new RowStyle(SizeType.AutoSize));_table.Controls.Add(refresh,0,row);_table.Controls.Add(choices,1,row);
+                choices.SelectedIndexChanged+=(sender,e)=>{if(choices.SelectedItem!=null)Fields["model"].Text=choices.SelectedItem.ToString();};
+                if(local!=null){refresh.Enabled=!local.Checked;local.CheckedChanged+=(sender,e)=>refresh.Enabled=!local.Checked;}
+                refresh.Click+=async(sender,e)=>
+                {
+                    if(_modelRefresh!=null)return;
+                    _modelRefresh=new CancellationTokenSource();refresh.Enabled=false;choices.Enabled=false;
+                    try
+                    {
+                        var api=new ClassicCompatibleAsrSettings{Url=Fields["url"].Text.Trim(),ApiKey=Fields["key"].Text.Trim(),TimeoutSeconds=60};
+                        using(var client=new ClassicAiClient(api))
+                        {
+                            var models=await client.GetModelsAsync(_modelRefresh.Token);
+                            var current=Fields["model"].Text;choices.Items.Clear();choices.Items.AddRange(models.Cast<object>().ToArray());
+                            choices.SelectedItem=models.FirstOrDefault(model=>model==current);
+                            Fields["model"].AutoCompleteMode=AutoCompleteMode.SuggestAppend;Fields["model"].AutoCompleteSource=AutoCompleteSource.CustomSource;
+                            Fields["model"].AutoCompleteCustomSource.Clear();Fields["model"].AutoCompleteCustomSource.AddRange(models.ToArray());
+                            choices.DroppedDown=true;
+                        }
+                    }
+                    catch(OperationCanceledException) { }
+                    catch(Exception error){MessageBox.Show(this,error.Message,Text,MessageBoxButtons.OK,MessageBoxIcon.Error);}
+                    finally{_modelRefresh.Dispose();_modelRefresh=null;refresh.Enabled=local==null || !local.Checked;choices.Enabled=true;if(_modelRefreshClose)Close();}
+                };
+            }
             if(local!=null){Action enabled=()=>{Fields["url"].Enabled=Fields["key"].Enabled=Fields["model"].Enabled=!local.Checked;};local.CheckedChanged+=(o,e)=>enabled();enabled();}
             if (id == "madlad")
             {
@@ -82,6 +118,31 @@ namespace Nikse.SubtitleEdit.Forms
             }
             if (id == "lara") Add("accessId", "Lara access key ID", settings.AccessId);
             Add("context", ClassicSpeechSettings.L("Контекст: имена, термины", "Context: names, terms"), settings.Context, multiline: true);
+            if (id == "llama-advanced" && subtitle != null && subtitle.Paragraphs.Count > 0)
+            {
+                var snapshot = new Subtitle(subtitle);
+                DownloadWith(async (cancel, progress) =>
+                {
+                    if (!string.IsNullOrWhiteSpace(Fields["context"].Text) && MessageBox.Show(this, ClassicSpeechSettings.L("Заменить текущий контекст черновиком от AI? Изменения сохранятся после нажатия «Сохранить».", "Replace the current context with an AI draft? Changes are kept only after Save."), Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) throw new OperationCanceledException(cancel);
+                    var api = new ClassicCompatibleAsrSettings { Url = Fields["url"].Text.Trim(), ApiKey = Fields["key"].Text.Trim(), Model = Fields["model"].Text.Trim(), TimeoutSeconds = settings.Api.TimeoutSeconds };
+                    LlamaCppModel definition = null;
+                    if (local.Checked)
+                    {
+                        var model = ClassicLlamaSettings.Load();
+                        if (!ClassicLlamaServer.Installed(model)) throw new InvalidOperationException(ClassicSpeechSettings.L("Сначала установите движок и модель через «Движок и AI-модели».", "Install the engine and model through Engine and AI models first."));
+                        definition = ClassicLlamaServer.Definition(model.Model); api.Url = await ClassicLlamaServer.Start(model, cancel); api.Model = "classic-local";
+                    }
+                    var lines = snapshot.Paragraphs.Select(p => new { Cue = p, Text = HtmlUtil.RemoveHtmlTags(p.Text, true).Replace(Environment.NewLine, " ").Replace('\n', ' ').Trim() }).Where(p => p.Text.Length > 0).Select(p => string.IsNullOrWhiteSpace(p.Cue.Actor) ? p.Text : "[" + p.Cue.Actor.Trim() + "] " + p.Text).ToList();
+                    var language = LanguageAutoDetect.AutoDetectGoogleLanguage(snapshot);
+                    var culture = System.Globalization.CultureInfo.GetCultures(System.Globalization.CultureTypes.NeutralCultures).FirstOrDefault(c => c.TwoLetterISOLanguageName == language); language = culture?.EnglishName ?? language;
+                    using (var client = new ClassicAiClient(api))
+                    {
+                        var draft = await AiReviewContextGenerator.GenerateAsync(lines, language, (system, user, json, token) => client.ChatAsync(new JArray(new JObject { ["role"] = "system", ["content"] = system }, new JObject { ["role"] = "user", ["content"] = user }), json, token, 0, definition), (part, total) => progress.Report(new SpeechProgress { Message = part == 0 ? ClassicSpeechSettings.L("Составление синопсиса…", "Writing synopsis…") : part + " / " + total }), cancel);
+                        if (string.IsNullOrWhiteSpace(draft)) throw new InvalidOperationException(ClassicSpeechSettings.L("AI не вернул пригодный контекст.", "AI returned no usable reference context."));
+                        cancel.ThrowIfCancellationRequested(); Fields["context"].Text = draft;
+                    }
+                }, ClassicSpeechSettings.L("Сгенерировать контекст с AI", "Generate context with AI"));
+            }
             var breaks=AddCheck(ClassicSpeechSettings.L("Сохранять переносы строк","Keep line breaks"),settings.KeepLineBreaks);
             if(id.EndsWith("-advanced",StringComparison.Ordinal))
             {
@@ -96,6 +157,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
             SaveWith(() => {
                 if (id != "madlad") { settings.Api.Url = Fields["url"].Text.Trim(); settings.Api.ApiKey = Fields["key"].Text.Trim(); }
+                if (id != "madlad" && id != "lara" && id != "perplexity") settings.Api.Url=ClassicAiClient.ChatUrl(settings.Api.Url);
                 if (id != "lara") settings.Api.Model = Fields["model"].Text.Trim();
                 if (id == "lara") settings.AccessId = Fields["accessId"].Text.Trim();
                 settings.Context = Fields["context"].Text;
@@ -105,6 +167,7 @@ namespace Nikse.SubtitleEdit.Forms
                 if (id == "madlad") settings.Variant = Fields["variant"].Text.Trim();
                 if (id == "madlad" && !new[] { "cpu", "cpu-legacy", "vulkan", "cuda", "cuda13" }.Contains(settings.Variant)) throw new ArgumentException("Select cpu, vulkan or cuda13.");
                 settings.Save(id);
+                Configuration.Settings.Tools.AutoTranslateKeepMusicLines=keepMusic.Checked;
             });
             if (id == "madlad") DownloadWith(async (cancel, progress) => {
                 var variant = Fields["variant"].Text.Trim();

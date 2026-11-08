@@ -1,4 +1,5 @@
-﻿using Nikse.SubtitleEdit.Core.Common.TextLengthCalculator;
+﻿using Nikse.SubtitleEdit.Core.Dictionaries;
+using Nikse.SubtitleEdit.Core.Common.TextLengthCalculator;
 using Nikse.SubtitleEdit.Core.ContainerFormats.Matroska;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
 using System;
@@ -21,6 +22,294 @@ namespace Nikse.SubtitleEdit.Core.Common
 {
     public static class Utilities
     {
+        public static string ToSubscript(string text)
+        {
+            var sb = new StringBuilder();
+            var subcript = new List<char>{
+                                           '₀',
+                                           '₁',
+                                           '₂',
+                                           '₃',
+                                           '₄',
+                                           '₅',
+                                           '₆',
+                                           '₇',
+                                           '₈',
+                                           '₉',
+                                           '₊',
+                                           '₋',
+                                           '₌',
+                                           '₍',
+                                           '₎',
+                                           'ₐ',
+                                           'ₑ',
+                                           'ᵢ',
+                                           'ₒ',
+                                           'ᵣ',
+                                           'ᵤ',
+                                           'ᵥ',
+                                           'ₓ',
+                                            };
+            var normal = new List<char>
+                             {
+                               '0',  // "₀"
+                               '1',  // "₁"
+                               '2',  // "₂"
+                               '3',  // "₃"
+                               '4',  // "₄"
+                               '5',  // "₅"
+                               '6',  // "₆"
+                               '7',  // "₇"
+                               '8',  // "₈"
+                               '9',  // "₉"
+                               '+',  // "₊"
+                               '-',  // "₋"
+                               '=',  // "₌"
+                               '(',  // "₍"
+                               ')',  // "₎"
+                               'a',  // "ₐ"
+                               'e',  // "ₑ"
+                               'i',  // "ᵢ"
+                               'o',  // "ₒ"
+                               'r',  // "ᵣ"
+                               'u',  // "ᵤ"
+                               'v',  // "ᵥ"
+                               'x',  // "ₓ"
+                             };
+            for (int i = 0; i < text.Length; i++)
+            {
+                char s = text[i];
+                int index = normal.IndexOf(s);
+                if (index >= 0)
+                {
+                    sb.Append(subcript[index]);
+                }
+                else
+                {
+                    sb.Append(s);
+                }
+            }
+            return sb.ToString();
+        }
+        public static string ToSuperscript(string text)
+        {
+            var sb = new StringBuilder();
+            var superscript = new List<char>{
+                                              '⁰',
+                                              '¹',
+                                              '²',
+                                              '³',
+                                              '⁴',
+                                              '⁵',
+                                              '⁶',
+                                              '⁷',
+                                              '⁸',
+                                              '⁹',
+                                              '⁺',
+                                              '⁻',
+                                              '⁼',
+                                              '⁽',
+                                              '⁾',
+                                              'ᵃ',
+                                              'ᵇ',
+                                              'ᶜ',
+                                              'ᵈ',
+                                              'ᵉ',
+                                              'ᶠ',
+                                              'ᵍ',
+                                              'ʰ',
+                                              'ⁱ',
+                                              'ʲ',
+                                              'ᵏ',
+                                              'ˡ',
+                                              'ᵐ',
+                                              'ⁿ',
+                                              'ᵒ',
+                                              'ᵖ',
+                                              'ʳ',
+                                              'ˢ',
+                                              'ᵗ',
+                                              'ᵘ',
+                                              'ᵛ',
+                                              'ʷ',
+                                              'ˣ',
+                                              'ʸ',
+                                              'ᶻ',
+                                              'ᴬ',
+                                              'ᴮ',
+                                              'ᴰ',
+                                              'ᴱ',
+                                              'ᴳ',
+                                              'ᴴ',
+                                              'ᴵ',
+                                              'ᴶ',
+                                              'ᴷ',
+                                              'ᴸ',
+                                              'ᴹ',
+                                              'ᴺ',
+                                              'ᴼ',
+                                              'ᴾ',
+                                              'ᴿ',
+                                              'ᵀ',
+                                              'ᵁ',
+                                              'ᵂ'
+                                            };
+            var normal = new List<char>{
+                                         '0', // "⁰"
+                                         '1', // "¹"
+                                         '2', // "²"
+                                         '3', // "³"
+                                         '4', // "⁴"
+                                         '5', // "⁵"
+                                         '6', // "⁶"
+                                         '7', // "⁷"
+                                         '8', // "⁸"
+                                         '9', // "⁹"
+                                         '+', // "⁺"
+                                         '-', // "⁻"
+                                         '=', // "⁼"
+                                         '(', // "⁽"
+                                         ')', // "⁾"
+                                         'a', // "ᵃ"
+                                         'b', // "ᵇ"
+                                         'c', // "ᶜ"
+                                         'd', // "ᵈ"
+                                         'e', // "ᵉ"
+                                         'f', // "ᶠ"
+                                         'g', // "ᵍ"
+                                         'h', // "ʰ"
+                                         'i', // "ⁱ"
+                                         'j', // "ʲ"
+                                         'k', // "ᵏ"
+                                         'l', // "ˡ"
+                                         'm', // "ᵐ"
+                                         'n', // "ⁿ"
+                                         'o', // "ᵒ"
+                                         'p', // "ᵖ"
+                                         'r', // "ʳ"
+                                         's', // "ˢ"
+                                         't', // "ᵗ"
+                                         'u', // "ᵘ"
+                                         'v', // "ᵛ"
+                                         'w', // "ʷ"
+                                         'x', // "ˣ"
+                                         'y', // "ʸ"
+                                         'z', // "ᶻ"
+                                         'A', // "ᴬ"
+                                         'B', // "ᴮ"
+                                         'D', // "ᴰ"
+                                         'E', // "ᴱ"
+                                         'G', // "ᴳ"
+                                         'H', // "ᴴ"
+                                         'I', // "ᴵ"
+                                         'J', // "ᴶ"
+                                         'K', // "ᴷ"
+                                         'L', // "ᴸ"
+                                         'M', // "ᴹ"
+                                         'N', // "ᴺ"
+                                         'O', // "ᴼ"
+                                         'P', // "ᴾ"
+                                         'R', // "ᴿ"
+                                         'T', // "ᵀ"
+                                         'U', // "ᵁ"
+                                         'W', // "ᵂ"
+                                            };
+            for (int i = 0; i < text.Length; i++)
+            {
+                char s = text[i];
+                int index = normal.IndexOf(s);
+                if (index >= 0)
+                {
+                    sb.Append(superscript[index]);
+                }
+                else
+                {
+                    sb.Append(s);
+                }
+            }
+            return sb.ToString();
+        }
+        public static List<string> GetDictionaryLanguagesCultureNeutral()
+        {
+            var list = new List<string>();
+            if (Directory.Exists(DictionaryFolder))
+            {
+                foreach (string dic in Directory.GetFiles(DictionaryFolder, "*.dic"))
+                {
+                    string name = Path.GetFileNameWithoutExtension(dic);
+                    if (!name.StartsWith("hyph", StringComparison.Ordinal))
+                    {
+                        try
+                        {
+                            var ci = CultureInfo.GetCultureInfo(name.Replace('_', '-'));
+                            var displayName = ci.DisplayName;
+                            if (displayName.Contains("("))
+                            {
+                                displayName = displayName.Remove(displayName.IndexOf('(')).TrimEnd();
+                            }
+                            name = displayName + " [" + ci.TwoLetterISOLanguageName + "]";
+                        }
+                        catch (Exception exception)
+                        {
+                            System.Diagnostics.Debug.WriteLine(exception.Message);
+                            name = "[" + name + "]";
+                        }
+                        if (!list.Contains(name))
+                        {
+                            list.Add(name);
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+        public static string NormalizeUserDictionaryWord(string word)
+        {
+            if (string.IsNullOrWhiteSpace(word))
+            {
+                return string.Empty;
+            }
+
+            var trimmed = TrimUserDictionaryWord(word);
+            if (trimmed.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            return trimmed.Normalize(NormalizationForm.FormC).ToLowerInvariant();
+        }
+        private static bool ShouldTrimUserDictionaryCharacter(char ch)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(ch);
+            return char.IsWhiteSpace(ch) || category == UnicodeCategory.Control || category == UnicodeCategory.Format;
+        }
+        private static string TrimUserDictionaryWord(string word)
+        {
+            if (word.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var start = 0;
+            var end = word.Length - 1;
+            while (start <= end && ShouldTrimUserDictionaryCharacter(word[start]))
+            {
+                start++;
+            }
+
+            while (end >= start && ShouldTrimUserDictionaryCharacter(word[end]))
+            {
+                end--;
+            }
+
+            if (start > end)
+            {
+                return string.Empty;
+            }
+
+            return word.Substring(start, end - start + 1);
+        }
         /// <summary>
         /// Cached environment new line characters for faster lookup.
         /// </summary>
@@ -77,7 +366,7 @@ namespace Nikse.SubtitleEdit.Core.Common
 
             foreach (var format in SubtitleFormat.AllSubtitleFormats)
             {
-                if (format.Name == friendlyName)
+                if (format.Name == friendlyName || format.AlternateNames.Contains(friendlyName))
                 {
                     return format;
                 }
@@ -480,7 +769,7 @@ namespace Nikse.SubtitleEdit.Core.Common
             }
 
             // do not auto break dialogs or music symbol
-            if (text.Contains(Environment.NewLine) && (text.IndexOf('-') >= 0 || text.IndexOf('♪') >= 0))
+            if (text.Contains(Environment.NewLine) && (text.Contains('-') || text.Contains('♪')))
             {
                 var sanitizedLines = RemoveUnicodeControlChars(HtmlUtil.RemoveHtmlTags(text, true)).SplitToLines();
                 if (sanitizedLines.Count == 2)
@@ -817,42 +1106,6 @@ namespace Nikse.SubtitleEdit.Core.Common
             return list;
         }
 
-        public static List<string> GetDictionaryLanguagesCultureNeutral()
-        {
-            var list = new List<string>();
-            if (Directory.Exists(DictionaryFolder))
-            {
-                foreach (string dic in Directory.GetFiles(DictionaryFolder, "*.dic"))
-                {
-                    string name = Path.GetFileNameWithoutExtension(dic);
-                    if (!name.StartsWith("hyph", StringComparison.Ordinal))
-                    {
-                        try
-                        {
-                            var ci = CultureInfo.GetCultureInfo(name.Replace('_', '-'));
-                            var displayName = ci.DisplayName;
-                            if (displayName.Contains("("))
-                            {
-                                displayName = displayName.Remove(displayName.IndexOf('(')).TrimEnd();
-                            }
-                            name = displayName + " [" + ci.TwoLetterISOLanguageName + "]";
-                        }
-                        catch (Exception exception)
-                        {
-                            System.Diagnostics.Debug.WriteLine(exception.Message);
-                            name = "[" + name + "]";
-                        }
-                        if (!list.Contains(name))
-                        {
-                            list.Add(name);
-                        }
-                    }
-                }
-            }
-
-            return list;
-        }
-
         public static IEnumerable<CultureInfo> GetSubtitleLanguageCultures(bool useFilter)
         {
             var prospects = new List<CultureInfo>();
@@ -967,6 +1220,8 @@ namespace Nikse.SubtitleEdit.Core.Common
             }
         }
 
+        public static event Action<string> UserDictionarySaved;
+
         public static void RemoveFromUserDictionary(string word, string languageName)
         {
             word = word.Trim();
@@ -997,20 +1252,11 @@ namespace Nikse.SubtitleEdit.Core.Common
                     }
                 }
 
-                words.Sort();
-
-                if (userWords.DocumentElement != null)
-                {
-                    userWords.DocumentElement.RemoveAll();
-                    foreach (string w in words)
-                    {
-                        XmlNode node = userWords.CreateElement("word");
-                        node.InnerText = w;
-                        userWords.DocumentElement.AppendChild(node);
-                    }
-                }
-
+                // Only the accepted words are rewritten - RemoveAll() also dropped the
+                // <removed> section (words the dictionary should reject).
+                UserDictionaryXml.WriteWords(userWords, words);
                 userWords.Save(userWordsXmlFileName);
+                UserDictionarySaved?.Invoke(userWordsXmlFileName);
             }
         }
 
@@ -1060,18 +1306,12 @@ namespace Nikse.SubtitleEdit.Core.Common
                         words.Add(word);
                     }
 
-                    words.Sort();
-
-                    userWords.DocumentElement.RemoveAll();
-                    foreach (string w in words)
-                    {
-                        XmlNode node = userWords.CreateElement("word");
-                        node.InnerText = w;
-                        userWords.DocumentElement.AppendChild(node);
-                    }
+                    UserDictionaryXml.WriteWords(userWords,words);
+                    UserDictionaryXml.RemoveFromRemovedWords(userWords,word);
                 }
 
                 userWords.Save(userWordsXmlFileName);
+                UserDictionarySaved?.Invoke(userWordsXmlFileName);
             }
         }
 
@@ -1547,215 +1787,6 @@ namespace Nikse.SubtitleEdit.Core.Common
                 sb.AppendLine(s);
             }
             return sb.ToString().Trim();
-        }
-
-        public static string ToSuperscript(string text)
-        {
-            var sb = new StringBuilder();
-            var superscript = new List<char>{
-                                              '⁰',
-                                              '¹',
-                                              '²',
-                                              '³',
-                                              '⁴',
-                                              '⁵',
-                                              '⁶',
-                                              '⁷',
-                                              '⁸',
-                                              '⁹',
-                                              '⁺',
-                                              '⁻',
-                                              '⁼',
-                                              '⁽',
-                                              '⁾',
-                                              'ᵃ',
-                                              'ᵇ',
-                                              'ᶜ',
-                                              'ᵈ',
-                                              'ᵉ',
-                                              'ᶠ',
-                                              'ᵍ',
-                                              'ʰ',
-                                              'ⁱ',
-                                              'ʲ',
-                                              'ᵏ',
-                                              'ˡ',
-                                              'ᵐ',
-                                              'ⁿ',
-                                              'ᵒ',
-                                              'ᵖ',
-                                              'ʳ',
-                                              'ˢ',
-                                              'ᵗ',
-                                              'ᵘ',
-                                              'ᵛ',
-                                              'ʷ',
-                                              'ˣ',
-                                              'ʸ',
-                                              'ᶻ',
-                                              'ᴬ',
-                                              'ᴮ',
-                                              'ᴰ',
-                                              'ᴱ',
-                                              'ᴳ',
-                                              'ᴴ',
-                                              'ᴵ',
-                                              'ᴶ',
-                                              'ᴷ',
-                                              'ᴸ',
-                                              'ᴹ',
-                                              'ᴺ',
-                                              'ᴼ',
-                                              'ᴾ',
-                                              'ᴿ',
-                                              'ᵀ',
-                                              'ᵁ',
-                                              'ᵂ'
-                                            };
-            var normal = new List<char>{
-                                         '0', // "⁰"
-                                         '1', // "¹"
-                                         '2', // "²"
-                                         '3', // "³"
-                                         '4', // "⁴"
-                                         '5', // "⁵"
-                                         '6', // "⁶"
-                                         '7', // "⁷"
-                                         '8', // "⁸"
-                                         '9', // "⁹"
-                                         '+', // "⁺"
-                                         '-', // "⁻"
-                                         '=', // "⁼"
-                                         '(', // "⁽"
-                                         ')', // "⁾"
-                                         'a', // "ᵃ"
-                                         'b', // "ᵇ"
-                                         'c', // "ᶜ"
-                                         'd', // "ᵈ"
-                                         'e', // "ᵉ"
-                                         'f', // "ᶠ"
-                                         'g', // "ᵍ"
-                                         'h', // "ʰ"
-                                         'i', // "ⁱ"
-                                         'j', // "ʲ"
-                                         'k', // "ᵏ"
-                                         'l', // "ˡ"
-                                         'm', // "ᵐ"
-                                         'n', // "ⁿ"
-                                         'o', // "ᵒ"
-                                         'p', // "ᵖ"
-                                         'r', // "ʳ"
-                                         's', // "ˢ"
-                                         't', // "ᵗ"
-                                         'u', // "ᵘ"
-                                         'v', // "ᵛ"
-                                         'w', // "ʷ"
-                                         'x', // "ˣ"
-                                         'y', // "ʸ"
-                                         'z', // "ᶻ"
-                                         'A', // "ᴬ"
-                                         'B', // "ᴮ"
-                                         'D', // "ᴰ"
-                                         'E', // "ᴱ"
-                                         'G', // "ᴳ"
-                                         'H', // "ᴴ"
-                                         'I', // "ᴵ"
-                                         'J', // "ᴶ"
-                                         'K', // "ᴷ"
-                                         'L', // "ᴸ"
-                                         'M', // "ᴹ"
-                                         'N', // "ᴺ"
-                                         'O', // "ᴼ"
-                                         'P', // "ᴾ"
-                                         'R', // "ᴿ"
-                                         'T', // "ᵀ"
-                                         'U', // "ᵁ"
-                                         'W', // "ᵂ"
-                                            };
-            for (int i = 0; i < text.Length; i++)
-            {
-                char s = text[i];
-                int index = normal.IndexOf(s);
-                if (index >= 0)
-                {
-                    sb.Append(superscript[index]);
-                }
-                else
-                {
-                    sb.Append(s);
-                }
-            }
-            return sb.ToString();
-        }
-
-        public static string ToSubscript(string text)
-        {
-            var sb = new StringBuilder();
-            var subcript = new List<char>{
-                                           '₀',
-                                           '₁',
-                                           '₂',
-                                           '₃',
-                                           '₄',
-                                           '₅',
-                                           '₆',
-                                           '₇',
-                                           '₈',
-                                           '₉',
-                                           '₊',
-                                           '₋',
-                                           '₌',
-                                           '₍',
-                                           '₎',
-                                           'ₐ',
-                                           'ₑ',
-                                           'ᵢ',
-                                           'ₒ',
-                                           'ᵣ',
-                                           'ᵤ',
-                                           'ᵥ',
-                                           'ₓ',
-                                            };
-            var normal = new List<char>
-                             {
-                               '0',  // "₀"
-                               '1',  // "₁"
-                               '2',  // "₂"
-                               '3',  // "₃"
-                               '4',  // "₄"
-                               '5',  // "₅"
-                               '6',  // "₆"
-                               '7',  // "₇"
-                               '8',  // "₈"
-                               '9',  // "₉"
-                               '+',  // "₊"
-                               '-',  // "₋"
-                               '=',  // "₌"
-                               '(',  // "₍"
-                               ')',  // "₎"
-                               'a',  // "ₐ"
-                               'e',  // "ₑ"
-                               'i',  // "ᵢ"
-                               'o',  // "ₒ"
-                               'r',  // "ᵣ"
-                               'u',  // "ᵤ"
-                               'v',  // "ᵥ"
-                               'x',  // "ₓ"
-                             };
-            for (int i = 0; i < text.Length; i++)
-            {
-                char s = text[i];
-                int index = normal.IndexOf(s);
-                if (index >= 0)
-                {
-                    sb.Append(subcript[index]);
-                }
-                else
-                {
-                    sb.Append(s);
-                }
-            }
-            return sb.ToString();
         }
 
         public static string FixQuotes(string text)

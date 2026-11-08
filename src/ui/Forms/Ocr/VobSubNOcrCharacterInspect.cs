@@ -26,6 +26,17 @@ namespace Nikse.SubtitleEdit.Forms.Ocr
             InitializeComponent();
             VobSubEditCharacters.MakeToolStripLetters(contextMenuStripLetters, InsertLanguageCharacter);
             UiUtil.FixFonts(this);
+            pictureBoxInspectItem.Cursor = Cursors.Hand;
+            pictureBoxInspectItem.DoubleClick += (sender, e) =>
+            {
+                if (_imageList == null || listBoxInspectItems.SelectedIndex < 0) return;
+                var rows = _indexLookup.Where(pair => _imageList[pair.Value].NikseBitmap != null).OrderBy(pair => pair.Key).ToArray();
+                var selected = Array.FindIndex(rows, pair => pair.Key == listBoxInspectItems.SelectedIndex);
+                if (selected < 0) return;
+                using (var viewer = new ExportPngXmlPreview(i => _imageList[rows[i].Value].NikseBitmap.GetBitmap(), selected, rows.Length,
+                    i => listBoxInspectItems.SelectedIndex = rows[i].Key)) viewer.ShowDialog(this);
+            };
+
             labelImageSize.Text = string.Empty;
             labelStatus.Text = string.Empty;
             labelExpandCount.Text = string.Empty;

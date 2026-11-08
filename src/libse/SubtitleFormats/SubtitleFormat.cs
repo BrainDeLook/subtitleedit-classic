@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -444,6 +444,15 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
         {
         }
 
+        protected static string JoinLines(List<string> lines) => string.Join(Environment.NewLine, lines);
+        protected static string JoinLinesTrimmed(List<string> lines) => JoinLines(lines).Trim();
+
+        public virtual SubtitleFormatLimits FormatLimits => null;
+
+        public virtual bool HasPositionSupport => false;
+
+        public virtual List<string> AlternateNames => new List<string>();
+
         public virtual List<string> AlternateExtensions => new List<string>();
 
         public static int MillisecondsToFrames(double milliseconds)
@@ -780,7 +789,8 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
             foreach (var format in AllSubtitleFormats)
             {
                 if (format.Name.Trim().Equals(trimmedFormatName, StringComparison.OrdinalIgnoreCase) ||
-                    format.FriendlyName.Trim().Equals(trimmedFormatName, StringComparison.OrdinalIgnoreCase))
+                    format.FriendlyName.Trim().Equals(trimmedFormatName, StringComparison.OrdinalIgnoreCase) ||
+                    format.AlternateNames.Any(n => n.Equals(trimmedFormatName, StringComparison.OrdinalIgnoreCase)))
                 {
                     return format;
                 }

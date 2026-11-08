@@ -19,6 +19,12 @@ namespace Nikse.SubtitleEdit.Forms.Translate
 
         public static async Task<int> MergeAndTranslateIfPossible(Subtitle sourceSubtitle, Subtitle targetSubtitle, TranslationPair source, TranslationPair target, int index, IAutoTranslator autoTranslator, bool forceSingleLineMode, CancellationToken cancellationToken)
         {
+            if (TranslationMusic.IsKeptUntranslated(sourceSubtitle.Paragraphs[index].Text))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                targetSubtitle.Paragraphs[index].Text = sourceSubtitle.Paragraphs[index].Text;
+                return 1;
+            }
             if(autoTranslator is ClassicNewTranslator advanced && advanced.IsAdvanced)
             {
                 var count=Math.Min(forceSingleLineMode?1:advanced.AdvancedBatchSize,sourceSubtitle.Paragraphs.Count-index);
@@ -427,6 +433,7 @@ namespace Nikse.SubtitleEdit.Forms.Translate
             for (var i = index + 1; i < sourceSubtitle.Paragraphs.Count; i++)
             {
                 var p = sourceSubtitle.Paragraphs[i];
+                if (TranslationMusic.IsKeptUntranslated(p.Text)) break;
 
                 if (item != null && Utilities.UrlEncodeLength(result.Text + Environment.NewLine + p.Text) > maxTextSize)
                 {

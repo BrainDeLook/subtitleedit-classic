@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.Common;
+﻿using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Dictionaries;
 using System;
 using System.IO;
@@ -12,17 +12,17 @@ namespace Nikse.SubtitleEdit.Logic.VideoOcr
         public OcrFixReplaceList ReplaceList { get; }
         public ClassicVideoOcrRules(string language)
         {
-            if(language!="eng" && language!="rus" && language!="ron" && language!="hrv") return;
+            var source = Assembly.GetExecutingAssembly().GetManifestResourceStream("ClassicVideoOcrRules."+language+".xml");
+            if (source == null) return;
             Directory.CreateDirectory(_folder);
             var name=language+"_OCRFixReplaceList.xml";var path=Path.Combine(_folder,name);
-            using(var source=Assembly.GetExecutingAssembly().GetManifestResourceStream("ClassicVideoOcrRules."+language+".xml"))
+            using(source)
             using(var output=File.Create(path))
             {
-                if(source==null) throw new InvalidDataException("Pinned OCR replacement rules are missing");
                 source.CopyTo(output);
             }
             // The classic loader layers existing user additions/removals onto the
-            // v5.2 base. Never overwrite the user's dictionary or replacement files.
+            // v5.4 base. Never overwrite the user's dictionary or replacement files.
             var userName=language+"_OCRFixReplaceList_User.xml";
             var legacyUser=Path.Combine(Configuration.DictionariesDirectory,userName);
             if(File.Exists(legacyUser)) File.Copy(legacyUser,Path.Combine(_folder,userName),true);

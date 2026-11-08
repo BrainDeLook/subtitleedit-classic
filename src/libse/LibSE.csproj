@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net48;netstandard2.1</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
 		<RootNamespace>Nikse.SubtitleEdit.Core</RootNamespace>
 		<AssemblyName>libse</AssemblyName>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -54,6 +55,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Win32.Registry" />
 		<PackageReference Include="System.Drawing.Common" />
+		<PackageReference Include="SkiaSharp" />
 		<PackageReference Include="System.Net.Http" />
 		<PackageReference Include="UTF.Unknown" />
 		<PackageReference Include="zlib.net-mutliplatform" />

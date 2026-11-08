@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "Name": "Crisp ASR ARK",
     "Family": "crisp",
@@ -2781,6 +2781,14 @@
           "https://huggingface.co/OpenVoiceOS/qwen3-forced-aligner-0.6b-q4-k-m/resolve/main/qwen3-forced-aligner-0.6b-q4_k_m.gguf"
         ],
         "Aligner": true
+      },
+      {
+        "Name": "qwen3-asr-0.6b-da-q8_0.gguf",
+        "Size": "1.0 GB",
+        "Urls": [
+          "https://huggingface.co/niksedk/qwen3-asr-0.6b-danish/resolve/main/qwen3-asr-0.6b-da-q8_0.gguf"
+        ],
+        "Aligner": false
       }
     ]
   },

@@ -26,6 +26,7 @@ public static class VideoOcrTimingRefiner
 
     public sealed class Context
     {
+        public double SourceOffsetMs { get; set; }
         public string VideoFileName { get; set; } = string.Empty;
 
         /// <summary>Folder with the coarse scan frames ("img%06d.jpg"), used for reference masks.</summary>
@@ -203,7 +204,7 @@ public static class VideoOcrTimingRefiner
         Directory.CreateDirectory(folder);
 
         var arguments = "-nostdin -y " +
-                        $"-ss {(windowStartMs / 1000.0).ToString("0.###", CultureInfo.InvariantCulture)} " +
+                        $"-ss {((windowStartMs + context.SourceOffsetMs) / 1000.0).ToString("0.###", CultureInfo.InvariantCulture)} " +
                         $"-i \"{context.VideoFileName}\" " +
                         $"-t {(lengthMs / 1000.0).ToString("0.###", CultureInfo.InvariantCulture)} " +
                         $"-vf \"showinfo,{context.CropAndScaleFilter}\" " +

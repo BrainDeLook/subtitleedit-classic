@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <OCRFixReplaceList>
 	<WholeWords>
+		<Word from="gasPs" to="gasps" />
+		<Word from="gasPing" to="gasping" />
+		<Word from="yelPs" to="yelps" />
+		<Word from="yelPing" to="yelping" />
         <Word from="tñere" to="there" />
         <Word from="ri9ht" to="right" />
 		<Word from="$COff$" to="scoffs" />
@@ -148,7 +152,6 @@
 		<Word from="agreetowaive" to="agree to waive" />
 		<Word from="aH" to="all" />
 		<Word from="ahd" to="and" />
-		<Word from="ahold" to="a hold" />
 		<Word from="ahsolutes" to="absolutes" />
 		<Word from="AI_I_" to="ALL" />
 		<Word from="AIarm" to="Alarm" />
@@ -693,7 +696,6 @@
 		<Word from="forAmerica's" to="for America's" />
 		<Word from="forArthur" to="for Arthur" />
 		<Word from="forbad" to="forbid" />
-		<Word from="forevermore" to="for evermore" />
 		<Word from="forgetyourname" to="forget your name" />
 		<Word from="forJack" to="for Jack" />
 		<Word from="forjoining" to="for joining" />
@@ -1061,7 +1063,6 @@
 		<Word from="Ile" to="lie" />
 		<Word from="Ileft" to="I left" />
 		<Word from="Ilive" to="I live" />
-		<Word from="I'LL" to="I'll" />
 		<Word from="I'lldo" to="I'll do" />
 		<Word from="I'llgo" to="I'll go" />
 		<Word from="I'lljust" to="I'll just" />
@@ -1198,6 +1199,8 @@
 		<Word from="I'va" to="I've" />
 		<Word from="I'Ve" to="I've" />
 		<Word from="I'vejust" to="I've just" />
+		<Word from="IVline" to="IV line" />
+		<Word from="IVlines" to="IV lines" />
 		<Word from="IVIan" to="Man" />
 		<Word from="IVIAN" to="MAN" />
 		<Word from="IVIarch" to="March" />
@@ -1284,7 +1287,6 @@
 		<Word from="l_AuGHING" to="LAUGHING" />
 		<Word from="l‘m" to="I'm" />
 		<Word from="l0ng's" to="long's" />
-		<Word from="lam" to="I am" />
 		<Word from="Laml6" to="I am 16" />
 		<Word from="lasagna" to="lasagne" />
 		<Word from="Lcad" to="Load" />
@@ -1558,7 +1560,6 @@
 		<Word from="newjobs" to="new jobs" />
 		<Word from="newous" to="nervous" />
 		<Word from="newsagenfs" to="newsagents" />
-		<Word from="newsstand" to="news stand" />
 		<Word from="nextdoor" to="next door" />
 		<Word from="nff" to="off" />
 		<Word from="NiCe" to="Nice" />
@@ -2337,7 +2338,6 @@
 		<Word from="Wasnt" to="Wasn't" />
 		<Word from="Wasrt" to="Wasn't" />
 		<Word from="wasrt" to="wasn't" />
-		<Word from="wastebasket" to="waste basket" />
 		<Word from="wayJack" to="way Jack" />
 		<Word from="wayl" to="way I" />
 		<Word from="wayround" to="way round" />
@@ -3393,6 +3393,8 @@
 		<RegEx find="(2 )(nd\b)" replaceWith="2$2" />
 		<RegEx find="(3 )(rd\b)" replaceWith="3$2" />
 		<RegEx find="([456789])( th\b)" replaceWith="$1th" />
+		<!-- nOCR: "p" and "P" are the same shape; a capital P between lowercase letters before an ending is a "p" ("gasPs", "sleePing") -->
+		<RegEx find="(?&lt;=\p{Ll})P(?=(?:s|ing|ed)\b)" replaceWith="p" />
 	</RegularExpressions>
 	<RegularExpressionsIfSpelledCorrectly>
 		<RegEx find="\[([A-Zl]+)\]" replaceAllFrom="l" replaceAllTo="I" spellCheck="$1" replaceWith="[$1]" />		
@@ -3404,6 +3406,10 @@
 		<RegEx find="\bl([A-Z]+)\b" spellCheck="I$1" replaceWith="I$1" /> 
     	<RegEx find="\b([A-Z]+)l\b" spellCheck="$1I" replaceWith="$1I" />
     	<RegEx find="\b([A-Z]+)l([A-Z]+)\b" spellCheck="$1I$2" replaceWith="$1I$2" /> <!-- SlNG to SING -->
+		<!-- All-caps word with any number of lowercase l (nOCR reads I as l in sans-serif fonts, #14885): -->
+		<!-- replace every l at once, so MlSSlSSlPPl and GRlNDlNG are repaired too. Needs at least one   -->
+		<!-- uppercase letter and one l, and the spell check gate keeps real words like "Al" untouched.  -->
+		<RegEx find="\b((?=[A-Zl]*[A-Z])(?=[A-Zl]*l)[A-Zl]{2,})\b" replaceAllFrom="l" replaceAllTo="I" spellCheck="$1" replaceWith="$1" />
 		<RegEx find="\b([a-zæøåöääöéèàùâêîôûëï]+)II([a-zæøåöääöéèàùâêîôûëï]+)\b" spellCheck="$1ll$2" replaceWith="$1ll$2" /> <!-- chaIIenge → challenge -->
 		<RegEx find="\b([a-zæøåöääöéèàùâêîôûëï]+)I([a-zæøåöääöéèàùâêîôûëï]+)\b" spellCheck="$1l$2" replaceWith="$1l$2" /> <!-- traiIing → trailing -->		
 		<RegEx find="\bI([a-zæøåöääöéèàùâêîôûëï]{3,})\b" spellCheck="l$1" replaceWith="l$1" /> <!-- Iaunch → launch, but NOT Is -->
@@ -3417,7 +3423,9 @@
 	<RegularExpressionsIfSpelledCorrectly>
 		<!-- Italic l misread as i (#13660): trailing i to l, double ii to ll.  -->
 		<!-- Correct i-words are in the dictionary and protected by the gate.   -->
-		<RegEx find="\b([A-Za-z][a-z]*)i\b" spellCheck="$1l" replaceWith="$1l" />
+		<!-- Stem of 3+ letters (#14824): "toi"/"moi"/"roi" in a quoted French   -->
+		<!-- line are not in the dictionary but "tol"/"mol"/"rol" are.           -->
+		<RegEx find="\b([A-Za-z][a-z]{3,})i\b" spellCheck="$1l" replaceWith="$1l" />
 		<RegEx find="\b([A-Za-z][a-z]*)ii([a-z]*)\b" spellCheck="$1ll$2" replaceWith="$1ll$2" />
 
 		<!-- word-initial i to l (iove to love, iieber to lieber) -->

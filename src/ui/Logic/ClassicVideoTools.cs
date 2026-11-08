@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -24,6 +24,24 @@ namespace Nikse.SubtitleEdit.Logic
             try { await ClassicMediaJobs.Render(arguments, stage, token); var probe = await ClassicMediaJobs.Probe(stage, token); if (probe.Streams.Count == 0) throw new IOException("The rendered file contains no media streams."); token.ThrowIfCancellationRequested(); ClassicMediaJobs.Commit(stage, output); }
             finally { if (File.Exists(stage)) File.Delete(stage); }
         }
+        public static Task ShiftAudioTrack(string input, string output, ClassicMediaInfo media, int streamIndex, double offsetSeconds, double? previewFrom, CancellationToken token)
+        {
+            if (!media.Streams.Any(t => t.Index == streamIndex && t.Type == "audio")) throw new ArgumentException("Select an audio stream from this file.");
+            if (double.IsNaN(offsetSeconds) || double.IsInfinity(offsetSeconds) || Math.Abs(offsetSeconds) > 3600) throw new ArgumentOutOfRangeException(nameof(offsetSeconds));
+            var args = "-i " + Q(input) + " -itsoffset " + N(offsetSeconds) + " -i " + Q(input);
+            if (previewFrom.HasValue)
+            {
+                args += " -ss " + N(Math.Max(0, previewFrom.Value)) + " -t 12 -map 0:v:0? -map 1:" + streamIndex + " -c:v libx264 -preset veryfast -crf 23 -c:a aac -use_editlist 1";
+            }
+            else
+            {
+                foreach (var stream in media.Streams) args += " -map " + (stream.Index == streamIndex ? "1:" : "0:") + stream.Index;
+                args += " -map_metadata 0 -map_chapters 0 -c copy -avoid_negative_ts disabled";
+                if (Path.GetExtension(output).Equals(".mp4", StringComparison.OrdinalIgnoreCase) || Path.GetExtension(output).Equals(".mov", StringComparison.OrdinalIgnoreCase)) args += " -use_editlist 1";
+            }
+            return Run(input, output, args, token);
+        }
+
         public static Task Cut(string input, string output, IList<ClassicCutSegment> clips, int audioIndex, double transitionSeconds, string transition, double sourceDuration, CancellationToken token)
         {
             if (clips.Count == 0) throw new ArgumentException("Add at least one segment.");
@@ -61,10 +79,12 @@ namespace Nikse.SubtitleEdit.Logic
             var codec = profile == 0 ? "-c:v libx264 -preset fast -crf 18 -g 12 -pix_fmt yuv420p" : profile == 1 ? "-c:v libx264 -preset fast -crf 18 -g 1 -pix_fmt yuv420p" : "-c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le";
             return Run(input, output, "-i " + Q(input) + " -map 0:v:0 " + string.Join(" ", audioIndices.Distinct().Select(i => "-map 0:" + i)) + " " + codec + (profile == 2 ? " -c:a pcm_s24le" : " -c:a aac -b:a 192k") + " -map_metadata 0 -map_chapters 0", token);
         }
-        public static Task Remux(string input, string output, IList<ClassicMappedStream> streams, bool mix, CancellationToken token)
+        public static Task Remux(string input, string output, IList<ClassicMappedStream> streams, bool mix, CancellationToken token, double captionOffsetMs = 0)
         {
-            if (ClassicCaptionRemux.IsMpeg(output)) return ClassicCaptionRemux.Write(input, output, streams, mix, token);
+            if (ClassicCaptionRemux.IsMpeg(output)) return ClassicCaptionRemux.Write(input, output, streams, mix, token, captionOffsetMs);
             var captions = streams.Where(s => s.Stream.Type == "subtitle" && new[] { ".scc", ".mcc" }.Contains(Path.GetExtension(s.File).ToLowerInvariant())).ToList();
+            if (captions.Count > 0 && Path.GetExtension(output).Equals(".mp4", StringComparison.OrdinalIgnoreCase)) return ClassicCaptionRemux.Write(input, output, streams, mix, token, captionOffsetMs);
+            if (captions.Count > 0 && Math.Abs(captionOffsetMs) > .001) throw new ArgumentException("Caption offset requires MP4 SEI or MPEG output.");
             if (captions.Count > 0 && (!Path.GetExtension(output).Equals(".mov", StringComparison.OrdinalIgnoreCase) || captions.Any(s => Path.GetExtension(s.File).Equals(".mcc", StringComparison.OrdinalIgnoreCase)))) throw new ArgumentException("SCC requires QuickTime MOV or MPEG output; MCC requires MPEG output.");
             return RemuxStreams(input, output, streams, mix, token);
         }

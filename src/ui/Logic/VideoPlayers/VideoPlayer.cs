@@ -21,6 +21,8 @@ namespace Nikse.SubtitleEdit.Logic.VideoPlayers
         public abstract void Stop();
         public abstract bool IsPaused { get; }
         public abstract bool IsPlaying { get; }
+        /// <summary>A copy of the decoded raw frame, without subtitle overlays, or null when the player cannot capture it.</summary>
+        public virtual System.Drawing.Bitmap CaptureFrame() => null;
         public abstract void Initialize(Control ownerControl, string videoFileName, EventHandler onVideoLoaded, EventHandler onVideoEnded);
         public abstract void DisposeVideoPlayer();
         public abstract event EventHandler OnVideoLoaded;

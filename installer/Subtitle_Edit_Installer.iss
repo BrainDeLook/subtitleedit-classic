@@ -211,6 +211,7 @@ Name: reset_settings;     Description: {cm:tsk_ResetSettings};     GroupDescript
 Name: associate_common;   Description: {cm:tsk_SetFileTypes};      GroupDescription: {cm:tsk_Other};
 
 [Files]
+Source: ..\Dictionaries\ita_OCRFixReplaceList.xml; DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion; Components: main
 Source: ..\Dictionaries\dan_OCRFixReplaceList.xml; DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion; Components: main
 Source: ..\Dictionaries\deu_OCRFixReplaceList.xml; DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion; Components: main
 Source: ..\Dictionaries\eng_OCRFixReplaceList.xml; DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion; Components: main
@@ -246,7 +247,6 @@ Source: ..\Dictionaries\*_NoBreakAfterList.xml;   DestDir: {userappdata}\Subtitl
 Source: ..\Dictionaries\da_DK_se.xml;              DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion onlyifdoesntexist; Components: main
 Source: ..\Dictionaries\de_DE_se.xml;              DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion onlyifdoesntexist; Components: main
 Source: ..\Dictionaries\en_US_se.xml;              DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion onlyifdoesntexist; Components: main
-Source: ..\Dictionaries\en_US_se.xml;              DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion; Components: main
 Source: ..\Dictionaries\es_MX_se.xml;              DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion onlyifdoesntexist; Components: main
 Source: ..\Dictionaries\fi_FI_se.xml;              DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion onlyifdoesntexist; Components: main
 Source: ..\Dictionaries\nl_NL_se.xml;              DestDir: {userappdata}\Subtitle Edit\Dictionaries; Flags: ignoreversion onlyifdoesntexist; Components: main
@@ -364,6 +364,11 @@ Source: ..\README.ru.md;                          DestDir: {app};               
 Source: {#bindir}\Hunspellx64.dll;                 DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\Hunspellx86.dll;                 DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\libse.dll;                       DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: {#bindir}\System.Resources.Extensions.dll; DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: {#bindir}\System.Formats.Nrbf.dll;          DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: {#bindir}\System.Collections.Immutable.dll; DestDir: {app};                                   Flags: ignoreversion; Components: main
+Source: {#bindir}\System.Reflection.Metadata.dll;  DestDir: {app};                                    Flags: ignoreversion; Components: main
+Source: {#bindir}\Microsoft.Bcl.HashCode.dll;       DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\zlib.net.dll;                    DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\NHunspell.dll;                   DestDir: {app};                                    Flags: ignoreversion; Components: main
 Source: {#bindir}\UtfUnknown.dll;                  DestDir: {app};                                    Flags: ignoreversion; Components: main

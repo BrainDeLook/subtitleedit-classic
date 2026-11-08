@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Controls;
+﻿using Nikse.SubtitleEdit.Controls;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.Enums;
 using Nikse.SubtitleEdit.Core.SubtitleFormats;
@@ -303,97 +303,8 @@ namespace Nikse.SubtitleEdit.Logic
             }
         }
 
-        public static void CheckAutoWrap(TextBox textBox, KeyEventArgs e, int numberOfNewLines)
-        {
-            // Do not auto-break lines more than 1 line.
-            if (numberOfNewLines != 1 || !Configuration.Settings.General.AutoWrapLineWhileTyping)
-            {
-                return;
-            }
-
-            int length = HtmlUtil.RemoveHtmlTags(textBox.Text, true).Length;
-            if (e.Modifiers == Keys.None && e.KeyCode != Keys.Enter && length > Configuration.Settings.General.SubtitleLineMaximumLength)
-            {
-                string newText;
-                if (length > Configuration.Settings.General.SubtitleLineMaximumLength + 30)
-                {
-                    newText = Utilities.AutoBreakLine(textBox.Text);
-                }
-                else
-                {
-                    int lastSpace = textBox.Text.LastIndexOf(' ');
-                    if (lastSpace > 0)
-                    {
-                        newText = textBox.Text.Remove(lastSpace, 1).Insert(lastSpace, Environment.NewLine);
-                    }
-                    else
-                    {
-                        newText = textBox.Text;
-                    }
-                }
-
-                int autoBreakIndex = newText.IndexOf(Environment.NewLine, StringComparison.Ordinal);
-                if (autoBreakIndex > 0)
-                {
-                    int selectionStart = textBox.SelectionStart;
-                    textBox.Text = newText;
-                    if (selectionStart > autoBreakIndex)
-                    {
-                        selectionStart += Environment.NewLine.Length - 1;
-                    }
-                    if (selectionStart >= 0)
-                    {
-                        textBox.SelectionStart = selectionStart;
-                    }
-                }
-            }
-        }
-
-        public static void CheckAutoWrap(SETextBox textBox, KeyEventArgs e, int numberOfNewLines)
-        {
-            // Do not auto-break lines more than 1 line.
-            if (numberOfNewLines != 1 || !Configuration.Settings.General.AutoWrapLineWhileTyping)
-            {
-                return;
-            }
-
-            var length = textBox.Text.CountCharacters(false);
-            if (e.Modifiers == Keys.None && e.KeyCode != Keys.Enter && length > Configuration.Settings.General.SubtitleLineMaximumLength)
-            {
-                string newText;
-                if (length > Configuration.Settings.General.SubtitleLineMaximumLength + 30)
-                {
-                    newText = Utilities.AutoBreakLine(textBox.Text);
-                }
-                else
-                {
-                    int lastSpace = textBox.Text.LastIndexOf(' ');
-                    if (lastSpace > 0)
-                    {
-                        newText = textBox.Text.Remove(lastSpace, 1).Insert(lastSpace, Environment.NewLine);
-                    }
-                    else
-                    {
-                        newText = textBox.Text;
-                    }
-                }
-
-                int autoBreakIndex = newText.IndexOf(Environment.NewLine, StringComparison.Ordinal);
-                if (autoBreakIndex > 0)
-                {
-                    int selectionStart = textBox.SelectionStart;
-                    textBox.Text = newText;
-                    if (selectionStart > autoBreakIndex)
-                    {
-                        selectionStart += Environment.NewLine.Length - 1;
-                    }
-                    if (selectionStart >= 0)
-                    {
-                        textBox.SelectionStart = selectionStart;
-                    }
-                }
-            }
-        }
+        public static void CheckAutoWrap(TextBox textBox,KeyEventArgs e,int numberOfNewLines)=>ClassicTextAutoWrap.Attach(textBox);
+        public static void CheckAutoWrap(SETextBox textBox,KeyEventArgs e,int numberOfNewLines)=>ClassicTextAutoWrap.Attach(textBox);
 
         private static readonly Dictionary<string, Keys> AllKeys = new Dictionary<string, Keys>();
         private static Keys _helpKeys;
@@ -687,7 +598,9 @@ namespace Nikse.SubtitleEdit.Logic
         {
             var sb = new StringBuilder();
             var index = 0;
-            foreach (SubtitleFormat format in SubtitleFormat.AllSubtitleFormats)
+            var favorites = (Configuration.Settings.General.FavoriteSubtitleFormats ?? string.Empty).Split(';');
+            var formats = SubtitleFormat.AllSubtitleFormats.OrderBy(format => Array.IndexOf(favorites, format.Name) < 0 ? int.MaxValue : Array.IndexOf(favorites, format.Name));
+            foreach (SubtitleFormat format in formats)
             {
                 sb.Append(format.Name + "|*" + format.Extension + "|");
                 if (currentFormat.Name == format.Name)

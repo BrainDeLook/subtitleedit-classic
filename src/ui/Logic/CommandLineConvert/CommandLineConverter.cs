@@ -1,4 +1,4 @@
-using Nikse.SubtitleEdit.Core.BluRaySup;
+﻿using Nikse.SubtitleEdit.Core.BluRaySup;
 using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.ContainerFormats.Matroska;
 using Nikse.SubtitleEdit.Core.ContainerFormats.Mp4;
@@ -1382,7 +1382,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
         internal static bool BatchConvertSave(string targetFormat, TimeSpan offset, TextEncoding targetEncoding, string outputFolder, string targetFileName, int count, ref int converted, ref int errors,
                                               List<SubtitleFormat> formats, string fileName, Subtitle sub, SubtitleFormat format, IList<IBinaryParagraphWithPosition> binaryParagraphs, bool overwrite, int pacCodePage,
                                               double? targetFrameRate, ICollection<string> multipleReplaceImportFiles, List<string> actions = null,
-                                              Point? resolution = null, bool autoDetectLanguage = false, BatchConvertProgress progressCallback = null, string ebuHeaderFile = null, string assaStyleFile = null, string ocrEngine = null, string preExt = null, int? renumber = null, double? adjustDurationMs = null, PreprocessingSettings preprocessingSettings = null, CancellationToken cancellationToken = default, bool preserveSourceTimestamp = false)
+                                              Point? resolution = null, bool autoDetectLanguage = false, BatchConvertProgress progressCallback = null, string ebuHeaderFile = null, string assaStyleFile = null, string ocrEngine = null, string preExt = null, int? renumber = null, double? adjustDurationMs = null, PreprocessingSettings preprocessingSettings = null, CancellationToken cancellationToken = default, bool preserveSourceTimestamp = false, bool frameRateAlreadyAdjusted = false)
         {
             if (string.IsNullOrWhiteSpace(preExt))
             {
@@ -1420,7 +1420,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                 // adjust frame rate
                 if (targetFrameRate.HasValue && targetFrameRate > 0)
                 {
-                    sub.ChangeFrameRate(Configuration.Settings.General.CurrentFrameRate, targetFrameRate.Value);
+                    if (!frameRateAlreadyAdjusted) sub.ChangeFrameRate(Configuration.Settings.General.CurrentFrameRate, targetFrameRate.Value);
                     Configuration.Settings.General.CurrentFrameRate = targetFrameRate.Value;
                 }
 
@@ -2303,7 +2303,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                             case BatchAction.ReverseRtlStartEnd:
                                 foreach (var p in sub.Paragraphs)
                                 {
-                                    p.Text = Utilities.ReverseStartAndEndingForRightToLeft(p.Text);
+                                    if (LanguageAutoDetect.ContainsRightToLeftLetter(p.Text)) p.Text = Utilities.ReverseStartAndEndingForRightToLeft(p.Text);
                                 }
 
                                 break;
@@ -2378,7 +2378,7 @@ namespace Nikse.SubtitleEdit.Logic.CommandLineConvert
                             case BatchAction.FixRtlViaUnicodeChars:
                                 foreach (var p in sub.Paragraphs)
                                 {
-                                    p.Text = Utilities.FixRtlViaUnicodeChars(p.Text);
+                                    if (LanguageAutoDetect.ContainsRightToLeftLetter(p.Text)) p.Text = Utilities.FixRtlViaUnicodeChars(p.Text);
                                 }
                                 break;
                             case BatchAction.RemoveUnicodeControlChars:

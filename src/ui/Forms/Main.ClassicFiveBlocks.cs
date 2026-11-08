@@ -140,7 +140,7 @@ namespace Nikse.SubtitleEdit.Forms
         private void ShowClassicDraw()
         {
             if(!CanEditClassicAss())return;var selected=SubtitleListview1.SelectedIndices.Cast<int>().ToArray();if(selected.Length==0)return;var dimensions=Logic.ClassicEffects.AdvancedEffectUtil.GetScriptResolution(_subtitle.Header,1280,720);
-            using(var form=new ClassicAssaDraw(_subtitle.Paragraphs[selected[0]],dimensions.Width,dimensions.Height,_subtitle))if(form.ShowDialog(this)==DialogResult.OK && form.Result!=null)ApplyClassicAssEvents(new[]{selected[0]},form.Result,"Edit ASS drawing",CreateClassicDrawHeader());
+            using(var form=new ClassicAssaDraw(_subtitle.Paragraphs[selected[0]],dimensions.Width,dimensions.Height,_subtitle,selected.Select(i=>_subtitle.Paragraphs[i])))if(form.ShowDialog(this)==DialogResult.OK && form.Result!=null)ApplyClassicAssEvents(selected,form.Result,"Edit ASS drawing",CreateClassicDrawHeader());
         }
         private string CreateClassicDrawHeader()
         {

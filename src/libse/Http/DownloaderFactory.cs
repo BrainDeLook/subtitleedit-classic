@@ -10,10 +10,7 @@ namespace Nikse.SubtitleEdit.Core.Http
     {
         public static IDownloader MakeHttpClient()
         {
-            var httpClient = new HttpClient(CreateHandler(Configuration.Settings.Proxy))
-            {
-                Timeout = TimeSpan.FromMinutes(30) // 30 minutes for large downloads
-            };
+            var httpClient = CreateHttpClient();
 
             if (Configuration.Settings.General.UseLegacyDownloader)
             {
@@ -21,6 +18,11 @@ namespace Nikse.SubtitleEdit.Core.Http
             }
 
             return new HttpClientDownloader(httpClient);
+        }
+
+        public static HttpClient CreateHttpClient()
+        {
+            return new HttpClient(CreateHandler(Configuration.Settings.Proxy)) { Timeout = TimeSpan.FromMinutes(30) };
         }
 
         private static HttpClientHandler CreateHandler(ProxySettings proxySettings)
@@ -35,7 +37,8 @@ namespace Nikse.SubtitleEdit.Core.Http
 
             if (proxySettings.UseDefaultCredentials)
             {
-                handler.Proxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+                if (handler.Proxy != null) handler.Proxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+                else handler.DefaultProxyCredentials = CredentialCache.DefaultNetworkCredentials;
                 handler.Credentials = CredentialCache.DefaultNetworkCredentials;
             }
             else if (!string.IsNullOrEmpty(proxySettings.UserName) && !string.IsNullOrEmpty(proxySettings.ProxyAddress))

@@ -1,4 +1,4 @@
-#nullable enable annotations
+﻿#nullable enable annotations
 // Algorithms adapted from stable Subtitle Edit v5.3.0; .NET Framework API substitutions only.
 using Nikse.SubtitleEdit.Core.Common;
 
@@ -51,6 +51,8 @@ public sealed partial class SubtitleRetimer
         /// <summary>Audio kept beyond a sentinel, so a slightly early or late sentinel is not clipped.</summary>
         public double SentinelPaddingSeconds { get; init; } = 1.0;
 
+        /// <summary>Stop a persistently crashing engine before launching it for every cue. 0 disables.</summary>
+        public int StopAfterEngineFailures { get; init; } = 3;
         public bool AdjustStart { get; init; } = true;
         public bool AdjustEnd { get; init; } = true;
 
@@ -236,6 +238,8 @@ public sealed partial class SubtitleRetimer
         var batches = PlanBatches(alignable.Select(i => lines[i]).ToList(), _options);
         Exception? lastError = null;
         var failedBatches = 0;
+        var succeededBatches = 0;
+        var engineFailuresInRow = 0;
 
         for (var b = 0; b < batches.Count; b++)
         {
@@ -245,6 +249,8 @@ public sealed partial class SubtitleRetimer
             try
             {
                 await RetimeBatchAsync(batch, lines, spoken, alignable, results, cancellationToken).ConfigureAwait(false);
+                succeededBatches++;
+                engineFailuresInRow = 0;
             }
             catch (OperationCanceledException)
             {
@@ -259,6 +265,8 @@ public sealed partial class SubtitleRetimer
                     var index = alignable[k];
                     results[index] = new LineResult(lines[index].StartSeconds, lines[index].EndSeconds, LineStatus.Failed);
                 }
+                engineFailuresInRow = exception is ForcedAlignerException error && error.ExitCode.HasValue ? engineFailuresInRow + 1 : 0;
+                if (succeededBatches == 0 && _options.StopAfterEngineFailures > 0 && engineFailuresInRow >= _options.StopAfterEngineFailures) throw;
             }
 
             progress?.Report(new Progress(b + 1, batches.Count, (b + 1) / (double)batches.Count * 100.0));

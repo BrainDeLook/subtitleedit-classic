@@ -58,6 +58,8 @@ namespace Nikse.SubtitleEdit.Forms
         }
         private async Task Work(Func<CancellationToken, Task> work)
         {
+            using var taskbarWork=new ClassicTaskbarWork(this);
+            using var preventSleep=ClassicPowerRequest.Acquire("Processing subtitles and media");
             _preview?.Stop(); _preview?.Dispose(); _preview = null;
             _operation = new CancellationTokenSource(); _generate.Enabled = _mix.Enabled = false;
             try { await work(_operation.Token); _status.Text = L("Готово", "Done"); }

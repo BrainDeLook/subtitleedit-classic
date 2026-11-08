@@ -1,4 +1,4 @@
-﻿using Nikse.SubtitleEdit.Core.Common;
+using Nikse.SubtitleEdit.Core.Common;
 using Nikse.SubtitleEdit.Core.ContainerFormats.Mp4;
 using System;
 using System.Collections.Generic;
@@ -65,7 +65,7 @@ namespace Nikse.SubtitleEdit.Core.SubtitleFormats
                         continue;
                     }
 
-                    if (xmlAsString.IndexOf('\0') >= 0)
+                    if (xmlAsString.Contains('\0'))
                     {
                         _errorCount++;
                         continue;

@@ -27,6 +27,11 @@ namespace Nikse.SubtitleEdit.Core.Common
         public List<HistoryItem> HistoryItems { get; }
         public bool CanUndo => HistoryItems.Count > 0;
 
+        private static bool MayBeUtf16(string fileName)
+        {
+            using(var stream=new FileStream(fileName,FileMode.Open,FileAccess.Read,FileShare.ReadWrite))
+            {var sample=new byte[4096];var count=stream.Read(sample,0,sample.Length);return Array.IndexOf(sample,(byte)0,0,count)>=0;}
+        }
         public Subtitle() : this(new List<Paragraph>(), new List<HistoryItem>())
         {
         }
@@ -319,7 +324,7 @@ namespace Nikse.SubtitleEdit.Core.Common
                 }
             }
 
-            if (useThisEncoding == null)
+            if (useThisEncoding == null && encoding?.CodePage!=Encoding.Unicode.CodePage && MayBeUtf16(fileName))
             {
                 return LoadSubtitle(fileName, out encoding, Encoding.Unicode);
             }

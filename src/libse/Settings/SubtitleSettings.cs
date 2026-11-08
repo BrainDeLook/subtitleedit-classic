@@ -77,6 +77,10 @@ namespace Nikse.SubtitleEdit.Core.Settings
         public string TimedTextItunesBottomExtent { get; set; }
         public string TimedTextItunesTimeCodeFormat { get; set; }
         public string TimedTextItunesStyleAttribute { get; set; }
+        public string TimedTextItunesDefaultColor { get; set; } = "white";
+        public string TimedTextItunesDefaultStyle { get; set; } = "";
+        public string TimedTextItunesDefaultRegion { get; set; } = "";
+        public string TimedTextItunesHeaderTemplate { get; set; } = "";
         public string TimedTextItunesLanguage { get; set; }
         public string TimedTextImsc11TimeCodeFormat { get; set; }
         public string TimedTextImsc11FileExtension { get; set; }
