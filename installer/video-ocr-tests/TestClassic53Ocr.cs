@@ -17,7 +17,7 @@ class TestClassic53Ocr
         {
             var pattern=ClassicOcrSearchReplace.Pattern("мир",false,false,true);var text=ClassicOcrSearchReplace.Replace("Мир, мирный и мир.",pattern,"$5",false,out var count);Check(count==2 && text=="$5, мирный и $5.","Unicode whole-word/literal-dollar replacement");
             text=ClassicOcrSearchReplace.Replace("123 abc",ClassicOcrSearchReplace.Pattern("(\\d+)",true,true,false),"[$1]",true,out count);Check(count==1 && text=="[123] abc","Regex replacement groups");
-            Check(ClassicCrispVideoOcr.PinnedVersion("cpu")=="0.17.12" && ClassicCrispVideoOcr.PinnedVersion("cuda")=="0.17.11","Stable OCR builds");
+            Check(ClassicCrispVideoOcr.PinnedVersion("cpu")=="0.17.14" && ClassicCrispVideoOcr.PinnedVersion("cuda")=="0.17.14","Stable OCR builds");
             typeof(Configuration).GetField("DataDirectory",BindingFlags.Static|BindingFlags.Public).SetValue(null,folder+Path.DirectorySeparatorChar);
             foreach(var language in new[]{"rus","eng","hrv","ron"})using(var rules=new ClassicVideoOcrRules(language))Check(rules.ReplaceList!=null,"Missing OCR dictionary "+language);
             Console.WriteLine("PASS: Unicode/whole-word/regex replacement, stable OCR versions and all bundled rule files");return;
