@@ -68,6 +68,7 @@ jobs:
           $languageTest = Join-Path $installDirectory 'TestClassicLanguages.exe'
           & "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe" /nologo /target:exe /platform:x64 "/out:$languageTest" /reference:System.Windows.Forms.dll (Join-Path $env:GITHUB_WORKSPACE 'installer\TestClassicLanguages.cs')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item (Join-Path $installDirectory 'SubtitleEdit.exe.config') ($languageTest + '.config') -Force
           & $languageTest
           if ($LASTEXITCODE -ne 0) { throw 'Installed language picker test failed.' }
           $app = Start-Process -FilePath $installedExe -WorkingDirectory $installDirectory -WindowStyle Hidden -PassThru
