@@ -153,7 +153,7 @@ public class NOcrDb
                 }
             }
 
-            if (File.Exists(FileName)) File.Replace(tempFileName, FileName, null); else File.Move(tempFileName, FileName);
+            if (File.Exists(FileName)) File.Replace(tempFileName, FileName, FileName + ".bak"); else File.Move(tempFileName, FileName);
 
             // The edit dialogs mutate OcrCharacters/character lines directly and then call
             // Save, so treat Save as a mutation barrier for the caches.
